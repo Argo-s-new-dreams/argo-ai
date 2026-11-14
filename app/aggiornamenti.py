@@ -165,8 +165,26 @@ def installa(cartella_app, stato=lambda t: None):
 
 
 def riavvia():
-    """Riapre Argo con lo stesso Python e lo stesso script."""
+    """Riapre Argo dopo l'aggiornamento.
+    Sul Mac passa dall'app «Argo AI» (open -n), dopo una breve attesa perché la vecchia finestra si chiuda;
+    altrove rilancia lo stesso Python con lo stesso script. Uscite scollegate: il processo nuovo non dipende
+    da quello vecchio."""
     script = Path(sys.argv[0]).resolve()
-    flags = 0x00000008 | 0x00000200 if os.name == "nt" else 0  # DETACHED_PROCESS | NEW_PROCESS_GROUP
-    subprocess.Popen([sys.executable, str(script)], close_fds=True, creationflags=flags,
-                     start_new_session=(os.name != "nt"))
+    nulla = subprocess.DEVNULL
+    if sys.platform == "darwin":
+        bundle = Path.home() / "Applications" / "Argo AI.app"
+        if bundle.exists():
+            cmd = f'sleep 2; open -n "{bundle}"'
+        else:
+            cmd = f'sleep 2; "{sys.executable}" "{script}"'
+        subprocess.Popen(["/bin/sh", "-c", cmd], stdin=nulla, stdout=nulla, stderr=nulla,
+                         close_fds=True, start_new_session=True)
+        return
+    if os.name == "nt":
+        pyw = Path(sys.executable).with_name("pythonw.exe")
+        exe = str(pyw) if pyw.exists() else sys.executable
+        subprocess.Popen([exe, str(script)], stdin=nulla, stdout=nulla, stderr=nulla, close_fds=True,
+                         creationflags=0x00000008 | 0x00000200)  # DETACHED_PROCESS | NEW_PROCESS_GROUP
+        return
+    subprocess.Popen(["/bin/sh", "-c", f'sleep 2; "{sys.executable}" "{script}"'], stdin=nulla, stdout=nulla,
+                     stderr=nulla, close_fds=True, start_new_session=True)
