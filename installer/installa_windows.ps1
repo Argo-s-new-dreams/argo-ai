@@ -59,7 +59,7 @@ try {
     }
 
     Passo 3 "WhisperX e interfaccia grafica (10-15 minuti la prima volta)"
-    uv pip install --python $py whisperx hf_xet PySide6 pypdf python-docx sounddevice | Out-Host
+    uv pip install --python $py -r (Join-Path $Src "requisiti.txt") | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Installazione dei pacchetti non riuscita (vedi messaggi sopra)." }
 
     Passo 4 "Copia dell'applicazione"

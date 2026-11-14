@@ -24,8 +24,9 @@ import voci_core as core  # noqa: E402
 import argo_attrezzi as attrezzi  # noqa: E402
 import llm_locale  # noqa: E402
 import voci_strumenti  # noqa: E402
+import aggiornamenti  # noqa: E402
 
-VERSIONE = "20261114.1845"
+VERSIONE = "20261114.1900"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -865,6 +866,28 @@ class Finestra(QMainWindow):
         self.pannello_ollama.cambiato.connect(lambda: self._aggiorna_badge() if hasattr(self, "badge") else None)
         lay.addWidget(self.pannello_ollama)
 
+        g4 = QGroupBox(f"Aggiornamenti · versione installata {VERSIONE}")
+        f4 = QVBoxLayout(g4)
+        self.cb_agg = QCheckBox("Controlla all'avvio se su GitHub c'è una versione nuova")
+        self.cb_agg.setChecked(bool(imp.get("controlla_aggiornamenti", True)))
+        self.cb_agg.toggled.connect(self._salva_pref_agg)
+        f4.addWidget(self.cb_agg)
+        nota_agg = QLabel("Argo legge da GitHub solo il numero dell'ultima versione e le novità: nessun dato, "
+                          "audio o documento viene inviato. Voci, impostazioni e glossario restano dove sono.")
+        nota_agg.setWordWrap(True)
+        f4.addWidget(nota_agg)
+        r4 = QHBoxLayout()
+        self.b_agg = QPushButton("Controlla ora")
+        self.b_agg.clicked.connect(lambda: self.controlla_aggiornamenti(manuale=True))
+        b_gh = QPushButton("Apri GitHub")
+        b_gh.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(aggiornamenti.URL_GITHUB)))
+        self.l_agg = QLabel("")
+        r4.addWidget(self.b_agg)
+        r4.addWidget(b_gh)
+        r4.addWidget(self.l_agg, 1)
+        f4.addLayout(r4)
+        lay.addWidget(g4)
+
         riga2 = QHBoxLayout()
         b_salva = QPushButton("Salva impostazioni")
         b_salva.clicked.connect(self.salva_impostazioni)
@@ -877,6 +900,106 @@ class Finestra(QMainWindow):
         lay.addStretch()
         lay.addWidget(QLabel(f"Dati in: {core.APP_HOME}  ·  L'audio non lascia mai questo computer."))
         return w
+
+    # ------------------------------------------------------------ aggiornamenti
+    def _salva_pref_agg(self, on):
+        imp = core.carica_impostazioni()
+        imp["controlla_aggiornamenti"] = bool(on)
+        core.salva_impostazioni(imp)
+
+    def controlla_aggiornamenti(self, manuale=False):
+        if getattr(self, "_lav_agg", None):
+            return
+        if hasattr(self, "l_agg"):
+            self.l_agg.setText("Controllo su GitHub…")
+        lav = attrezzi.Lavoro(lambda _l: aggiornamenti.controlla(VERSIONE), self)
+        lav.sig_fine.connect(lambda r: self._esito_controllo(r, manuale))
+        lav.sig_errore.connect(lambda e: self._errore_controllo(e, manuale))
+        self._lav_agg = lav
+        lav.start()
+
+    def _errore_controllo(self, e, manuale):
+        self._lav_agg = None
+        if hasattr(self, "l_agg"):
+            self.l_agg.setText("Controllo non riuscito (sei offline?)")
+        if manuale:
+            QMessageBox.warning(self, "Aggiornamenti", f"Non riesco a contattare GitHub:\n{e}")
+
+    def _esito_controllo(self, r, manuale):
+        self._lav_agg = None
+        nuova, remota, testo = r
+        if not nuova:
+            if hasattr(self, "l_agg"):
+                self.l_agg.setText(f"✅ Hai l'ultima versione ({VERSIONE}).")
+            if manuale:
+                QMessageBox.information(self, "Aggiornamenti", f"Hai già l'ultima versione ({VERSIONE}).")
+            return
+        if hasattr(self, "l_agg"):
+            self.l_agg.setText(f"🆕 Disponibile la versione {remota}.")
+        self._proponi_aggiornamento(remota, testo)
+
+    def _proponi_aggiornamento(self, remota, testo):
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Nuova versione di Argo")
+        dlg.resize(620, 480)
+        lay = QVBoxLayout(dlg)
+        lay.addWidget(QLabel(f"<b>È disponibile la versione {remota}</b> (hai la {VERSIONE}).<br>"
+                             "L'aggiornamento sostituisce solo i file del programma: voci, token, impostazioni, "
+                             "glossario e documenti indicizzati restano come sono."))
+        box = QPlainTextEdit(testo or "Novità: vedi CHANGELOG su GitHub.")
+        box.setReadOnly(True)
+        lay.addWidget(box, 1)
+        bar = QHBoxLayout()
+        b_ora = QPushButton("Aggiorna ora")
+        b_ora.setStyleSheet("font-weight: bold;")
+        b_dopo = QPushButton("Più tardi")
+        b_gh = QPushButton("Apri GitHub")
+        bar.addWidget(b_gh)
+        bar.addStretch()
+        bar.addWidget(b_dopo)
+        bar.addWidget(b_ora)
+        lay.addLayout(bar)
+        b_gh.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(aggiornamenti.URL_GITHUB)))
+        b_dopo.clicked.connect(dlg.reject)
+        b_ora.clicked.connect(dlg.accept)
+        if dlg.exec():
+            self.installa_aggiornamento()
+
+    def installa_aggiornamento(self):
+        if self.worker or self.worker_voce:
+            QMessageBox.information(self, "Aggiornamento", "Aspetta che finisca l'elaborazione in corso, poi riprova.")
+            return
+        cartella = Path(__file__).resolve().parent
+        lav = attrezzi.Lavoro(lambda l: aggiornamenti.installa(cartella, l.stato), self)
+        lav.sig_stato.connect(lambda t: self.statusBar().showMessage(t))
+        lav.sig_fine.connect(self._fine_aggiornamento)
+        lav.sig_errore.connect(lambda e: (QMessageBox.warning(
+            self, "Aggiornamento non riuscito",
+            f"{e}\n\nLa versione attuale non è stata toccata. Puoi scaricare il pacchetto da GitHub e rilanciare l'installer."),
+            setattr(self, "_lav_inst", None)))
+        self._lav_inst = lav
+        self.statusBar().showMessage("Aggiornamento in corso…")
+        lav.start()
+
+    def _fine_aggiornamento(self, esito):
+        self._lav_inst = None
+        lib = esito["librerie"]
+        extra = ""
+        if lib == "manca_uv":
+            extra = ("\n\nQuesta versione richiede librerie nuove e non trovo «uv» per installarle: "
+                     "scarica il pacchetto da GitHub e rilancia l'installer.")
+        elif lib.startswith("errore"):
+            extra = f"\n\nAggiornamento delle librerie non riuscito: {lib[7:]}\nRilancia l'installer dal pacchetto su GitHub."
+        r = QMessageBox.question(
+            self, "Aggiornamento installato",
+            f"Argo {esito['versione']} è installato.{extra}\n\nRiavvio Argo adesso per usarlo?\n"
+            f"(La versione precedente è salvata in {esito['backup']}.)",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        self.statusBar().showMessage(f"Aggiornato alla versione {esito['versione']}.")
+        if r == QMessageBox.Yes:
+            self._salva_coda()
+            aggiornamenti.riavvia()
+            QApplication.quit()
 
     def verifica_token(self):
         tok = self.e_token.text().strip()
@@ -920,6 +1043,9 @@ def main():
         app.setWindowIcon(QIcon(str(icona)))
     f = Finestra()
     f.show()
+    if core.carica_impostazioni().get("controlla_aggiornamenti", True):
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(3000, f.controlla_aggiornamenti)
     sys.exit(app.exec())
 
 
