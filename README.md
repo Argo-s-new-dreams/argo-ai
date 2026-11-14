@@ -1,13 +1,23 @@
-# Trascrittore
+# Argo · Cassetta degli attrezzi AI
 
-**Trascrizione delle riunioni con riconoscimento dei parlanti, tutto in locale.**
-*Meeting transcription with speaker recognition, fully local. English summary below.*
+**Attrezzi di intelligenza artificiale che girano tutti sul tuo computer: niente audio né documenti nel cloud.**
+*A toolbox of local AI tools: meeting transcription with speaker recognition, minutes, private document Q&A, dictation and glossary-aware translation. English summary below.*
 
-Trascrittore è un'app desktop per Windows e macOS costruita su [WhisperX](https://github.com/m-bain/whisperX) e [pyannote.audio](https://github.com/pyannote/pyannote-audio). Trascrive file audio e video, separa le voci e, grazie a un'**anagrafe delle voci**, mette in automatico il nome giusto accanto a ogni intervento.
+| Attrezzo | Cosa fa | Motore locale |
+| --- | --- | --- |
+| **Trascrittore** | Trascrive riunioni, separa le voci e riconosce chi parla grazie all'anagrafe delle voci | WhisperX + pyannote |
+| **Verbale** | Dalla trascrizione al verbale: decisioni, azioni, responsabili, scadenze; oppure mail di sintesi al cliente | LLM via [Ollama](https://ollama.com) |
+| **Documenti riservati** | Domande su NDA, contratti e capitolati (PDF, DOCX, TXT) con citazione delle fonti | Embedding + LLM via Ollama |
+| **Dettatura** | Parli, e ottieni una mail o un appunto già scritti bene | faster-whisper + LLM |
+| **Traduzione** | Traduce testi e trascrizioni IT/EN/DE rispettando il glossario aziendale | LLM via Ollama |
+
+Nato come Trascrittore, costruito su [WhisperX](https://github.com/m-bain/whisperX) e [pyannote.audio](https://github.com/pyannote/pyannote-audio): trascrive file audio e video, separa le voci e, grazie a un'**anagrafe delle voci**, mette in automatico il nome giusto accanto a ogni intervento.
 
 L'audio non lascia mai il computer: Internet serve solo per installare i pacchetti e scaricare i modelli la prima volta.
 
-![Coda trascrizioni](docs/screenshot-coda.png)
+![Argo · Trascrittore](docs/screenshot-coda.png)
+
+![Argo · Documenti riservati](docs/screenshot-documenti.png)
 
 ## Funzionalità
 
@@ -22,6 +32,19 @@ L'audio non lascia mai il computer: Internet serve solo per installare i pacchet
 
 [00:00:41] Marco: Ok, sul budget però...
 ```
+
+## Il "cervello" testuale: Ollama
+
+Verbale, Documenti, Dettatura e Traduzione usano un modello linguistico locale servito da [Ollama](https://ollama.com) su `localhost`. Installa Ollama, poi scarica un modello per i testi e uno per i documenti, per esempio:
+
+```bash
+ollama pull gemma3:12b   # testi (circa 8 GB): adatto a un Mac da 16 GB
+ollama pull bge-m3       # embedding multilingue per la ricerca nei documenti
+```
+
+In *Impostazioni → Modello linguistico locale* scegli i modelli tra quelli installati (puoi anche scaricarli da lì). La barra in basso mostra **🔒 100% locale** finché Ollama punta a questo computer.
+
+Nella cartella `app/esempi` trovi una riunione, un NDA e un capitolato **fittizi** per provare subito tutti gli attrezzi.
 
 ## Requisiti
 
@@ -42,9 +65,9 @@ Servono anche circa 10 GB liberi e un account gratuito [Hugging Face](https://hu
    - Crea un token di tipo **Read** su [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
 2. **Scarica** il repository (`Code → Download ZIP`) oppure l'ultima release ed estrailo.
 3. **Avvia l'installer**
-   - Windows: doppio clic su `Installa-Trascrittore.bat`. Se compare SmartScreen: *Ulteriori informazioni → Esegui comunque*.
-   - macOS: tasto destro su `Installa-Trascrittore.command` → *Apri*. Se macOS lo blocca: *Impostazioni di Sistema → Privacy e sicurezza → Apri comunque*.
-4. **Apri Trascrittore** (Desktop/menu Start su Windows, Applicazioni su Mac), incolla il token in *Impostazioni* e premi **Salva e verifica**.
+   - Windows: doppio clic su `Installa-Argo.bat`. Se compare SmartScreen: *Ulteriori informazioni → Esegui comunque*.
+   - macOS: tasto destro su `Installa-Argo.command` → *Apri*. Se macOS lo blocca: *Impostazioni di Sistema → Privacy e sicurezza → Apri comunque*.
+4. **Apri Argo AI** (Desktop/menu Start su Windows, Applicazioni su Mac), incolla il token in *Impostazioni* e premi **Salva e verifica**.
 
 Gli installer non sono firmati digitalmente: per questo Windows e macOS mostrano un avviso. Il codice è tutto qui, leggibile.
 
@@ -81,8 +104,8 @@ Queste note sono informative e non costituiscono consulenza legale.
 | --- | --- |
 | `app/trascrittore.py` | Interfaccia grafica (PySide6): coda, anagrafe, impostazioni, revisione |
 | `app/voci_core.py` | Motore: impronte vocali, identificazione, comando WhisperX; usabile anche da riga di comando |
-| `installer/installa_windows.ps1` | Installer Windows (lanciato dal `.bat`) |
-| `Installa-Trascrittore.command` | Installer macOS, crea `~/Applications/Trascrittore.app` |
+| `installer/installa_windows.ps1` | Installer Windows (lanciato da `Installa-Argo.bat`) |
+| `Installa-Argo.command` | Installer macOS, crea `~/Applications/Argo AI.app` |
 
 ## Stato del progetto
 
@@ -96,10 +119,10 @@ Codice rilasciato con licenza [MIT](LICENSE). Le dipendenze e i modelli hanno le
 
 ## English summary
 
-**Trascrittore** is a desktop app (Windows x64/ARM, macOS Apple Silicon) built on WhisperX and pyannote.audio. It transcribes audio/video files, separates speakers and labels them by name using a local **voice registry**. Everything runs locally; the internet is only needed to install packages and download models once.
+**Argo** is a local AI toolbox (Windows x64/ARM, macOS Apple Silicon): a transcriber built on WhisperX and pyannote.audio, plus minutes, private document Q&A, dictation and glossary-aware translation powered by a local LLM through Ollama. It transcribes audio/video files, separates speakers and labels them by name using a local **voice registry**. Everything runs locally; the internet is only needed to install packages and download models once.
 
 1. Accept the conditions of [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1) and create a **Read** token on Hugging Face.
-2. Run `Installa-Trascrittore.bat` (Windows) or `Installa-Trascrittore.command` (macOS, right-click → Open).
+2. Run `Installa-Argo.bat` (Windows) or `Installa-Argo.command` (macOS, right-click → Open).
 3. Open the app, paste the token in *Impostazioni* (Settings), enroll voices, queue your files.
 
 The UI is in Italian. Voiceprints are biometric data: enroll other people's voices only with their explicit consent. Under the EU AI Act, recognising people from their voice against a stored registry is biometric identification: personal non-professional use is outside the deployer obligations, while professional use may fall under the high-risk category (Annex III, point 1(a)), applicable from 2 December 2027. Personal project, provided as is, MIT licensed; not legal advice.

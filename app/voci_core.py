@@ -26,6 +26,11 @@ DEFAULT_SETTINGS = {
     "device": "cpu",
     "soglia": 0.5,
     "hotwords": "",
+    # Argo · attrezzi (Ollama)
+    "ollama_url": "http://localhost:11434",
+    "modello_chat": "",
+    "modello_embed": "",
+    "modello_dettatura": "large-v3-turbo",
 }
 
 
