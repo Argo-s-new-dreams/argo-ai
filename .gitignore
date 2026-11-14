@@ -1,0 +1,36 @@
+# Dati personali: non devono MAI finire nel repository
+.hf_token
+voci/
+*.npy
+trascrittore_impostazioni.json
+trascrittore_coda.json
+
+# Audio, video e trascrizioni
+*.wav
+*.WAV
+*.mp3
+*.m4a
+*.aac
+*.flac
+*.ogg
+*.opus
+*.wma
+*.mp4
+*.mov
+*.mkv
+*.webm
+*_nomi.txt
+*.srt
+*.vtt
+
+# Python e ambienti
+__pycache__/
+*.pyc
+.venv/
+venv/
+whisperx-env/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.zip
