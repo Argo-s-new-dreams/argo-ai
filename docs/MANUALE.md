@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261114.1510 · riferita all'app versione 20261114.1510*
+*Versione del manuale: 20261114.1520 · riferita all'app versione 20261114.1520*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -26,7 +26,7 @@ Audio, documenti e testi non vengono mai inviati a servizi cloud.
 8. [Documenti riservati](#8-documenti-riservati)
 9. [Dettatura](#9-dettatura)
 10. [Traduzione con glossario](#10-traduzione-con-glossario)
-11. [Impostazioni nel dettaglio](#11-impostazioni-nel-dettaglio)
+11. [Impostazioni nel dettaglio](#11-impostazioni-nel-dettaglio) · [I documenti Word](#11bis-i-documenti-word)
 12. [Dove stanno i dati](#12-dove-stanno-i-dati)
 13. [Uso da riga di comando](#13-uso-da-riga-di-comando)
 14. [Aggiornare e disinstallare](#14-aggiornare-e-disinstallare)
@@ -204,6 +204,7 @@ Pulsanti disponibili sulla riga selezionata:
 - **Apri trascrizione**: apre il file `_nomi.txt`.
 - **Rivedi parlanti…**: apre la revisione (vedi sotto).
 - **Apri cartella**: apre la cartella del file.
+- **Esporta in Word**: crea `nomefile_trascrizione.docx`, con orari in grigio e nomi dei parlanti in grassetto, e lo apre.
 - **Crea verbale →**: passa la trascrizione alla scheda Verbale.
 
 ### 5.5 Revisione parlanti
@@ -275,7 +276,7 @@ Trasforma una trascrizione con i nomi in un testo pronto da usare. Richiede un m
 | Solo elenco delle azioni | Solo la tabella delle azioni |
 
 3. Premi **▶ Genera**: il testo compare parola per parola. Premi di nuovo il pulsante per fermare la generazione.
-4. **Copia** oppure **Salva .md**. Il nome proposto è `nomefile_verbale.md`, accanto alla trascrizione.
+4. **Copia**, **Salva .md** oppure **Salva Word**. I nomi proposti stanno accanto alla trascrizione: `nomefile_verbale`, `nomefile_sintesi` o `nomefile_azioni`, a seconda del formato.
 
 **Come lavora:**
 
@@ -301,6 +302,10 @@ Fai domande su contratti, NDA e capitolati senza caricarli nel cloud. Richiede i
 - **Esempio** carica i due documenti fittizi. **Svuota** cancella l'indice: i file originali non vengono toccati.
 - I PDF scansionati (solo immagini, senza testo selezionabile) non vengono letti: Argo non fa OCR.
 - Se cambi il modello di embedding, Argo svuota l'indice e lo ricostruisce: vettori calcolati con modelli diversi non sono confrontabili.
+
+### Salvare in Word
+
+**Salva Word**, accanto a *Fonti usate per la risposta*, crea un documento con la domanda, la risposta e l'elenco delle fonti (file, pagina e inizio dell'estratto).
 
 ### Chiedere
 
@@ -330,7 +335,7 @@ Parli e ottieni un testo già scritto bene.
    - Solo trascrizione (non serve Ollama).
 2. Premi **● Registra**, parla, poi **■ Stop**. In alternativa usa **Da file audio…**.
 3. A sinistra compare la trascrizione grezza, a destra il testo riscritto. Puoi correggere la trascrizione e premere **Riscrivi**, oppure cambiare formato e riscrivere.
-4. **Copia risultato** e incolla dove ti serve.
+4. **Copia risultato** e incolla dove ti serve, oppure **Salva Word**.
 
 **Dettagli tecnici:**
 
@@ -359,7 +364,7 @@ Traduce testi e trascrizioni in **inglese, tedesco o italiano** imponendo al mod
 3. Argo cerca nel testo i termini del glossario e li passa al modello come **glossario obbligatorio**. La barra di stato mostra quanti termini ha applicato.
 4. Orari, nomi e formato delle righe `[ora] Nome: testo` vengono mantenuti: puoi tradurre direttamente un `_nomi.txt`.
 
-I testi lunghi vengono tradotti a blocchi di circa 4.000 caratteri.
+I testi lunghi vengono tradotti a blocchi di circa 4.000 caratteri. **Salva Word** salva la traduzione in un documento (`traduzione_en.docx`, `traduzione_de.docx`…).
 
 ### Il glossario
 
@@ -416,6 +421,18 @@ Contiene il token, il pulsante **Mostra** e **Salva e verifica**, più i link al
 Se il modello "ragiona" ad alta voce (per esempio `qwen3`), Argo nasconde automaticamente le parti `<think>…</think>`.
 
 Per salvare tutto premi **Salva impostazioni**. **Apri cartella dati** apre la cartella descritta qui sotto.
+
+---
+
+## 11bis. I documenti Word
+
+Tutti gli attrezzi possono salvare il risultato in **Word (.docx)**. Argo chiede dove salvarlo e poi lo apre.
+
+- **Cosa diventa cosa:** i titoli diventano titoli di Word, gli elenchi diventano elenchi puntati o numerati, le tabelle del verbale diventano tabelle vere con l'intestazione colorata. Grassetto e corsivo vengono mantenuti.
+- **In ogni documento** ci sono un titolo, la data, un piè di pagina "Argo · AI locale" con data e ora, e una breve nota in fondo che ricorda che il testo è generato da un'AI e va riletto.
+- **Tutto in locale:** il file viene creato con la libreria python-docx, senza servizi esterni. Non serve avere Word installato per crearlo; serve solo per aprirlo.
+
+Il documento è un normale file Word: modificalo, cambia lo stile o togli la nota finale se non ti serve.
 
 ---
 
