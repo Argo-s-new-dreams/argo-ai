@@ -12,13 +12,15 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import QObject, Qt, QThread, Signal
-from PySide6.QtGui import QGuiApplication, QTextCursor
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QDesktopServices, QGuiApplication, QTextCursor
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView,
     QLabel, QLineEdit, QListWidget, QMessageBox, QPlainTextEdit, QPushButton, QSplitter,
     QTableWidget, QTableWidgetItem, QTextBrowser, QVBoxLayout, QWidget,
 )
 
+import esporta_word as word
 import llm_locale as llm
 import voci_core as core
 
@@ -235,6 +237,30 @@ def copia(testo):
     QGuiApplication.clipboard().setText(testo)
 
 
+def salva_word(parent, testo, base, titolo=None, sottotitolo=None, nota_ai=True, stato=None):
+    """Chiede dove salvare, crea il .docx e lo apre in Word."""
+    testo = (testo or "").strip()
+    if not testo:
+        QMessageBox.information(parent, "Niente da salvare", "Non c'è ancora un testo da esportare.")
+        return None
+    f, _ = QFileDialog.getSaveFileName(parent, "Salva in Word", str(base), "Documento Word (*.docx)")
+    if not f:
+        return None
+    try:
+        out = word.salva_docx(testo, f, titolo, sottotitolo, nota_ai)
+    except Exception as e:
+        QMessageBox.warning(parent, "Word", f"Non riesco a salvare il documento: {e}")
+        return None
+    if stato is not None:
+        stato.setText(f"Salvato in Word: {out}")
+    QDesktopServices.openUrl(QUrl.fromLocalFile(str(out)))
+    return out
+
+
+def oggi():
+    return time.strftime("%d/%m/%Y")
+
+
 # =============================================================== 1. Riunione -> verbale
 MODELLI_VERBALE = {
     "Verbale della riunione": (
@@ -269,10 +295,11 @@ class SchedaVerbale(SchedaBase):
         self.b_gen.setStyleSheet("font-weight: bold;")
         b_cop = QPushButton("Copia")
         b_salva = QPushButton("Salva .md")
+        b_word = QPushButton("Salva Word")
         for w in (b_apri, b_es):
             bar.addWidget(w)
         bar.addStretch()
-        for w in (QLabel("Formato:"), self.c_tipo, self.b_gen, b_cop, b_salva):
+        for w in (QLabel("Formato:"), self.c_tipo, self.b_gen, b_cop, b_salva, b_word):
             bar.addWidget(w)
         lay.addLayout(bar)
         self.ingresso = area(segnaposto="Incolla qui una trascrizione, oppure aprila da file (*_nomi.txt).")
@@ -287,6 +314,7 @@ class SchedaVerbale(SchedaBase):
         self.b_gen.clicked.connect(lambda: self.ferma_o(self.genera))
         b_cop.clicked.connect(lambda: copia(self.uscita.toPlainText()))
         b_salva.clicked.connect(self.salva)
+        b_word.clicked.connect(self.salva_word)
 
     def apri(self):
         f, _ = QFileDialog.getOpenFileName(self, "Trascrizione", str(Path.home()), "Testo (*.txt *.md)")
@@ -339,6 +367,20 @@ class SchedaVerbale(SchedaBase):
         if f:
             Path(f).write_text(testo + "\n", encoding="utf-8")
             self.stato.setText(f"Salvato: {f}")
+
+
+    def salva_word(self):
+        tipo = self.c_tipo.currentText()
+        titoli = {"Verbale della riunione": "Verbale della riunione",
+                  "Mail di sintesi al cliente": "Sintesi della riunione",
+                  "Solo elenco delle azioni": "Azioni concordate"}
+        nome = (self.sorgente.stem.replace("_nomi", "") if self.sorgente else "riunione")
+        cartella = self.sorgente.parent if self.sorgente else Path.home()
+        suffisso = {"Verbale della riunione": "_verbale", "Mail di sintesi al cliente": "_sintesi",
+                    "Solo elenco delle azioni": "_azioni"}.get(tipo, "_verbale")
+        sotto = f"{nome} · {oggi()}"
+        salva_word(self, self.uscita.toPlainText(), cartella / f"{nome}{suffisso}.docx",
+                   titoli.get(tipo, "Verbale"), sotto, stato=self.stato)
 
 
 # =============================================================== 2. Documenti riservati
@@ -396,7 +438,14 @@ class SchedaDocumenti(SchedaBase):
         ldx.addLayout(rq)
         self.risposta = area(True, "La risposta comparirà qui.")
         ldx.addWidget(self.risposta, 3)
-        ldx.addWidget(QLabel("Fonti usate per la risposta"))
+        rf = QHBoxLayout()
+        rf.addWidget(QLabel("Fonti usate per la risposta"))
+        rf.addStretch()
+        b_word_doc = QPushButton("Salva Word")
+        b_word_doc.clicked.connect(self.salva_word)
+        rf.addWidget(b_word_doc)
+        ldx.addLayout(rf)
+        self.ultima = None  # (domanda, estratti)
         self.fonti = QTextBrowser()
         self.fonti.setOpenExternalLinks(False)
         ldx.addWidget(self.fonti, 1)
@@ -513,12 +562,26 @@ class SchedaDocumenti(SchedaBase):
             if not r:
                 return
             _, estratti = r
+            self.ultima = (q, estratti)
             html = "".join(f"<p><b>[{n}]</b> {Path(p['file']).name}, pag. {p['pagina']} "
                            f"<span style='color:gray'>(somiglianza {sim:.2f})</span><br>"
                            f"<i>{p['testo'][:280].replace('<', '&lt;')}…</i></p>" for n, p, sim in estratti)
             self.fonti.setHtml(html)
 
         self.avvia(fn, self.risposta, fine, self.b_chiedi)
+
+
+    def salva_word(self):
+        risposta = self.risposta.toPlainText().strip()
+        if not risposta or not self.ultima:
+            QMessageBox.information(self, "Niente da salvare", "Fai prima una domanda sui documenti.")
+            return
+        q, estratti = self.ultima
+        fonti = "\n".join(f"- **[{n}]** {Path(p['file']).name}, pag. {p['pagina']}: "
+                          f"*{p['testo'][:240].strip().replace(chr(10), ' ')}…*" for n, p, _ in estratti)
+        testo = f"## Domanda\n\n{q}\n\n## Risposta\n\n{risposta}\n\n## Fonti\n\n{fonti}\n"
+        salva_word(self, testo, Path.home() / "risposta_documenti.docx", "Domanda sui documenti riservati",
+                   oggi(), stato=self.stato)
 
 
 # =============================================================== 3. Dettatura e mail
@@ -550,10 +613,13 @@ class SchedaDettatura(SchedaBase):
         self.c_stile.addItems(list(STILI_DETTATURA))
         b_rif = QPushButton("Riscrivi")
         b_cop = QPushButton("Copia risultato")
+        b_word = QPushButton("Salva Word")
+        b_word.clicked.connect(lambda: salva_word(self, self.uscita.toPlainText(), Path.home() / "dettatura.docx",
+                                                  None, oggi(), stato=self.stato))
         for w in (self.b_reg, b_file):
             bar.addWidget(w)
         bar.addStretch()
-        for w in (QLabel("Formato:"), self.c_stile, b_rif, b_cop):
+        for w in (QLabel("Formato:"), self.c_stile, b_rif, b_cop, b_word):
             bar.addWidget(w)
         lay.addLayout(bar)
         self.grezzo = area(segnaposto="Qui compare la trascrizione grezza (modificabile).")
@@ -660,10 +726,14 @@ class SchedaTraduzione(SchedaBase):
         self.b_trad = QPushButton("▶ Traduci")
         self.b_trad.setStyleSheet("font-weight: bold;")
         b_cop = QPushButton("Copia")
+        b_word = QPushButton("Salva Word")
+        b_word.clicked.connect(lambda: salva_word(
+            self, self.uscita.toPlainText(), Path.home() / f"traduzione_{self.c_lingua.currentData()}.docx",
+            None, f"Traduzione in {self.c_lingua.currentText().lower()} · {oggi()}", stato=self.stato))
         for w in (b_txt, b_aud):
             bar.addWidget(w)
         bar.addStretch()
-        for w in (QLabel("Traduci in:"), self.c_lingua, self.b_trad, b_cop):
+        for w in (QLabel("Traduci in:"), self.c_lingua, self.b_trad, b_cop, b_word):
             bar.addWidget(w)
         lay.addLayout(bar)
         sp = QSplitter(Qt.Horizontal)

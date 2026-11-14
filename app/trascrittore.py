@@ -24,7 +24,7 @@ import voci_core as core  # noqa: E402
 import argo_attrezzi as attrezzi  # noqa: E402
 import llm_locale  # noqa: E402
 
-VERSIONE = "20261114.1510"
+VERSIONE = "20261114.1520"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma", ".mp4", ".mov", ".mkv", ".webm"}
 MODELLI = [
     ("large-v3", "large-v3 - massima qualità (lento)"),
@@ -267,10 +267,11 @@ class Finestra(QMainWindow):
         self.b_rev = QPushButton("Rivedi parlanti…")
         self.b_cart = QPushButton("Apri cartella")
         self.b_verb = QPushButton("Crea verbale →")
+        self.b_word = QPushButton("Esporta in Word")
         for b in (self.b_agg, self.b_rim, self.b_rip):
             bar.addWidget(b)
         bar.addStretch()
-        for b in (self.b_ris, self.b_rev, self.b_verb, self.b_cart, self.b_avvia):
+        for b in (self.b_ris, self.b_rev, self.b_word, self.b_verb, self.b_cart, self.b_avvia):
             bar.addWidget(b)
         self.b_agg.clicked.connect(self.scegli_file)
         self.b_rim.clicked.connect(self.rimuovi_job)
@@ -280,6 +281,7 @@ class Finestra(QMainWindow):
         self.b_rev.clicked.connect(self.rivedi_parlanti)
         self.b_cart.clicked.connect(self.apri_cartella)
         self.b_verb.clicked.connect(self.crea_verbale)
+        self.b_word.clicked.connect(self.esporta_word)
 
         self.fase = QLabel("")
         self.log = QPlainTextEdit()
@@ -553,6 +555,19 @@ class Finestra(QMainWindow):
             return
         self.tab_verbale.carica(j["txt"])
         self.tabs.setCurrentWidget(self.tab_verbale)
+
+    def esporta_word(self):
+        j = self._job_selezionato()
+        if not j:
+            return
+        if not (j.get("txt") and Path(j["txt"]).exists()):
+            QMessageBox.information(self, "Non pronta", "Prima completa la trascrizione.")
+            return
+        txt = Path(j["txt"])
+        nome = txt.stem.replace("_nomi", "")
+        attrezzi.salva_word(self, txt.read_text(encoding="utf-8", errors="replace"),
+                            txt.with_name(nome + "_trascrizione.docx"), f"Trascrizione: {nome}",
+                            attrezzi.oggi(), nota_ai=attrezzi.word.NOTA_TRASCRIZIONE)
 
     def _aggiorna_badge(self):
         url = core.carica_impostazioni().get("ollama_url", "")
