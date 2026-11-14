@@ -11,11 +11,11 @@ import uuid
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QThread, QUrl, Signal
-from PySide6.QtGui import QDesktopServices, QFont, QIcon
+from PySide6.QtGui import QDesktopServices, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
     QDoubleSpinBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView, QInputDialog,
-    QLabel, QLineEdit, QMainWindow, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QScrollArea,
+    QLabel, QLineEdit, QMainWindow, QMenu, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QScrollArea,
     QSpinBox, QSplitter, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
 )
 
@@ -26,7 +26,7 @@ import llm_locale  # noqa: E402
 import voci_strumenti  # noqa: E402
 import aggiornamenti  # noqa: E402
 
-VERSIONE = "20261114.1910"
+VERSIONE = "20261114.1930"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -84,11 +84,14 @@ class ProcessWorker(QThread):
             self.proc = subprocess.Popen(
                 self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                 env=core.env_processo(), creationflags=flags,
+                start_new_session=(os.name != "nt"),  # gruppo di processi: si ferma anche ciò che lancia
             )
         except Exception as e:
             self.riga.emit(f"ERRORE avvio processo: {e}")
             self.finito.emit(-1)
             return
+        if self.interrotto:  # «Ferma» premuto prima che il processo partisse
+            self._uccidi()
         buf = b""
         while True:
             chunk = self.proc.stdout.read1(4096) if hasattr(self.proc.stdout, "read1") else self.proc.stdout.read(1)
@@ -107,8 +110,34 @@ class ProcessWorker(QThread):
 
     def ferma(self):
         self.interrotto = True
-        if self.proc and self.proc.poll() is None:
-            self.proc.terminate()
+        self._uccidi()
+
+    def _uccidi(self):
+        """Ferma il processo e i suoi figli; se dopo 3 secondi è ancora vivo, lo chiude d'autorità."""
+        p = self.proc
+        if not p or p.poll() is not None:
+            return
+        try:
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/PID", str(p.pid), "/T", "/F"], capture_output=True,
+                               creationflags=0x08000000)
+            else:
+                import signal
+                os.killpg(p.pid, signal.SIGTERM)
+
+                def forza():
+                    if p.poll() is None:
+                        try:
+                            os.killpg(p.pid, signal.SIGKILL)
+                        except Exception:
+                            pass
+                import threading
+                threading.Timer(3.0, forza).start()
+        except Exception:
+            try:
+                p.kill()
+            except Exception:
+                pass
 
 
 # =============================================================== dialogo revisione parlanti
@@ -265,6 +294,10 @@ class Finestra(QMainWindow):
         self.tab_coda.setColumnWidth(self.COL_PARL, 95)
         self.tab_coda.setColumnWidth(self.COL_AVANZ, 180)
         self.tab_coda.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tab_coda.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tab_coda.customContextMenuRequested.connect(self._menu_coda)
+        QShortcut(QKeySequence.Delete, self.tab_coda, activated=self.rimuovi_job)
+        QShortcut(QKeySequence(Qt.Key_Backspace), self.tab_coda, activated=self.rimuovi_job)
         self.tab_coda.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tab_coda.doubleClicked.connect(lambda _: self.apri_risultato())
 
@@ -407,15 +440,42 @@ class Finestra(QMainWindow):
         righe = sorted({i.row() for i in self.tab_coda.selectedIndexes()})
         return [self.jobs[r] for r in righe if r < len(self.jobs)]
 
+    def _menu_coda(self, pos):
+        r = self.tab_coda.rowAt(pos.y())
+        if r < 0:
+            return
+        if r not in {i.row() for i in self.tab_coda.selectedIndexes()}:
+            self.tab_coda.selectRow(r)
+        j = self.jobs[r]
+        m = QMenu(self)
+        if j["stato"] == "Completata":
+            m.addAction("Apri trascrizione", self.apri_trascrizione if hasattr(self, "apri_trascrizione") else self.b_ris.click)
+            m.addAction("✏️ Nomi dei parlanti…", self.rivedi_parlanti)
+            m.addAction("Esporta in Word", self.esporta_word)
+            m.addAction("Crea verbale →", self.crea_verbale)
+            m.addSeparator()
+        m.addAction("🎧 Marca voci…", lambda: self.marca_voci(j["file"]))
+        m.addAction("Rimetti in coda", self.rimetti_in_coda)
+        m.addAction("Apri cartella", self.b_cart.click)
+        m.addSeparator()
+        m.addAction("Rimuovi dalla coda", self.rimuovi_job)
+        m.exec(self.tab_coda.viewport().mapToGlobal(pos))
+
+    def _in_lavorazione(self, j):
+        return j is self.job_corrente and self.worker is not None and self.worker.isRunning()
+
     def rimuovi_job(self):
-        sel = [j for j in self._selezionati() if j is not self.job_corrente]
+        sel = [j for j in self._selezionati() if not self._in_lavorazione(j)]
+        if not sel and self._selezionati():
+            QMessageBox.information(self, "In lavorazione", "Questo file è in elaborazione: ferma prima la coda.")
+            return
         for j in sel:
             self.jobs.remove(j)
         self._ridisegna_coda()
         self._salva_coda()
 
     def rimetti_in_coda(self):
-        sel = [j for j in self._selezionati() if j is not self.job_corrente]
+        sel = [j for j in self._selezionati() if not self._in_lavorazione(j)]
         solo = False
         if any(j["stato"] == "Completata" and j.get("json") and Path(j["json"]).exists() for j in sel):
             box = QMessageBox(self)
@@ -429,7 +489,7 @@ class Finestra(QMainWindow):
                 return
             solo = box.clickedButton() is b_parl
         for j in sel:
-            if j is not self.job_corrente:
+            if not self._in_lavorazione(j):
                 da_json = solo and j["stato"] == "Completata" and j.get("json") and Path(j["json"]).exists()
                 j.update(stato="In attesa", progresso=0, nota="solo parlanti" if da_json else "", solo_parlanti=bool(da_json))
         self._ridisegna_coda()
@@ -460,6 +520,9 @@ class Finestra(QMainWindow):
             if self.worker:
                 self.worker.ferma()
             self.statusBar().showMessage("Coda fermata.")
+            return
+        if self.worker is not None and self.worker.isRunning():
+            QMessageBox.information(self, "Attendi", "Sto ancora fermando l'elaborazione precedente: riprova tra qualche secondo.")
             return
         if not core.leggi_token():
             QMessageBox.warning(self, "Token mancante", "Inserisci prima il token Hugging Face nelle Impostazioni.")
@@ -504,10 +567,11 @@ class Finestra(QMainWindow):
         self.t_inizio = time.time()
         self._log_job = []
         self.filtro = FiltroRumore()
-        self.worker = ProcessWorker(cmd, self)
-        self.worker.riga.connect(self._riga_whisperx)
-        self.worker.finito.connect(self._fine_whisperx)
-        self.worker.start()
+        w = ProcessWorker(cmd, self)
+        self.worker = w
+        w.riga.connect(lambda testo, w=w: self._riga_whisperx(testo) if w is self.worker else None)
+        w.finito.connect(lambda codice, w=w, jb=job: self._fine_whisperx(codice, w, jb))
+        w.start()
 
     def _riga_whisperx(self, testo):
         job = self.job_corrente
@@ -537,11 +601,20 @@ class Finestra(QMainWindow):
         minuti = int((time.time() - self.t_inizio) // 60)
         self.fase.setText(f"{Path(job['file']).name}: {job.get('nota', '')} - {minuti} min trascorsi")
 
-    def _fine_whisperx(self, codice):
-        job, self.job_corrente = self.job_corrente, None
+    def _fine_whisperx(self, codice, w=None, job=None):
+        if w is not None and w is not self.worker:  # segnale tardivo di un lavoro già sostituito
+            if job is not None and job.get("stato") == "In corso":
+                job.update(stato="Interrotta", nota="fermata dall'utente", progresso=0)
+                self._ridisegna_coda()
+                self._salva_coda()
+            return
+        job = job or self.job_corrente
+        self.job_corrente = None
         self._fase_corrente = None
         interrotto = self.worker.interrotto if self.worker else False
         self.worker = None
+        if job is None:
+            return
         minuti = max(1, round((time.time() - self.t_inizio) / 60))
         if interrotto:
             job.update(stato="Interrotta", nota="fermata dall'utente", progresso=0)
