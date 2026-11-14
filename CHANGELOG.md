@@ -2,6 +2,13 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261114.1845: installazione su Mac senza Homebrew
+- L'installer per Mac non richiede più Homebrew:
+  - se Homebrew c'è, lo usa;
+  - altrimenti scarica `uv` dall'installer ufficiale e prende FFmpeg dal pacchetto `imageio-ffmpeg`, dentro la cartella di Argo.
+- Non servono password di amministratore.
+- La versione mostrata nelle informazioni dell'app ora è quella reale.
+
 ## 20261114.1830: partecipanti e nomi modificabili dopo la trascrizione
 - La colonna **Partecipanti** si può cambiare anche su una trascrizione completata. In quel caso Argo rifà **solo la separazione dei parlanti**: il testo resta lo stesso e ci vuole meno tempo.
 - **Rimetti in coda** su una trascrizione completata chiede se rifare solo i parlanti o tutta la trascrizione.

@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261114.1830 · riferita all'app versione 20261114.1830*
+*Versione del manuale: 20261114.1845 · riferita all'app versione 20261114.1845*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -65,7 +65,7 @@ La barra in basso nella finestra mostra **🔒 100% locale** finché Ollama punt
 | --- | --- | --- |
 | Windows 10/11 x64 | Sì | GPU NVIDIA facoltativa |
 | Windows 11 ARM (es. Snapdragon) | Sì | Gira in emulazione x64: più lento, consigliato `large-v3-turbo` |
-| macOS Apple Silicon (M1 e successivi) | Sì | Richiede [Homebrew](https://brew.sh) |
+| macOS Apple Silicon (M1 e successivi) | Sì | Homebrew non serve (se c'è, viene usato) |
 | macOS Intel | No | PyTorch non pubblica più versioni per Mac Intel |
 | Linux | Non ancora | Il codice Python è portabile, ma manca l'installer |
 
@@ -109,10 +109,9 @@ Da [github.com/Argo-s-new-dreams/argo-ai](https://github.com/Argo-s-new-dreams/a
 
 **macOS (Apple Silicon)**
 
-1. Installa prima [Homebrew](https://brew.sh), se non c'è.
-2. Tasto destro su `Installa-Argo.command` → **Apri**. Se macOS lo blocca: *Impostazioni di Sistema → Privacy e sicurezza → Apri comunque*.
-3. L'installer:
-   - installa `ffmpeg` e `uv` con Homebrew;
+1. Tasto destro su `Installa-Argo.command` → **Apri**. Se macOS lo blocca: *Impostazioni di Sistema → Privacy e sicurezza → Apri comunque*.
+2. L'installer:
+   - prepara `uv` e `ffmpeg`: se c'è [Homebrew](https://brew.sh) usa quello, altrimenti scarica `uv` dal sito ufficiale (astral.sh) e prende `ffmpeg` dal pacchetto Python `imageio-ffmpeg`, dentro la cartella di Argo. Non servono password di amministratore;
    - crea l'ambiente in `~/whisperx-env`;
    - installa le librerie;
    - crea l'app **Argo AI** in `~/Applications`.
@@ -559,6 +558,7 @@ Per `iscrivi` il token Hugging Face deve essere già salvato (lo fa l'app).
 | L'impronta da *Marca voci* riconosce male | Nei tratti ci sono voci sovrapposte o rumore | Elimina la voce, rimarca solo tratti puliti, aggiungi un campione con *Registra voce* |
 | Trascrizione molto lenta | CPU, modello `large-v3`, PC ARM | Passa a `large-v3-turbo` o `medium`; su NVIDIA usa CUDA |
 | Il Mac Intel non installa | Non supportato | Serve un Mac Apple Silicon o un PC Windows |
+| "Homebrew non trovato" (versioni fino alla 1830) | L'installer vecchio richiedeva Homebrew | Usa l'installer dalla versione 1845 in poi: Homebrew non serve più |
 
 Se un file va in **Errore**, il log in fondo alla scheda Trascrittore riporta il messaggio: è il primo posto dove guardare, e il testo da allegare a una segnalazione su GitHub.
 

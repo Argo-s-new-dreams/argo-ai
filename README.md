@@ -54,7 +54,7 @@ Nella cartella `app/esempi` trovi una riunione, un NDA e un capitolato **fittizi
 | --- | --- |
 | Windows 10/11 x64 | Sì |
 | Windows 11 ARM (es. Snapdragon) | Sì, in emulazione x64 (più lento: consigliato large-v3-turbo) |
-| macOS Apple Silicon (M1 o successivi) | Sì, richiede [Homebrew](https://brew.sh) |
+| macOS Apple Silicon (M1 o successivi) | Sì (Homebrew facoltativo) |
 | macOS Intel | No: PyTorch non pubblica più versioni per Mac Intel |
 | Linux | Non ancora |
 
