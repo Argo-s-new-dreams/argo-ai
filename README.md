@@ -77,9 +77,7 @@ Gli installer non sono firmati digitalmente: per questo Windows e macOS mostrano
 2. *Coda trascrizioni*: trascina i file, imposta i partecipanti, **Avvia coda**.
 3. A fine lavoro: **Apri trascrizione** oppure **Rivedi parlanti…** per correggere i nomi e spuntare **Memorizza**.
 
-| Anagrafe voci | Revisione parlanti | Impostazioni |
-| --- | --- | --- |
-| ![Anagrafe voci](docs/screenshot-voci.png) | ![Revisione parlanti](docs/screenshot-revisione.png) | ![Impostazioni](docs/screenshot-impostazioni.png) |
+📖 **Manuale completo:** [docs/MANUALE.md](docs/MANUALE.md): installazione, tutti gli attrezzi, impostazioni, dati, risoluzione dei problemi, privacy e AI Act.
 
 ## Privacy e dati
 
@@ -104,6 +102,10 @@ Queste note sono informative e non costituiscono consulenza legale.
 | --- | --- |
 | `app/trascrittore.py` | Interfaccia grafica (PySide6): coda, anagrafe, impostazioni, revisione |
 | `app/voci_core.py` | Motore: impronte vocali, identificazione, comando WhisperX; usabile anche da riga di comando |
+| `app/argo_attrezzi.py` | Attrezzi Verbale, Documenti riservati, Dettatura, Traduzione e pannello Ollama |
+| `app/llm_locale.py` | Client minimale per Ollama: chat in streaming, embedding, download modelli |
+| `app/esempi/` | Riunione, NDA e capitolato fittizi per le prove |
+| `docs/MANUALE.md` | Manuale d'uso completo |
 | `installer/installa_windows.ps1` | Installer Windows (lanciato da `Installa-Argo.bat`) |
 | `Installa-Argo.command` | Installer macOS, crea `~/Applications/Argo AI.app` |
 
@@ -125,4 +127,4 @@ Codice rilasciato con licenza [MIT](LICENSE). Le dipendenze e i modelli hanno le
 2. Run `Installa-Argo.bat` (Windows) or `Installa-Argo.command` (macOS, right-click → Open).
 3. Open the app, paste the token in *Impostazioni* (Settings), enroll voices, queue your files.
 
-The UI is in Italian. Voiceprints are biometric data: enroll other people's voices only with their explicit consent. Under the EU AI Act, recognising people from their voice against a stored registry is biometric identification: personal non-professional use is outside the deployer obligations, while professional use may fall under the high-risk category (Annex III, point 1(a)), applicable from 2 December 2027. Personal project, provided as is, MIT licensed; not legal advice.
+The UI and the [full manual](docs/MANUALE.md) are in Italian. Voiceprints are biometric data: enroll other people's voices only with their explicit consent. Under the EU AI Act, recognising people from their voice against a stored registry is biometric identification: personal non-professional use is outside the deployer obligations, while professional use may fall under the high-risk category (Annex III, point 1(a)), applicable from 2 December 2027. Personal project, provided as is, MIT licensed; not legal advice.
