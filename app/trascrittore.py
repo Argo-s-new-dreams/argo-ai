@@ -27,8 +27,9 @@ import voci_strumenti  # noqa: E402
 import aggiornamenti  # noqa: E402
 import tema  # noqa: E402
 import dettaglio  # noqa: E402
+import m365  # noqa: E402
 
-VERSIONE = "20261114.1945"
+VERSIONE = "20261114.2000"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -294,6 +295,7 @@ class Finestra(QMainWindow):
 
         self._carica_coda()
         self._aggiorna_voci()
+        self._stato_m365()
         if not core.leggi_token():
             self.tabs.setCurrentWidget(self.tab_imp)
             QMessageBox.information(self, "Primo avvio",
@@ -823,7 +825,10 @@ class Finestra(QMainWindow):
 
     def _aggiorna_badge(self):
         url = core.carica_impostazioni().get("ollama_url", "")
-        if llm_locale.e_locale(url):
+        if llm_locale.e_locale(url) and m365.account():
+            self.badge.setText("🔒 Locale · Microsoft 365 collegato: solo i risultati che confermi vanno su M365")
+            self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
+        elif llm_locale.e_locale(url):
             self.badge.setText("🔒 100% locale: audio e testi non lasciano questo computer")
             self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
         else:
@@ -1062,6 +1067,32 @@ class Finestra(QMainWindow):
         self.pannello_ollama.cambiato.connect(lambda: self._aggiorna_badge() if hasattr(self, "badge") else None)
         lay.addWidget(self.pannello_ollama)
 
+        g6 = QGroupBox("Microsoft 365 (facoltativo) · per gli Incarichi")
+        f6 = QFormLayout(g6)
+        self.e_m365_client = QLineEdit(imp.get("m365_client_id", ""))
+        self.e_m365_client.setPlaceholderText("Application (client) ID dell'app registrata in Entra ID")
+        self.e_m365_tenant = QLineEdit(imp.get("m365_tenant_id", ""))
+        self.e_m365_tenant.setPlaceholderText("Directory (tenant) ID")
+        f6.addRow("Client ID:", self.e_m365_client)
+        f6.addRow("Tenant ID:", self.e_m365_tenant)
+        r6 = QHBoxLayout()
+        self.b_m365 = QPushButton("Collega")
+        self.b_m365.clicked.connect(self.collega_m365)
+        self.b_m365_off = QPushButton("Scollega")
+        self.b_m365_off.clicked.connect(self.scollega_m365)
+        self.l_m365 = QLabel("")
+        self.l_m365.setWordWrap(True)
+        r6.addWidget(self.b_m365)
+        r6.addWidget(self.b_m365_off)
+        r6.addWidget(self.l_m365, 1)
+        f6.addRow("", r6)
+        n6 = QLabel("Su Microsoft 365 vanno solo i risultati che confermi negli Incarichi (bozza della mail, task in "
+                    "Planner) e Argo legge la riunione dal calendario. Audio, trascrizioni e documenti restano qui.")
+        n6.setWordWrap(True)
+        n6.setProperty("ruolo", "tenue")
+        f6.addRow("", n6)
+        lay.addWidget(g6)
+
         g5 = QGroupBox("Aspetto")
         f5 = QHBoxLayout(g5)
         f5.addWidget(QLabel("Tema:"))
@@ -1108,6 +1139,58 @@ class Finestra(QMainWindow):
         lay.addStretch()
         lay.addWidget(QLabel(f"Dati in: {core.APP_HOME}  ·  L'audio non lascia mai questo computer."))
         return w
+
+    def _stato_m365(self):
+        acc = m365.account()
+        if hasattr(self, "l_m365"):
+            self.l_m365.setText(f"✅ Collegato come {acc}" if acc else "Non collegato")
+            self.b_m365_off.setEnabled(bool(acc))
+        if hasattr(self, "tab_incarichi"):
+            self.tab_incarichi.aggiorna_m365()
+        self._aggiorna_badge()
+
+    def collega_m365(self):
+        imp = core.carica_impostazioni()
+        imp["m365_client_id"] = self.e_m365_client.text().strip()
+        imp["m365_tenant_id"] = self.e_m365_tenant.text().strip()
+        core.salva_impostazioni(imp)
+        try:
+            flow = m365.avvia_accesso()
+        except m365.ErroreM365 as e:
+            QMessageBox.warning(self, "Microsoft 365", str(e))
+            return
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Collega Microsoft 365")
+        dl = QVBoxLayout(dlg)
+        dl.addWidget(QLabel(f"1. Apri la pagina di accesso Microsoft\n2. Inserisci questo codice:"))
+        codice = QLabel(flow["user_code"])
+        codice.setStyleSheet("font-size: 28px; font-weight: 700; letter-spacing: 4px;")
+        codice.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        dl.addWidget(codice, alignment=Qt.AlignHCenter)
+        dl.addWidget(QLabel("3. Accedi con il tuo account e accetta i permessi. Questa finestra si chiude da sola."))
+        rb = QHBoxLayout()
+        b_copia = QPushButton("Copia codice")
+        b_copia.clicked.connect(lambda: QApplication.clipboard().setText(flow["user_code"]))
+        b_apri = QPushButton("Apri la pagina")
+        b_apri.setProperty("primario", True)
+        b_apri.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(flow["verification_uri"])))
+        b_ann = QPushButton("Annulla")
+        b_ann.clicked.connect(dlg.reject)
+        for b in (b_copia, b_ann, b_apri):
+            rb.addWidget(b)
+        dl.addLayout(rb)
+        QApplication.clipboard().setText(flow["user_code"])
+        lav = attrezzi.Lavoro(lambda _l: m365.completa_accesso(flow), self)
+        lav.sig_fine.connect(lambda _u: (dlg.accept(), self._stato_m365()))
+        lav.sig_errore.connect(lambda e: (dlg.reject(), QMessageBox.warning(self, "Microsoft 365", e), self._stato_m365()))
+        self._lav_m365 = lav
+        lav.start()
+        QDesktopServices.openUrl(QUrl(flow["verification_uri"]))
+        dlg.exec()
+
+    def scollega_m365(self):
+        m365.scollega()
+        self._stato_m365()
 
     def cambia_tema(self, nome):
         imp = core.carica_impostazioni()

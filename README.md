@@ -5,7 +5,7 @@
 
 | Attrezzo | Cosa fa | Motore locale |
 | --- | --- | --- |
-| **Incarichi** | In stile Cowork: «Call → recap + task» esegue trascrizione, verbale, Word, mail di recap e task in fila, con conferma dei nomi | Tutti i motori qui sotto |
+| **Incarichi** | In stile Cowork: «Call → recap + task» esegue trascrizione, verbale, Word, mail di recap e task in fila, con conferma dei nomi; con Microsoft 365 (facoltativo) bozza in Outlook e task in Planner | Tutti i motori qui sotto + Microsoft Graph (solo se collegato) |
 | **Trascrittore** | Trascrive riunioni, separa le voci e riconosce chi parla grazie all'anagrafe delle voci | WhisperX + pyannote |
 | **Verbale** | Dalla trascrizione al verbale: decisioni, azioni, responsabili, scadenze; oppure mail di sintesi al cliente | LLM via [Ollama](https://ollama.com) |
 | **Documenti riservati** | Domande su NDA, contratti e capitolati (PDF, DOCX, TXT) con citazione delle fonti | Embedding + LLM via Ollama |
@@ -116,6 +116,7 @@ Queste note sono informative e non costituiscono consulenza legale.
 | `app/trascrittore.py` | Interfaccia grafica (PySide6): coda, anagrafe, impostazioni, revisione |
 | `app/voci_core.py` | Motore: impronte vocali, identificazione, comando WhisperX; usabile anche da riga di comando |
 | `app/argo_attrezzi.py` | Attrezzi Verbale, Documenti riservati, Dettatura, Traduzione e pannello Ollama |
+| `app/m365.py` | Connettore facoltativo a Microsoft 365: calendario, bozze di Outlook, Planner |
 | `app/incarichi.py` | Incarichi in stile Cowork: ricetta Call → verbale + recap + task |
 | `app/tema.py` | Tema scuro/chiaro, icone e menu laterale |
 | `app/dettaglio.py` | Dettaglio della trascrizione con le corsie dei parlanti |
