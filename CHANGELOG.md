@@ -2,6 +2,11 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261114.2030: accesso a Microsoft 365 dal browser
+- **Collega** apre il browser di sistema (codice di autorizzazione con PKCE, risposta su `http://localhost`) invece del codice dispositivo, che molti tenant bloccano con l'accesso condizionale (errore AADSTS53003).
+- Messaggi chiari per gli errori più comuni: 53003 (accesso condizionale), 50011 (redirect URI mancante), 65001 (consenso mancante).
+- Nella registrazione dell'app serve il redirect URI `http://localhost` (Mobile and desktop applications).
+
 ## 20261114.2015: riavvio dopo l'aggiornamento
 - Corretto: sul Mac, dopo **Aggiorna ora**, Argo si chiudeva senza riaprirsi. Ora si riapre dall'app «Argo AI», due secondi dopo la chiusura; il nuovo processo è del tutto separato da quello vecchio.
 

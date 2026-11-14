@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261114.2015 · riferita all'app versione 20261114.2015*
+*Versione del manuale: 20261114.2030 · riferita all'app versione 20261114.2030*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -541,10 +541,10 @@ Serve solo agli Incarichi, per calendario, bozze di Outlook e Planner.
 
 1. Un amministratore registra l'app in **Microsoft Entra ID** (una volta per organizzazione):
    - *App registrations → New registration*, nome **Argo AI**, solo questa organizzazione;
-   - *Authentication → Mobile and desktop applications* con l'indirizzo `https://login.microsoftonline.com/common/oauth2/nativeclient`, e *Allow public client flows = Yes*;
+   - *Authentication → Add a platform → Mobile and desktop applications* con il redirect URI **`http://localhost`** (scritto così, senza porta). *Allow public client flows* può restare **No**: Argo non usa il codice dispositivo, spesso bloccato dai criteri di accesso condizionale;
    - *API permissions → Microsoft Graph → Delegated*: `Calendars.Read`, `Mail.ReadWrite`, `Tasks.ReadWrite`, `User.ReadBasic.All`, `Group.Read.All`, poi *Grant admin consent*.
 2. In *Impostazioni → Microsoft 365* inserisci **Client ID** e **Tenant ID** dell'app e premi **Collega**.
-3. Si apre la pagina di accesso Microsoft: inserisci il **codice** mostrato da Argo (è già copiato negli appunti), accedi e accetta.
+3. Si apre il **browser** sulla pagina di accesso Microsoft: accedi con il tuo account e accetta i permessi. Quando compare «Argo è collegato a Microsoft 365» puoi chiudere la scheda. Hai 5 minuti.
 4. Lo stato diventa *Collegato come …* e il bollino in basso diventa *Locale · Microsoft 365 collegato*.
 
 Il token di accesso resta in `whisperx-env/m365_token.bin`, leggibile solo dal tuo utente. **Scollega** lo cancella.
@@ -667,6 +667,8 @@ Il controllo legge da GitHub solo il numero di versione e le novità: nessun dat
 | Il Mac Intel non installa | Non supportato | Serve un Mac Apple Silicon o un PC Windows |
 | Righe *Interrotta* che non si riescono a rimuovere o rimettere in coda (versioni fino alla 1910) | Un'elaborazione fermata restava agganciata alla coda | Chiudi e riapri Argo, poi aggiorna alla 1930 o successiva |
 | Dopo «Aggiorna ora» Argo si chiude e non si riapre (fino alla 2000) | Il riavvio automatico non partiva sul Mac | Riapri *Argo AI* da Applicazioni: l'aggiornamento è già installato. Corretto dalla 2015 |
+| Microsoft 365: «You don't have access to this», errore **53003** | Un criterio di accesso condizionale del tenant blocca l'accesso (per esempio il blocco del *device code flow*, usato fino alla 2015) | Aggiorna alla 2030, che accede dal browser; aggiungi il redirect `http://localhost` all'app. Se resta bloccato, in *Entra → Log di accesso → Accesso condizionale* trovi il criterio responsabile |
+| Microsoft 365: errore **50011** | Manca il redirect URI | Aggiungi `http://localhost` in *Authentication → Mobile and desktop applications* |
 | "Controllo non riuscito" negli aggiornamenti | Nessuna connessione, oppure un firewall blocca GitHub | Riprova più tardi o aggiorna a mano dal pacchetto; puoi disattivare il controllo in *Impostazioni → Aggiornamenti* |
 | "Homebrew non trovato" (versioni fino alla 1830) | L'installer vecchio richiedeva Homebrew | Usa l'installer dalla versione 1845 in poi: Homebrew non serve più |
 
