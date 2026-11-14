@@ -83,6 +83,8 @@ Gli installer non sono firmati digitalmente: per questo Windows e macOS mostrano
 | --- | --- | --- |
 | ![Anagrafe voci](docs/screenshot-voci.png) | ![Revisione parlanti](docs/screenshot-revisione.png) | ![Impostazioni](docs/screenshot-impostazioni.png) |
 
+🆕 **Novità:** [CHANGELOG.md](CHANGELOG.md), con l'elenco delle versioni e delle migliorie.
+
 📖 **Manuale completo:** [docs/MANUALE.md](docs/MANUALE.md): installazione, tutti gli attrezzi, impostazioni, dati, risoluzione dei problemi, privacy e AI Act.
 
 ## Privacy e dati
