@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261114.1845 · riferita all'app versione 20261114.1845*
+*Versione del manuale: 20261114.1900 · riferita all'app versione 20261114.1900*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -527,7 +527,27 @@ Per `iscrivi` il token Hugging Face deve essere già salvato (lo fa l'app).
 
 ## 14. Aggiornare e disinstallare
 
-**Aggiornare:** scarica la nuova versione dal repository e rilancia l'installer. Il programma viene sostituito; voci, glossario, impostazioni e indice restano.
+**Aggiornare dall'app (consigliato).** All'avvio Argo controlla su GitHub se c'è una versione nuova. Se la trova, ti mostra le novità e propone tre scelte: **Aggiorna ora**, **Più tardi**, **Apri GitHub**.
+
+Con *Aggiorna ora* Argo:
+1. scarica il pacchetto;
+2. salva una copia della versione attuale in `whisperx-env/app_precedente`;
+3. sostituisce solo i file del programma;
+4. se la nuova versione chiede librerie nuove, le installa con `uv`;
+5. alla fine ti propone di riavviarsi.
+
+Voci, token, impostazioni, glossario e documenti indicizzati non vengono toccati.
+
+In *Impostazioni → Aggiornamenti* trovi:
+- la versione installata;
+- **Controlla ora**;
+- la casella per disattivare il controllo all'avvio.
+
+Il controllo legge da GitHub solo il numero di versione e le novità: nessun dato viene inviato.
+
+**Aggiornare a mano.** Scarica la nuova versione dal repository e rilancia l'installer. Il programma viene sostituito; voci, glossario, impostazioni e indice restano. Serve anche quando l'aggiornamento dall'app segnala che mancano librerie e non trova `uv`.
+
+**Tornare indietro.** La versione precedente resta in `whisperx-env/app_precedente`: per ripristinarla, chiudi Argo e copia il contenuto di quella cartella in `whisperx-env/app`.
 
 **Disinstallare:**
 
@@ -566,7 +586,7 @@ Se un file va in **Errore**, il log in fondo alla scheda Trascrittore riporta il
 
 ## 16. Privacy, GDPR e AI Act
 
-- **Tutto locale.** Audio e documenti non lasciano il computer. La telemetria anonima di pyannote è disattivata dall'app.
+- **Tutto locale.** Audio e documenti non lasciano il computer. La telemetria anonima di pyannote è disattivata dall'app. L'unica connessione che Argo fa da sé è il controllo degli aggiornamenti su GitHub, che legge solo numero di versione e novità e si può disattivare in *Impostazioni → Aggiornamenti*.
 - **Informa sempre** i partecipanti che la riunione viene registrata e trascritta.
 - **Le impronte vocali sono dati biometrici** (art. 9 GDPR). Registra le voci di altre persone solo con il loro consenso esplicito e cancellale quando non servono più (**Elimina** nell'Anagrafe).
 - **Documenti riservati:** l'indice contiene estratti testuali dei documenti. Proteggi il computer (cifratura del disco, account con password) come faresti con gli originali.

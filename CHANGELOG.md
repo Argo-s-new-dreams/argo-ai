@@ -2,6 +2,16 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261114.1900: aggiornamenti dall'app
+- All'avvio Argo controlla su GitHub se c'è una versione nuova. Se c'è, mostra le novità e propone **Aggiorna ora**, **Più tardi** o **Apri GitHub**.
+- **Aggiorna ora**:
+  - scarica il pacchetto e salva la versione attuale in `app_precedente`;
+  - sostituisce solo i file del programma;
+  - se servono, installa le nuove librerie con `uv`;
+  - propone il riavvio.
+- In *Impostazioni → Aggiornamenti* trovi la versione installata, **Controlla ora** e la casella per disattivare il controllo all'avvio.
+- Le librerie sono elencate in `app/requisiti.txt`, usato anche dagli installer.
+
 ## 20261114.1845: installazione su Mac senza Homebrew
 - L'installer per Mac non richiede più Homebrew:
   - se Homebrew c'è, lo usa;

@@ -38,7 +38,7 @@ else
 fi
 
 passo 3 "WhisperX e interfaccia grafica (5-15 minuti la prima volta)"
-uv pip install --python "$APP/bin/python" whisperx hf_xet PySide6 pypdf python-docx sounddevice || errore "installazione dei pacchetti non riuscita"
+uv pip install --python "$APP/bin/python" -r "$DIR/app/requisiti.txt" || errore "installazione dei pacchetti non riuscita"
 if ! command -v ffmpeg >/dev/null; then
   echo "  FFmpeg non presente: lo prendo dal pacchetto imageio-ffmpeg"
   uv pip install --python "$APP/bin/python" imageio-ffmpeg || errore "installazione di FFmpeg non riuscita"

@@ -1,0 +1,6 @@
+whisperx
+hf_xet
+PySide6
+pypdf
+python-docx
+sounddevice

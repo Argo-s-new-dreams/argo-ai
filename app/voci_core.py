@@ -31,6 +31,7 @@ DEFAULT_SETTINGS = {
     "modello_chat": "",
     "modello_embed": "",
     "modello_dettatura": "large-v3-turbo",
+    "controlla_aggiornamenti": True,  # all'avvio legge da GitHub solo il numero di versione
 }
 
 
