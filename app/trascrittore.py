@@ -29,7 +29,7 @@ import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261114.2015"
+VERSIONE = "20261114.2030"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -1154,39 +1154,29 @@ class Finestra(QMainWindow):
         imp["m365_client_id"] = self.e_m365_client.text().strip()
         imp["m365_tenant_id"] = self.e_m365_tenant.text().strip()
         core.salva_impostazioni(imp)
-        try:
-            flow = m365.avvia_accesso()
-        except m365.ErroreM365 as e:
-            QMessageBox.warning(self, "Microsoft 365", str(e))
+        if not m365.configurato():
+            QMessageBox.warning(self, "Microsoft 365", "Inserisci Client ID e Tenant ID.")
             return
-        dlg = QDialog(self)
-        dlg.setWindowTitle("Collega Microsoft 365")
-        dl = QVBoxLayout(dlg)
-        dl.addWidget(QLabel(f"1. Apri la pagina di accesso Microsoft\n2. Inserisci questo codice:"))
-        codice = QLabel(flow["user_code"])
-        codice.setStyleSheet("font-size: 28px; font-weight: 700; letter-spacing: 4px;")
-        codice.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        dl.addWidget(codice, alignment=Qt.AlignHCenter)
-        dl.addWidget(QLabel("3. Accedi con il tuo account e accetta i permessi. Questa finestra si chiude da sola."))
-        rb = QHBoxLayout()
-        b_copia = QPushButton("Copia codice")
-        b_copia.clicked.connect(lambda: QApplication.clipboard().setText(flow["user_code"]))
-        b_apri = QPushButton("Apri la pagina")
-        b_apri.setProperty("primario", True)
-        b_apri.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(flow["verification_uri"])))
-        b_ann = QPushButton("Annulla")
-        b_ann.clicked.connect(dlg.reject)
-        for b in (b_copia, b_ann, b_apri):
-            rb.addWidget(b)
-        dl.addLayout(rb)
-        QApplication.clipboard().setText(flow["user_code"])
-        lav = attrezzi.Lavoro(lambda _l: m365.completa_accesso(flow), self)
-        lav.sig_fine.connect(lambda _u: (dlg.accept(), self._stato_m365()))
-        lav.sig_errore.connect(lambda e: (dlg.reject(), QMessageBox.warning(self, "Microsoft 365", e), self._stato_m365()))
+        self.l_m365.setText("Si è aperto il browser: accedi con il tuo account Microsoft e accetta i permessi "
+                            "(hai 5 minuti)…")
+        self.b_m365.setEnabled(False)
+        lav = attrezzi.Lavoro(lambda _l: m365.accedi_interattivo(), self)
+
+        def fine(_u):
+            self.b_m365.setEnabled(True)
+            self._stato_m365()
+            self.raise_()
+            self.activateWindow()
+
+        def errore(e):
+            self.b_m365.setEnabled(True)
+            self._stato_m365()
+            QMessageBox.warning(self, "Microsoft 365", e)
+
+        lav.sig_fine.connect(fine)
+        lav.sig_errore.connect(errore)
         self._lav_m365 = lav
         lav.start()
-        QDesktopServices.openUrl(QUrl(flow["verification_uri"]))
-        dlg.exec()
 
     def scollega_m365(self):
         m365.scollega()

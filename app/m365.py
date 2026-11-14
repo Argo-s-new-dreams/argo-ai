@@ -75,6 +75,37 @@ def account():
         return None
 
 
+def accedi_interattivo():
+    """Accesso consigliato: apre il browser di sistema sulla pagina Microsoft (codice di autorizzazione + PKCE,
+    risposta su http://localhost). Bloccante fino alla fine dell'accesso: va eseguito in un thread.
+    Richiede nella registrazione dell'app il redirect URI «http://localhost» (Mobile and desktop applications)."""
+    app, cache = _app()
+    r = app.acquire_token_interactive(
+        SCOPES, prompt="select_account", timeout=300,
+        success_template="<html><body style='font-family:sans-serif'><h2>Argo è collegato a Microsoft 365.</h2>"
+                         "<p>Puoi chiudere questa scheda e tornare ad Argo.</p></body></html>",
+        error_template="<html><body style='font-family:sans-serif'><h2>Accesso non riuscito</h2>"
+                       "<p>$error: $error_description</p></body></html>")
+    _salva_cache(cache)
+    if "access_token" not in r:
+        raise ErroreM365(_spiega(r))
+    return r.get("id_token_claims", {}).get("preferred_username") or account()
+
+
+def _spiega(r):
+    desc = r.get("error_description") or r.get("error") or "accesso non riuscito"
+    if "AADSTS53003" in desc:
+        return ("Accesso bloccato da un criterio di accesso condizionale del tuo tenant (AADSTS53003). "
+                "Controlla in Entra → Log di accesso → scheda «Accesso condizionale» quale criterio blocca "
+                "l'app «Argo AI».")
+    if "AADSTS50011" in desc:
+        return ("Nella registrazione dell'app manca il redirect URI «http://localhost»: aggiungilo in "
+                "Authentication → Mobile and desktop applications.")
+    if "AADSTS65001" in desc:
+        return "Manca il consenso ai permessi: un amministratore deve premere «Grant admin consent» nell'app."
+    return desc
+
+
 def avvia_accesso():
     """Primo passo del codice dispositivo: ritorna il flow con user_code e verification_uri."""
     app, cache = _app()
@@ -90,7 +121,7 @@ def completa_accesso(flow):
     r = app.acquire_token_by_device_flow(flow)
     _salva_cache(cache)
     if "access_token" not in r:
-        raise ErroreM365(r.get("error_description") or "accesso non riuscito")
+        raise ErroreM365(_spiega(r))
     return r.get("id_token_claims", {}).get("preferred_username") or account()
 
 
