@@ -22,7 +22,7 @@ L'audio non lascia mai il computer: Internet serve solo per installare i pacchet
 ## Funzionalità
 
 - **Coda di trascrizioni**: trascini file o cartelle, imposti il numero di partecipanti, la coda lavora da sola e resta salvata anche chiudendo l'app.
-- **Anagrafe voci**: un'impronta vocale per persona, ricavata da un breve audio o direttamente da una riunione già trascritta.
+- **Anagrafe voci**: un'impronta vocale per persona. Si crea registrando la voce dal microfono, da un file audio, da una riunione già trascritta, oppure **marcando sulla forma d'onda** i tratti in cui parla ciascuno.
 - **Revisione parlanti**: correggi i nomi e memorizzi le voci nuove con una spunta.
 - **Risultato leggibile**: `nome_nomi.txt` con orario e nome di chi parla, pronto per farne un verbale.
 - **Esporta in Word**: trascrizioni, verbali, risposte sui documenti, dettature e traduzioni diventano file `.docx` già impaginati (titoli, elenchi, tabelle).
@@ -108,6 +108,7 @@ Queste note sono informative e non costituiscono consulenza legale.
 | `app/trascrittore.py` | Interfaccia grafica (PySide6): coda, anagrafe, impostazioni, revisione |
 | `app/voci_core.py` | Motore: impronte vocali, identificazione, comando WhisperX; usabile anche da riga di comando |
 | `app/argo_attrezzi.py` | Attrezzi Verbale, Documenti riservati, Dettatura, Traduzione e pannello Ollama |
+| `app/voci_strumenti.py` | Registrazione delle voci dal microfono e marcatura delle voci su forma d'onda |
 | `app/esporta_word.py` | Esportazione in Word (.docx) dei testi prodotti dagli attrezzi |
 | `app/llm_locale.py` | Client minimale per Ollama: chat in streaming, embedding, download modelli |
 | `app/esempi/` | Riunione, NDA e capitolato fittizi per le prove |

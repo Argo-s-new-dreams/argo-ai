@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261114.1520 · riferita all'app versione 20261114.1520*
+*Versione del manuale: 20261114.1600 · riferita all'app versione 20261114.1600*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -235,6 +235,38 @@ La finestra mostra, per ogni voce trovata:
 L'anagrafe contiene un'**impronta vocale** (un vettore numerico) per ogni persona. Più campioni ha una persona, più il riconoscimento è stabile: Argo ne fa la media.
 
 ### Aggiungere una voce
+
+Ci sono tre modi per creare un'impronta.
+
+**🎙 Registra voce… (dal microfono)**
+
+1. Scrivi o scegli il nome. Se la voce esiste già, la registrazione diventa un nuovo campione.
+2. Premi **● Registra** e fai parlare **solo** quella persona, nel silenzio. Può leggere il testo proposto nella finestra.
+3. La barra mostra il livello del microfono e i secondi registrati. Servono almeno 10 secondi; dai 20 in su l'impronta è più stabile. Se non arriva audio, la finestra lo segnala.
+4. Premi **■ Stop**, se vuoi **▶ Riascolta**, poi spunta il **consenso** e premi **Crea impronta**.
+
+Sul Mac, alla prima registrazione il sistema chiede il permesso di usare il microfono.
+
+**🎧 Marca voci in un audio… (da una registrazione)**
+
+Serve quando hai una riunione o un'intervista in cui parlano più persone e vuoi ricavare le impronte di tutte in una volta. Si apre anche dal Trascrittore, con **🎧 Marca voci…** sulla riga selezionata.
+
+1. **Apri audio…**: compare la forma d'onda. La linea rossa è la posizione di ascolto.
+2. Ascolta con **▶ Ascolta**, **⏪ 5 s** e **5 s ⏩**. Clicca sulla forma d'onda per saltare in un punto.
+3. **Zoom:** rotella del mouse (o i pulsanti *Zoom +* e *Zoom −*); con **Maiusc + rotella** scorri. *Tutto* torna alla vista completa.
+4. **Trascina** sulla forma d'onda per selezionare un tratto in cui parla una sola persona. **▶ Ascolta selezione** lo riproduce.
+5. Scrivi o scegli la **Persona** e premi **✚ Assegna selezione**. Il tratto si colora e finisce nella tabella; puoi marcare più tratti per la stessa persona.
+6. Il riepilogo mostra i secondi per persona: 🔴 sotto 10 s, 🟡 sufficiente, ✅ 20 s o più. Doppio clic su una riga della tabella per riascoltarla; **Rimuovi segno** la toglie.
+7. Spunta il **consenso** e premi **Crea impronte**: Argo ritaglia i tratti, li unisce per persona e calcola un'impronta per ciascuno, uno dopo l'altro.
+
+**Se l'audio è già stato trascritto** (c'è il file `.json` accanto all'audio), sotto la forma d'onda compare una corsia con i **parlanti rilevati**. Dove li riconosce, mostra già il nome dall'anagrafe.
+
+- Clicca su un tratto della corsia per selezionarlo.
+- Oppure scegli il parlante in **Parlante rilevato** e premi **Assegna tutti i suoi tratti**: tutti i suoi interventi vanno alla persona indicata.
+
+Prima di creare l'impronta conviene ascoltarne qualche tratto: la separazione automatica a volte mescola due voci.
+
+**➕ Nuova voce da audio… (da un file)**
 
 - **➕ Nuova voce da audio…**: scegli un file in cui parla **solo** quella persona (bastano 20-60 secondi puliti) e dai un nome. Usa solo lettere, numeri, spazi, `-` e `_`.
 - **Aggiungi campione…**: aggiunge un altro audio a una voce esistente, utile se la riconosce male.
@@ -514,6 +546,8 @@ Per `iscrivi` il token Hugging Face deve essere già salvato (lo fa l'app).
 | "Manca il modello per i documenti" | Nessun modello di embedding | `ollama pull bge-m3` |
 | Nessuna risposta dai Documenti | Indice vuoto o PDF scansionato | Indicizza documenti con testo selezionabile |
 | Il microfono non registra | Permessi negati | Vedi [§9](#9-dettatura) |
+| "Tratti troppo corti" in *Marca voci* | Meno di 10 secondi marcati per una persona | Marca altri tratti in cui parla solo lei |
+| L'impronta da *Marca voci* riconosce male | Nei tratti ci sono voci sovrapposte o rumore | Elimina la voce, rimarca solo tratti puliti, aggiungi un campione con *Registra voce* |
 | Trascrizione molto lenta | CPU, modello `large-v3`, PC ARM | Passa a `large-v3-turbo` o `medium`; su NVIDIA usa CUDA |
 | Il Mac Intel non installa | Non supportato | Serve un Mac Apple Silicon o un PC Windows |
 
