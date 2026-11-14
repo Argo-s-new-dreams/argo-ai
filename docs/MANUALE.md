@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261114.1615 · riferita all'app versione 20261114.1615*
+*Versione del manuale: 20261114.1830 · riferita all'app versione 20261114.1830*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -180,7 +180,11 @@ Video: `mp4`, `mov`, `mkv`, `webm`, `m4v`, `avi`, `wmv`: per esempio le registra
 | Interrotta | Fermata da te o dalla chiusura dell'app |
 
 - La coda viene salvata: se chiudi Argo, la ritrovi alla riapertura.
-- **Rimetti in coda** riporta in *In attesa* un file con errore o interrotto. **Rimuovi** lo toglie dalla lista senza cancellare il file.
+- **Rimetti in coda** riporta in *In attesa* un file con errore o interrotto. Su una trascrizione completata ti chiede se rifare **solo i parlanti** o **tutta la trascrizione**. **Rimuovi** toglie il file dalla lista senza cancellarlo.
+
+### 5.3bis Cambiare il numero di partecipanti dopo la trascrizione
+
+Se la separazione delle voci non torna (per esempio ha trovato 2 persone ma erano 3), cambia il numero nella colonna **Partecipanti** anche su una riga *Completata*. Argo chiede conferma e **rifà solo la separazione dei parlanti**: il testo trascritto resta lo stesso, e ci vuole molto meno di una trascrizione completa. Alla fine la riga torna *Completata* con i nuovi parlanti; i nomi corretti a mano vanno riassegnati.
 
 > La prima trascrizione scarica i modelli (alcuni GB): è normale che ci metta di più.
 
@@ -202,12 +206,12 @@ I parlanti non riconosciuti compaiono come **Sconosciuto 1**, **Sconosciuto 2** 
 Pulsanti disponibili sulla riga selezionata:
 
 - **Apri trascrizione**: apre il file `_nomi.txt`.
-- **Rivedi parlanti…**: apre la revisione (vedi sotto).
+- **✏️ Nomi dei parlanti…** (oppure doppio clic sulla riga completata): apre la revisione dei nomi (vedi sotto).
 - **Apri cartella**: apre la cartella del file.
 - **Esporta in Word**: crea `nomefile_trascrizione.docx`, con orari in grigio e nomi dei parlanti in grassetto, e lo apre.
 - **Crea verbale →**: passa la trascrizione alla scheda Verbale.
 
-### 5.5 Revisione parlanti
+### 5.5 Nomi dei parlanti (revisione)
 
 La finestra mostra, per ogni voce trovata:
 
@@ -219,7 +223,11 @@ La finestra mostra, per ogni voce trovata:
 1. Passa il mouse su un nome per leggere una frase di quel parlante e capire chi è.
 2. Correggi il nome dal menu a tendina, oppure scrivine uno nuovo.
 3. Spunta **Memorizza** per salvare l'impronta di quella voce nell'anagrafe: dalla volta successiva verrà riconosciuta da sola.
-4. Conferma: Argo riscrive il `_nomi.txt` con i nomi corretti.
+4. Conferma con **Applica e salva**: Argo riscrive il `_nomi.txt` con i nomi corretti.
+
+I nomi scelti restano **salvati** (dentro il file `.json` della trascrizione): riaprendo la finestra li ritrovi, e li puoi correggere quante volte vuoi. Le etichette lasciate come *Sconosciuto* invece vengono ricalcolate: se poi aggiungi quella voce all'anagrafe, alla riapertura la trovi già riconosciuta.
+
+**Due etichette sono la stessa persona?** Dai loro lo stesso nome: nella trascrizione i loro interventi vengono uniti. **Mancano persone?** Cambia il numero di partecipanti (vedi §5.3bis).
 
 ### 5.6 Consigli per una buona trascrizione
 
@@ -271,7 +279,7 @@ Prima di creare l'impronta conviene ascoltarne qualche tratto: la separazione au
 
 - **➕ Nuova voce da audio…**: scegli un file in cui parla **solo** quella persona (bastano 20-60 secondi puliti) e dai un nome. Usa solo lettere, numeri, spazi, `-` e `_`.
 - **Aggiungi campione…**: aggiunge un altro audio a una voce esistente, utile se la riconosce male.
-- In alternativa, il modo più comodo: trascrivi una riunione, apri **Rivedi parlanti…** e spunta **Memorizza**.
+- In alternativa, il modo più comodo: trascrivi una riunione, apri **✏️ Nomi dei parlanti…** e spunta **Memorizza**.
 
 ### Gestire le voci
 
@@ -592,7 +600,7 @@ Sì. Trascrittore, Marca voci, Dettatura e Traduzione accettano anche file video
 Sì: i file `.json` e `_nomi.txt` stanno accanto agli audio. Rimuovere una riga dalla coda non cancella nulla.
 
 **Posso riconoscere le voci in una riunione già trascritta senza rifarla?**
-Sì. Dopo aver aggiunto nuove voci all'anagrafe, apri **Rivedi parlanti…** sulla trascrizione: gli abbinamenti vengono ricalcolati dal file `.json`. In alternativa usa `voci_core.py identifica` (vedi [§13](#13-uso-da-riga-di-comando)).
+Sì. Dopo aver aggiunto nuove voci all'anagrafe, apri **✏️ Nomi dei parlanti…** sulla trascrizione: gli abbinamenti vengono ricalcolati dal file `.json`. In alternativa usa `voci_core.py identifica` (vedi [§13](#13-uso-da-riga-di-comando)).
 
 **Il token Hugging Face viene usato durante le trascrizioni?**
 Solo per scaricare o verificare i modelli. L'audio non viene mai inviato a Hugging Face.

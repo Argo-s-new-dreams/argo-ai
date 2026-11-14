@@ -188,6 +188,41 @@ def leggi_json(file_json):
     return json.loads(Path(file_json).read_text(encoding="utf-8"))
 
 
+NOMI_KEY = "argo_nomi"  # nomi assegnati a mano in revisione, salvati nel JSON della trascrizione
+
+
+def salva_nomi(file_json, mappa):
+    """Salva solo i nomi veri: le etichette automatiche (Sconosciuto/Parlante) restano da ricalcolare."""
+    dati = leggi_json(file_json)
+    dati[NOMI_KEY] = {s: n for s, n in mappa.items() if not n.startswith(("Sconosciuto", "Parlante"))}
+    Path(file_json).write_text(json.dumps(dati, ensure_ascii=False), encoding="utf-8")
+
+
+def ridiarizza(file_json, file_audio, n_parlanti=0, device="cpu"):
+    """Rifà solo la separazione dei parlanti su una trascrizione esistente (il testo resta quello).
+    n_parlanti = 0: decide il modello."""
+    os.environ.setdefault("PYANNOTE_METRICS_ENABLED", "0")
+    from whisperx.audio import load_audio
+    from whisperx.diarize import DiarizationPipeline, assign_word_speakers
+
+    dati = leggi_json(file_json)
+    for seg in dati.get("segments", []):
+        seg.pop("speaker", None)
+        for w in seg.get("words", []) or []:
+            w.pop("speaker", None)
+    dati.pop("speaker_embeddings", None)
+    dati.pop(NOMI_KEY, None)
+    print("Ricalcolo dei parlanti" + (f" con {n_parlanti} partecipanti" if n_parlanti else " (numero automatico)"),
+          flush=True)
+    pipe = DiarizationPipeline(token=leggi_token(), device=device)
+    kw = {"num_speakers": int(n_parlanti)} if int(n_parlanti) > 0 else {}
+    df, emb = pipe(load_audio(str(file_audio)), return_embeddings=True,
+                   progress_callback=lambda pct: print(f"Progress: {pct:.1f}%", flush=True), **kw)
+    dati = assign_word_speakers(df, dati, emb)
+    Path(file_json).write_text(json.dumps(dati, ensure_ascii=False), encoding="utf-8")
+    print(f"OK - parlanti trovati: {len(set(df['speaker'])) if len(df) else 0}", flush=True)
+
+
 def parlanti_senza_embedding(dati):
     return sorted({s.get("speaker") for s in dati.get("segments", []) if s.get("speaker")})
 
@@ -218,6 +253,9 @@ def identifica(file_json, soglia=None):
     else:  # trascrizione fatta senza impronte: etichette generiche
         mappa = {s: f"Parlante {i}" for i, s in enumerate(parlanti_senza_embedding(dati), 1)}
         migliori, coppie = {}, []
+    for s, n in (dati.get(NOMI_KEY) or {}).items():  # nomi corretti a mano: hanno la precedenza
+        if s in mappa:
+            mappa[s] = n
     out = scrivi_trascrizione(dati, mappa, file_json)
     return out, mappa, migliori, coppie
 
@@ -278,6 +316,8 @@ if __name__ == "__main__":
             for s, n in sorted(mappa.items()):
                 print(f"  {s} -> {n}")
             print(f"OK - Trascrizione con i nomi: {out}")
+        elif len(a) >= 4 and a[1] == "ridiarizza":
+            ridiarizza(a[2], a[3], int(a[4]) if len(a) > 4 else 0, a[5] if len(a) > 5 else "cpu")
         elif len(a) == 2 and a[1] == "elenco":
             print("Voci registrate: " + (", ".join(f"{n} ({c})" for n, c in elenco_voci()) or "nessuna"))
         else:
