@@ -25,7 +25,7 @@ import argo_attrezzi as attrezzi  # noqa: E402
 import llm_locale  # noqa: E402
 import voci_strumenti  # noqa: E402
 
-VERSIONE = "20261114.1830"
+VERSIONE = "20261114.1845"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
