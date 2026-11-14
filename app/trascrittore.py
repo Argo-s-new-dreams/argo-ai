@@ -25,8 +25,9 @@ import argo_attrezzi as attrezzi  # noqa: E402
 import llm_locale  # noqa: E402
 import voci_strumenti  # noqa: E402
 
-VERSIONE = "20261114.1600"
-AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma", ".mp4", ".mov", ".mkv", ".webm"}
+VERSIONE = "20261114.1615"
+AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
+             ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
     ("large-v3", "large-v3 - massima qualità (lento)"),
     ("large-v3-turbo", "large-v3-turbo - ottimo compromesso (consigliato)"),
@@ -652,7 +653,7 @@ class Finestra(QMainWindow):
         if not core.nome_valido(nome or ""):
             QMessageBox.warning(self, "Nome non valido", "Scegli un nome senza caratteri speciali.")
             return
-        filtro = "Audio (" + " ".join("*" + x for x in sorted(AUDIO_EXT)) + ")"
+        filtro = "Audio o video (" + " ".join("*" + x for x in sorted(AUDIO_EXT)) + ")"
         f, _ = QFileDialog.getOpenFileName(self, f"Audio con la sola voce di {nome}", str(Path.home()), filtro)
         if not f:
             return

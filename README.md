@@ -21,6 +21,7 @@ L'audio non lascia mai il computer: Internet serve solo per installare i pacchet
 
 ## Funzionalità
 
+- **Anche i video delle call**: mp4, mov, mkv, webm (Teams, Zoom, Meet…); in *Marca voci* il video si vede, sincronizzato con l'audio.
 - **Coda di trascrizioni**: trascini file o cartelle, imposti il numero di partecipanti, la coda lavora da sola e resta salvata anche chiudendo l'app.
 - **Anagrafe voci**: un'impronta vocale per persona. Si crea registrando la voce dal microfono, da un file audio, da una riunione già trascritta, oppure **marcando sulla forma d'onda** i tratti in cui parla ciascuno.
 - **Revisione parlanti**: correggi i nomi e memorizzi le voci nuove con una spunta.

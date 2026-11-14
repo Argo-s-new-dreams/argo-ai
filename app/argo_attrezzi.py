@@ -671,8 +671,8 @@ class SchedaDettatura(SchedaBase):
             self.elabora(f)
 
     def da_file(self):
-        f, _ = QFileDialog.getOpenFileName(self, "Audio", str(Path.home()),
-                                           "Audio (*.wav *.m4a *.mp3 *.aac *.flac *.ogg *.opus)")
+        f, _ = QFileDialog.getOpenFileName(self, "Audio o video", str(Path.home()),
+                                           "Audio o video (*.wav *.m4a *.mp3 *.aac *.flac *.ogg *.opus *.mp4 *.mov *.mkv *.webm *.m4v)")
         if f:
             self.elabora(Path(f))
 
@@ -824,8 +824,8 @@ class SchedaTraduzione(SchedaBase):
             self.ingresso.setPlainText(Path(f).read_text(encoding="utf-8", errors="replace"))
 
     def trascrivi_audio(self):
-        f, _ = QFileDialog.getOpenFileName(self, "Audio", str(Path.home()),
-                                           "Audio (*.wav *.m4a *.mp3 *.aac *.flac *.ogg *.opus)")
+        f, _ = QFileDialog.getOpenFileName(self, "Audio o video", str(Path.home()),
+                                           "Audio o video (*.wav *.m4a *.mp3 *.aac *.flac *.ogg *.opus *.mp4 *.mov *.mkv *.webm *.m4v)")
         if f:
             self.avvia(lambda lav: trascrivi_file(f, None, lav), fine=self.ingresso.setPlainText)
 

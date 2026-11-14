@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261114.1600 · riferita all'app versione 20261114.1600*
+*Versione del manuale: 20261114.1615 · riferita all'app versione 20261114.1615*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -158,7 +158,7 @@ La scheda principale: una **coda** di file audio o video da trascrivere, con ric
 ### 5.1 Formati accettati
 
 Audio: `wav`, `mp3`, `m4a`, `aac`, `flac`, `ogg`, `opus`, `wma`.
-Video: `mp4`, `mov`, `mkv`, `webm` (Argo ne usa solo l'audio).
+Video: `mp4`, `mov`, `mkv`, `webm`, `m4v`, `avi`, `wmv`: per esempio le registrazioni delle call di Teams o Zoom. Argo ne usa solo l'audio; il file video resta dov'è e non viene modificato.
 
 ### 5.2 Aggiungere file
 
@@ -251,7 +251,8 @@ Sul Mac, alla prima registrazione il sistema chiede il permesso di usare il micr
 
 Serve quando hai una riunione o un'intervista in cui parlano più persone e vuoi ricavare le impronte di tutte in una volta. Si apre anche dal Trascrittore, con **🎧 Marca voci…** sulla riga selezionata.
 
-1. **Apri audio…**: compare la forma d'onda. La linea rossa è la posizione di ascolto.
+1. **Apri audio o video…**: compare la forma d'onda. La linea rossa è la posizione di ascolto.
+   Se è un **video** (per esempio la registrazione di una call di Teams), sopra la forma d'onda vedi anche il video, sincronizzato con l'ascolto: è il modo più semplice per capire chi sta parlando, perché nelle call il nome compare sul riquadro di chi parla. Puoi allargare il riquadro del video trascinando il bordo tra video e forma d'onda.
 2. Ascolta con **▶ Ascolta**, **⏪ 5 s** e **5 s ⏩**. Clicca sulla forma d'onda per saltare in un punto.
 3. **Zoom:** rotella del mouse (o i pulsanti *Zoom +* e *Zoom −*); con **Maiusc + rotella** scorri. *Tutto* torna alla vista completa.
 4. **Trascina** sulla forma d'onda per selezionare un tratto in cui parla una sola persona. **▶ Ascolta selezione** lo riproduce.
@@ -365,7 +366,7 @@ Parli e ottieni un testo già scritto bene.
    - Appunto ordinato;
    - Messaggio breve (Teams/WhatsApp);
    - Solo trascrizione (non serve Ollama).
-2. Premi **● Registra**, parla, poi **■ Stop**. In alternativa usa **Da file audio…**.
+2. Premi **● Registra**, parla, poi **■ Stop**. In alternativa usa **Da file audio…**, che accetta anche video (mp4, mov…).
 3. A sinistra compare la trascrizione grezza, a destra il testo riscritto. Puoi correggere la trascrizione e premere **Riscrivi**, oppure cambiare formato e riscrivere.
 4. **Copia risultato** e incolla dove ti serve, oppure **Salva Word**.
 
@@ -583,6 +584,9 @@ No. Su CPU funziona tutto, solo più lentamente. Sul Mac i modelli di Ollama sfr
 
 **Posso usare un modello Ollama diverso da quelli suggeriti?**
 Sì, qualsiasi modello installato in Ollama. Modelli più grandi scrivono meglio ma richiedono più memoria e tempo.
+
+**Posso usare le registrazioni video delle call (Teams, Zoom, Meet)?**
+Sì. Trascrittore, Marca voci, Dettatura e Traduzione accettano anche file video come `mp4`, `mov`, `mkv` e `webm`: Argo ne estrae l'audio. In *Marca voci* il video si vede anche, così riconosci chi parla dal riquadro della call.
 
 **Le trascrizioni restano anche se cancello la coda?**
 Sì: i file `.json` e `_nomi.txt` stanno accanto agli audio. Rimuovere una riga dalla coda non cancella nulla.
