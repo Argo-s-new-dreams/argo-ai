@@ -2,6 +2,9 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261114.2015: riavvio dopo l'aggiornamento
+- Corretto: sul Mac, dopo **Aggiorna ora**, Argo si chiudeva senza riaprirsi. Ora si riapre dall'app «Argo AI», due secondi dopo la chiusura; il nuovo processo è del tutto separato da quello vecchio.
+
 ## 20261114.2000: Microsoft 365 negli Incarichi (facoltativo)
 - **Collegamento a Microsoft 365** in *Impostazioni*, con accesso tramite codice dispositivo (MSAL) e permessi delegati.
 - Negli Incarichi:
