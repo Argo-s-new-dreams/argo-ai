@@ -77,6 +77,10 @@ Gli installer non sono firmati digitalmente: per questo Windows e macOS mostrano
 2. *Coda trascrizioni*: trascina i file, imposta i partecipanti, **Avvia coda**.
 3. A fine lavoro: **Apri trascrizione** oppure **Rivedi parlanti…** per correggere i nomi e spuntare **Memorizza**.
 
+| Anagrafe voci | Revisione parlanti | Impostazioni |
+| --- | --- | --- |
+| ![Anagrafe voci](docs/screenshot-voci.png) | ![Revisione parlanti](docs/screenshot-revisione.png) | ![Impostazioni](docs/screenshot-impostazioni.png) |
+
 📖 **Manuale completo:** [docs/MANUALE.md](docs/MANUALE.md): installazione, tutti gli attrezzi, impostazioni, dati, risoluzione dei problemi, privacy e AI Act.
 
 ## Privacy e dati
