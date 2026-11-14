@@ -11,7 +11,7 @@ import wave
 from pathlib import Path
 
 import numpy as np
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import QObject, Qt, QThread, Signal
 from PySide6.QtGui import QGuiApplication, QTextCursor
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView,
@@ -43,16 +43,63 @@ def imp():
     return core.carica_impostazioni()
 
 
+PREFERITI_CHAT = ("gemma3", "qwen3", "llama3", "mistral", "phi")
+PREFERITI_EMBED = ("bge-m3", "nomic-embed", "mxbai-embed")
+
+
+def scegli_preferito(nomi, preferiti):
+    """Primo modello che corrisponde all'ordine di preferenza, altrimenti il primo dell'elenco."""
+    for pref in preferiti:
+        for n in nomi:
+            if n.lower().startswith(pref):
+                return n
+    return nomi[0] if nomi else ""
+
+
+def completa_modelli(s, chat, emb):
+    """Se manca la scelta (o il modello non c'è più) ma Ollama ne ha uno, lo sceglie da solo.
+    Ritorna l'elenco dei modelli scelti automaticamente."""
+    scelti = []
+    if chat and s.get("modello_chat") not in chat:
+        s["modello_chat"] = scegli_preferito(chat, PREFERITI_CHAT)
+        scelti.append(f"testi: {s['modello_chat']}")
+    if emb and s.get("modello_embed") not in emb:
+        s["modello_embed"] = scegli_preferito(emb, PREFERITI_EMBED)
+        scelti.append(f"documenti: {s['modello_embed']}")
+    if scelti:
+        core.salva_impostazioni(s)
+    return scelti
+
+
 def pronto_llm(parent, serve_embed=False):
+    """Controlla che Ollama risponda e che ci siano i modelli; se manca solo la scelta, la fa da solo."""
     s = imp()
-    if not s.get("modello_chat"):
-        QMessageBox.warning(parent, "Modello mancante",
-                            "Scegli un modello linguistico in Impostazioni → Modello linguistico locale.")
+    url = s.get("ollama_url") or llm.DEFAULT_URL
+    try:
+        chat, emb = llm.elenco_modelli(url)
+    except llm.ErroreLLM:
+        QMessageBox.warning(parent, "Ollama non è acceso",
+                            f"Argo non riesce a parlare con Ollama ({url}).\n\n"
+                            "Avvia Ollama (sul Mac: l'icona del lama nella barra dei menu) e riprova.\n"
+                            "Se non è installato, scaricalo da ollama.com.")
         return False
-    if serve_embed and not s.get("modello_embed"):
-        QMessageBox.warning(parent, "Modello mancante",
-                            "Per i documenti serve un modello di embedding (es. bge-m3): sceglilo in Impostazioni.")
+    if not chat:
+        QMessageBox.warning(parent, "Nessun modello scaricato",
+                            "Ollama è acceso ma non ha modelli per i testi.\n\n"
+                            "Scaricane uno dal Terminale, per esempio:\n    ollama pull gemma3:12b\n\n"
+                            "oppure da Impostazioni → Modello linguistico locale → Scarica un modello.")
         return False
+    if serve_embed and not emb:
+        QMessageBox.warning(parent, "Manca il modello per i documenti",
+                            "Per cercare nei documenti serve un modello di embedding.\n\n"
+                            "Scaricalo dal Terminale:\n    ollama pull bge-m3\n\n"
+                            "oppure da Impostazioni → Modello linguistico locale → Scarica un modello.")
+        return False
+    scelti = completa_modelli(s, chat, emb)
+    if scelti:
+        QMessageBox.information(parent, "Modello scelto in automatico",
+                                "Uso " + " e ".join(scelti) + ".\nPuoi cambiarlo in Impostazioni → Modello linguistico locale.")
+        segnale_modelli.cambiato.emit()
     return True
 
 
@@ -757,6 +804,13 @@ class SchedaTraduzione(SchedaBase):
 
 
 # =============================================================== impostazioni Ollama
+class _SegnaleModelli(QObject):
+    cambiato = Signal()
+
+
+segnale_modelli = _SegnaleModelli()
+
+
 class PannelloOllama(QGroupBox):
     """Riquadro per la scheda Impostazioni: server Ollama e modelli."""
     cambiato = Signal()
@@ -796,6 +850,7 @@ class PannelloOllama(QGroupBox):
         b_salva.clicked.connect(self.salva)
         b_pull.clicked.connect(self.scarica)
         self.lavoro = None
+        segnale_modelli.cambiato.connect(lambda: self.verifica(silenzioso=True))
         self.verifica(silenzioso=True)
 
     def verifica(self, silenzioso=False):
@@ -806,6 +861,7 @@ class PannelloOllama(QGroupBox):
             self.l_stato.setText("❌ " + str(e) + " Installa Ollama da ollama.com e avvialo.")
             return
         s = imp()
+        scelti = completa_modelli(s, chat, emb)
         for combo, voci, attuale in ((self.c_chat, chat, s.get("modello_chat")),
                                      (self.c_embed, emb, s.get("modello_embed"))):
             combo.clear()
@@ -814,6 +870,11 @@ class PannelloOllama(QGroupBox):
                 combo.setCurrentText(attuale)
         avviso = "" if llm.e_locale(url) else " ⚠️ L'indirizzo NON è locale: i testi lascerebbero il computer."
         self.l_stato.setText(f"✅ Ollama risponde: {len(chat)} modelli per testi, {len(emb)} per documenti.{avviso}")
+        if scelti:
+            self.l_stato.setText(self.l_stato.text() + " Scelti in automatico e salvati: " + ", ".join(scelti) + ".")
+            self.cambiato.emit()
+        if not chat:
+            self.l_stato.setText(self.l_stato.text() + " Scarica un modello per i testi, es. «gemma3:12b».")
         if not silenzioso and not emb:
             self.l_stato.setText(self.l_stato.text() + " Per i documenti scarica un modello di embedding, es. «bge-m3».")
 
