@@ -26,7 +26,7 @@ import llm_locale  # noqa: E402
 import voci_strumenti  # noqa: E402
 import aggiornamenti  # noqa: E402
 
-VERSIONE = "20261114.1900"
+VERSIONE = "20261114.1910"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [

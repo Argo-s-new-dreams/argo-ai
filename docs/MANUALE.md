@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261114.1900 · riferita all'app versione 20261114.1900*
+*Versione del manuale: 20261114.1910 · riferita all'app versione 20261114.1910*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -578,6 +578,7 @@ Il controllo legge da GitHub solo il numero di versione e le novità: nessun dat
 | L'impronta da *Marca voci* riconosce male | Nei tratti ci sono voci sovrapposte o rumore | Elimina la voce, rimarca solo tratti puliti, aggiungi un campione con *Registra voce* |
 | Trascrizione molto lenta | CPU, modello `large-v3`, PC ARM | Passa a `large-v3-turbo` o `medium`; su NVIDIA usa CUDA |
 | Il Mac Intel non installa | Non supportato | Serve un Mac Apple Silicon o un PC Windows |
+| "Controllo non riuscito" negli aggiornamenti | Nessuna connessione, oppure un firewall blocca GitHub | Riprova più tardi o aggiorna a mano dal pacchetto; puoi disattivare il controllo in *Impostazioni → Aggiornamenti* |
 | "Homebrew non trovato" (versioni fino alla 1830) | L'installer vecchio richiedeva Homebrew | Usa l'installer dalla versione 1845 in poi: Homebrew non serve più |
 
 Se un file va in **Errore**, il log in fondo alla scheda Trascrittore riporta il messaggio: è il primo posto dove guardare, e il testo da allegare a una segnalazione su GitHub.

@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -28,18 +29,29 @@ RE_VERSIONE = re.compile(r'^VERSIONE\s*=\s*"(\d{8}\.\d{4})"', re.M)
 REQUISITI = "requisiti.txt"
 
 
-def _contesto_ssl():
-    try:  # il Python installato da uv su macOS non sempre trova i certificati di sistema
+def _contesti_ssl():
+    """Prima i certificati di sistema (rispettano anche SSL_CERT_FILE e i proxy aziendali),
+    poi quelli di certifi (il Python installato da uv su macOS non sempre trova quelli di sistema)."""
+    yield ssl.create_default_context()
+    try:
         import certifi
-        return ssl.create_default_context(cafile=certifi.where())
+        yield ssl.create_default_context(cafile=certifi.where())
     except Exception:
-        return ssl.create_default_context()
+        pass
 
 
 def _scarica(url, timeout=15):
     req = urllib.request.Request(url, headers={"User-Agent": "Argo-AI-aggiornamenti", "Cache-Control": "no-cache"})
-    with urllib.request.urlopen(req, timeout=timeout, context=_contesto_ssl()) as r:
-        return r.read()
+    ultimo = None
+    for ctx in _contesti_ssl():
+        try:
+            with urllib.request.urlopen(req, timeout=timeout, context=ctx) as r:
+                return r.read()
+        except urllib.error.URLError as e:
+            if not isinstance(getattr(e, "reason", None), ssl.SSLCertVerificationError):
+                raise
+            ultimo = e
+    raise ultimo
 
 
 def numero(v):
