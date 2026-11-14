@@ -23,8 +23,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import voci_core as core  # noqa: E402
 import argo_attrezzi as attrezzi  # noqa: E402
 import llm_locale  # noqa: E402
+import voci_strumenti  # noqa: E402
 
-VERSIONE = "20261114.1520"
+VERSIONE = "20261114.1600"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma", ".mp4", ".mov", ".mkv", ".webm"}
 MODELLI = [
     ("large-v3", "large-v3 - massima qualità (lento)"),
@@ -268,10 +269,11 @@ class Finestra(QMainWindow):
         self.b_cart = QPushButton("Apri cartella")
         self.b_verb = QPushButton("Crea verbale →")
         self.b_word = QPushButton("Esporta in Word")
+        self.b_marca_job = QPushButton("🎧 Marca voci…")
         for b in (self.b_agg, self.b_rim, self.b_rip):
             bar.addWidget(b)
         bar.addStretch()
-        for b in (self.b_ris, self.b_rev, self.b_word, self.b_verb, self.b_cart, self.b_avvia):
+        for b in (self.b_ris, self.b_rev, self.b_marca_job, self.b_word, self.b_verb, self.b_cart, self.b_avvia):
             bar.addWidget(b)
         self.b_agg.clicked.connect(self.scegli_file)
         self.b_rim.clicked.connect(self.rimuovi_job)
@@ -282,6 +284,7 @@ class Finestra(QMainWindow):
         self.b_cart.clicked.connect(self.apri_cartella)
         self.b_verb.clicked.connect(self.crea_verbale)
         self.b_word.clicked.connect(self.esporta_word)
+        self.b_marca_job.clicked.connect(lambda: (lambda j: j and self.marca_voci(j["file"]))(self._job_selezionato()))
 
         self.fase = QLabel("")
         self.log = QPlainTextEdit()
@@ -588,9 +591,11 @@ class Finestra(QMainWindow):
         w = QWidget()
         lay = QVBoxLayout(w)
         info = QLabel(
-            "Registra ogni persona con 20-60 secondi di audio in cui parla solo lei, con il microfono che usi di solito. "
-            "Più campioni della stessa persona migliorano il riconoscimento.\n"
-            "In alternativa: dopo una trascrizione usa «Rivedi parlanti» e spunta «Memorizza».")
+            "Ogni persona ha un'impronta vocale ricavata da 20-60 secondi in cui parla solo lei. Tre modi per crearla:\n"
+            "🎙 Registra voce: la persona parla al microfono adesso.\n"
+            "🎧 Marca voci in un audio: ascolti una registrazione e segni dove parla ciascuno.\n"
+            "➕ Nuova voce da audio: scegli un file in cui parla solo quella persona.\n"
+            "Più campioni della stessa persona migliorano il riconoscimento. Registra le voci solo con il consenso delle persone.")
         info.setWordWrap(True)
         lay.addWidget(info)
         self.tab_voci = QTableWidget(0, 2)
@@ -600,16 +605,20 @@ class Finestra(QMainWindow):
         self.tab_voci.setEditTriggers(QAbstractItemView.NoEditTriggers)
         lay.addWidget(self.tab_voci)
         bar = QHBoxLayout()
+        self.b_reg_voce = QPushButton("🎙 Registra voce…")
+        self.b_marca = QPushButton("🎧 Marca voci in un audio…")
         self.b_nuova = QPushButton("➕ Nuova voce da audio…")
         self.b_camp = QPushButton("Aggiungi campione…")
         b_ren = QPushButton("Rinomina…")
         b_del = QPushButton("Elimina")
-        for b in (self.b_nuova, self.b_camp, b_ren, b_del):
+        for b in (self.b_reg_voce, self.b_marca, self.b_nuova, self.b_camp, b_ren, b_del):
             bar.addWidget(b)
         bar.addStretch()
         lay.addLayout(bar)
         self.stato_voci = QLabel("")
         lay.addWidget(self.stato_voci)
+        self.b_reg_voce.clicked.connect(self.registra_voce)
+        self.b_marca.clicked.connect(lambda: self.marca_voci(None))
         self.b_nuova.clicked.connect(lambda: self.iscrivi_voce(None))
         self.b_camp.clicked.connect(lambda: self.iscrivi_voce(self._voce_selezionata()))
         b_ren.clicked.connect(self.rinomina_voce)
@@ -647,11 +656,59 @@ class Finestra(QMainWindow):
         f, _ = QFileDialog.getOpenFileName(self, f"Audio con la sola voce di {nome}", str(Path.home()), filtro)
         if not f:
             return
+        self._avvia_iscrizioni([(nome, f)])
+
+    def _pronto_per_voci(self):
+        if self.worker_voce:
+            QMessageBox.information(self, "Attendi", "Sto già elaborando una voce.")
+            return False
+        if not core.leggi_token():
+            QMessageBox.warning(self, "Token mancante", "Inserisci prima il token nelle Impostazioni.")
+            return False
+        return True
+
+    def registra_voce(self):
+        if not self._pronto_per_voci():
+            return
+        dlg = voci_strumenti.RegistraVoceDialog([n for n, _ in core.elenco_voci()], self._voce_selezionata(), self)
+        if dlg.exec() and dlg.risultato:
+            self._avvia_iscrizioni(dlg.risultato)
+
+    def marca_voci(self, file_audio=None):
+        if not self._pronto_per_voci():
+            return
+        dlg = voci_strumenti.MarcaVociDialog([n for n, _ in core.elenco_voci()], file_audio, self)
+        if dlg.exec() and dlg.risultato:
+            self.tabs.setCurrentWidget(self.tab_voci.parentWidget())
+            self._avvia_iscrizioni(dlg.risultato)
+
+    def _avvia_iscrizioni(self, coppie):
+        """Calcola le impronte una dopo l'altra: coppie = [(nome, file_audio)]."""
+        self._coda_voci = list(coppie)
+        self._fatte_voci, self._errori_voci = [], []
+        self._prossima_iscrizione()
+
+    def _prossima_iscrizione(self):
+        if not self._coda_voci:
+            self.b_nuova.setEnabled(True)
+            self.b_camp.setEnabled(True)
+            self.b_reg_voce.setEnabled(True)
+            self.b_marca.setEnabled(True)
+            self._aggiorna_voci()
+            msg = []
+            if self._fatte_voci:
+                msg.append("Impronte salvate: " + ", ".join(self._fatte_voci) + ".")
+            if self._errori_voci:
+                msg.append("Errori: " + "; ".join(self._errori_voci))
+            self.stato_voci.setText(" ".join(msg))
+            return
+        nome, f = self._coda_voci.pop(0)
         device = core.carica_impostazioni().get("device", "cpu")
         cmd = [sys.executable, str(Path(core.__file__).resolve()), "iscrivi", nome, f, device]
-        self.stato_voci.setText(f"Calcolo dell'impronta di {nome} in corso (1-2 minuti)…")
-        self.b_nuova.setEnabled(False)
-        self.b_camp.setEnabled(False)
+        resto = f" (poi altre {len(self._coda_voci)})" if self._coda_voci else ""
+        self.stato_voci.setText(f"Calcolo dell'impronta di {nome} in corso (1-2 minuti){resto}…")
+        for b in (self.b_nuova, self.b_camp, self.b_reg_voce, self.b_marca):
+            b.setEnabled(False)
         self._righe_voce = []
         filtro_voce = FiltroRumore()
         self.worker_voce = ProcessWorker(cmd, self)
@@ -662,14 +719,13 @@ class Finestra(QMainWindow):
 
     def _fine_iscrizione(self, codice, nome):
         self.worker_voce = None
-        self.b_nuova.setEnabled(True)
-        self.b_camp.setEnabled(True)
         self._aggiorna_voci()
         if codice == 0:
-            self.stato_voci.setText(f"Impronta di {nome} salvata.")
+            self._fatte_voci.append(nome)
         else:
-            err = next((r for r in reversed(self._righe_voce) if r.startswith("ERRORE")), "vedi registro nella scheda Coda")
-            self.stato_voci.setText(f"Errore per {nome}: {err}")
+            err = next((r for r in reversed(self._righe_voce) if r.startswith("ERRORE")), "vedi registro nella scheda Trascrittore")
+            self._errori_voci.append(f"{nome}: {err}")
+        self._prossima_iscrizione()
 
     def rinomina_voce(self):
         n = self._voce_selezionata()
