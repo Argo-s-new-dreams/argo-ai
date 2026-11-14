@@ -26,7 +26,7 @@ function Installa-Se-Manca($comando, $id) {
 }
 
 try {
-    Write-Host "=== Installazione Trascrittore ===" -ForegroundColor Green
+    Write-Host "=== Installazione Argo - Cassetta degli attrezzi AI ===" -ForegroundColor Green
     Write-Host "Cartella: $App"
 
     Passo 1 "Strumenti di base (FFmpeg e uv)"
@@ -59,7 +59,7 @@ try {
     }
 
     Passo 3 "WhisperX e interfaccia grafica (10-15 minuti la prima volta)"
-    uv pip install --python $py whisperx hf_xet PySide6 | Out-Host
+    uv pip install --python $py whisperx hf_xet PySide6 pypdf python-docx sounddevice | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Installazione dei pacchetti non riuscita (vedi messaggi sopra)." }
 
     Passo 4 "Copia dell'applicazione"
@@ -71,17 +71,22 @@ try {
     $ws = New-Object -ComObject WScript.Shell
     $dove = @([Environment]::GetFolderPath("Desktop"), [Environment]::GetFolderPath("Programs"))
     foreach ($cartella in $dove) {
-        $lnk = $ws.CreateShortcut((Join-Path $cartella "Trascrittore.lnk"))
+        $vecchio = Join-Path $cartella "Trascrittore.lnk"
+        if (Test-Path $vecchio) { Remove-Item $vecchio -Force }
+        $lnk = $ws.CreateShortcut((Join-Path $cartella "Argo AI.lnk"))
         $lnk.TargetPath = Join-Path $App "Scripts\pythonw.exe"
         $lnk.Arguments = '"' + (Join-Path $Dest "trascrittore.py") + '"'
         $lnk.WorkingDirectory = $Dest
         $lnk.IconLocation = Join-Path $Dest "icon.ico"
-        $lnk.Description = "Trascrizione riunioni con riconoscimento voci (locale)"
+        $lnk.Description = "Argo - Cassetta degli attrezzi AI (tutto in locale)"
         $lnk.Save()
     }
 
     Write-Host "`nINSTALLAZIONE COMPLETATA" -ForegroundColor Green
-    Write-Host "Apri 'Trascrittore' dal Desktop o dal menu Start."
+    Write-Host "Apri 'Argo AI' dal Desktop o dal menu Start."
+    if (-not (Get-Command ollama -ErrorAction SilentlyContinue)) {
+        Write-Host "NOTA: per Verbale, Documenti, Dettatura e Traduzione serve Ollama: https://ollama.com" -ForegroundColor Yellow
+    }
     Write-Host "Al primo avvio inserisci il token Hugging Face nelle Impostazioni."
 }
 catch {

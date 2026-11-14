@@ -1,4 +1,4 @@
-"""Trascrittore - interfaccia grafica per WhisperX con anagrafe voci e coda di trascrizioni.
+"""Argo · Cassetta degli attrezzi AI - trascrittore con anagrafe voci, verbale, documenti riservati, dettatura e traduzione.
 Tutto gira in locale: l'audio non lascia il computer.
 """
 import json
@@ -15,14 +15,16 @@ from PySide6.QtGui import QDesktopServices, QFont, QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
     QDoubleSpinBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView, QInputDialog,
-    QLabel, QLineEdit, QMainWindow, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton,
+    QLabel, QLineEdit, QMainWindow, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QScrollArea,
     QSpinBox, QSplitter, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import voci_core as core  # noqa: E402
+import argo_attrezzi as attrezzi  # noqa: E402
+import llm_locale  # noqa: E402
 
-VERSIONE = "20261114.1010"
+VERSIONE = "20261114.1500"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma", ".mp4", ".mov", ".mkv", ".webm"}
 MODELLI = [
     ("large-v3", "large-v3 - massima qualità (lento)"),
@@ -199,8 +201,8 @@ class Finestra(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(f"Trascrittore - versione {VERSIONE}")
-        self.resize(1050, 680)
+        self.setWindowTitle(f"Argo · Cassetta degli attrezzi AI - versione {VERSIONE}")
+        self.resize(1150, 720)
         self.setAcceptDrops(True)
         self.jobs = []
         self.worker = None          # trascrizione in corso
@@ -210,16 +212,27 @@ class Finestra(QMainWindow):
         self.t_inizio = 0
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(self._tab_coda(), "Coda trascrizioni")
+        self.tab_verbale = attrezzi.SchedaVerbale()
+        self.tabs.addTab(self._tab_coda(), "Trascrittore")
+        self.tabs.addTab(self.tab_verbale, "Verbale")
+        self.tabs.addTab(attrezzi.SchedaDocumenti(), "Documenti riservati")
+        self.tabs.addTab(attrezzi.SchedaDettatura(), "Dettatura")
+        self.tabs.addTab(attrezzi.SchedaTraduzione(), "Traduzione")
         self.tabs.addTab(self._tab_voci(), "Anagrafe voci")
-        self.tabs.addTab(self._tab_impostazioni(), "Impostazioni")
+        self.tab_imp = QScrollArea()
+        self.tab_imp.setWidgetResizable(True)
+        self.tab_imp.setWidget(self._tab_impostazioni())
+        self.tabs.addTab(self.tab_imp, "Impostazioni")
         self.setCentralWidget(self.tabs)
+        self.badge = QLabel()
+        self.statusBar().addPermanentWidget(self.badge)
+        self._aggiorna_badge()
         self.statusBar().showMessage("Pronto. Tutto viene elaborato in locale.")
 
         self._carica_coda()
         self._aggiorna_voci()
         if not core.leggi_token():
-            self.tabs.setCurrentIndex(2)
+            self.tabs.setCurrentWidget(self.tab_imp)
             QMessageBox.information(self, "Primo avvio",
                                     "Benvenuto! Inserisci il token Hugging Face nelle Impostazioni e premi «Verifica».")
 
@@ -253,10 +266,11 @@ class Finestra(QMainWindow):
         self.b_ris = QPushButton("Apri trascrizione")
         self.b_rev = QPushButton("Rivedi parlanti…")
         self.b_cart = QPushButton("Apri cartella")
+        self.b_verb = QPushButton("Crea verbale →")
         for b in (self.b_agg, self.b_rim, self.b_rip):
             bar.addWidget(b)
         bar.addStretch()
-        for b in (self.b_ris, self.b_rev, self.b_cart, self.b_avvia):
+        for b in (self.b_ris, self.b_rev, self.b_verb, self.b_cart, self.b_avvia):
             bar.addWidget(b)
         self.b_agg.clicked.connect(self.scegli_file)
         self.b_rim.clicked.connect(self.rimuovi_job)
@@ -265,6 +279,7 @@ class Finestra(QMainWindow):
         self.b_ris.clicked.connect(self.apri_risultato)
         self.b_rev.clicked.connect(self.rivedi_parlanti)
         self.b_cart.clicked.connect(self.apri_cartella)
+        self.b_verb.clicked.connect(self.crea_verbale)
 
         self.fase = QLabel("")
         self.log = QPlainTextEdit()
@@ -397,7 +412,7 @@ class Finestra(QMainWindow):
             return
         if not core.leggi_token():
             QMessageBox.warning(self, "Token mancante", "Inserisci prima il token Hugging Face nelle Impostazioni.")
-            self.tabs.setCurrentIndex(2)
+            self.tabs.setCurrentWidget(self.tab_imp)
             return
         if not any(j["stato"] == "In attesa" for j in self.jobs):
             QMessageBox.information(self, "Coda vuota", "Non ci sono file «In attesa». Aggiungi dei file o rimettili in coda.")
@@ -528,6 +543,25 @@ class Finestra(QMainWindow):
             j["txt"] = str(dlg.out)
             self._salva_coda()
             self._aggiorna_voci()
+
+    def crea_verbale(self):
+        j = self._job_selezionato()
+        if not j:
+            return
+        if not (j.get("txt") and Path(j["txt"]).exists()):
+            QMessageBox.information(self, "Non pronta", "Prima completa la trascrizione.")
+            return
+        self.tab_verbale.carica(j["txt"])
+        self.tabs.setCurrentWidget(self.tab_verbale)
+
+    def _aggiorna_badge(self):
+        url = core.carica_impostazioni().get("ollama_url", "")
+        if llm_locale.e_locale(url):
+            self.badge.setText("🔒 100% locale: audio e testi non lasciano questo computer")
+            self.badge.setStyleSheet("color: #1b7f3b; font-weight: bold;")
+        else:
+            self.badge.setText("⚠️ Il modello linguistico punta a un server esterno")
+            self.badge.setStyleSheet("color: #b45309; font-weight: bold;")
 
     def apri_cartella(self):
         j = self._job_selezionato()
@@ -704,6 +738,10 @@ class Finestra(QMainWindow):
         f3.addRow("", nota)
         lay.addWidget(g3)
 
+        self.pannello_ollama = attrezzi.PannelloOllama()
+        self.pannello_ollama.cambiato.connect(lambda: self._aggiorna_badge() if hasattr(self, "badge") else None)
+        lay.addWidget(self.pannello_ollama)
+
         riga2 = QHBoxLayout()
         b_salva = QPushButton("Salva impostazioni")
         b_salva.clicked.connect(self.salva_impostazioni)
@@ -753,7 +791,7 @@ class Finestra(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-    app.setApplicationName("Trascrittore")
+    app.setApplicationName("Argo AI")
     icona = Path(__file__).resolve().parent / "icon.png"
     if icona.exists():
         app.setWindowIcon(QIcon(str(icona)))
