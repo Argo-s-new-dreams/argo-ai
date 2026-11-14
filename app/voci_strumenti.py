@@ -15,13 +15,22 @@ import wave
 from pathlib import Path
 
 import numpy as np
-from PySide6.QtCore import QRectF, Qt, QTimer, Signal
+from PySide6.QtCore import QRectF, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import (
     QAbstractItemView, QCheckBox, QComboBox, QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel,
-    QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
+    QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QSplitter, QTableWidget, QTableWidgetItem, QVBoxLayout,
     QWidget,
 )
+
+try:  # anteprima video (Qt Multimedia, incluso in PySide6)
+    from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+    from PySide6.QtMultimediaWidgets import QVideoWidget
+    VIDEO_OK = True
+except Exception:  # pragma: no cover
+    VIDEO_OK = False
+
+VIDEO_EXT = {".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 
 import voci_core as core
 
@@ -432,14 +441,85 @@ class Lettore:
             self.inizio_t = self.posizione()
         self.partito = None
 
+    def sposta(self, t):
+        self.inizio_t = t
+
+    def chiudi(self):
+        self.ferma()
+
+
+class LettoreVideo:
+    """Riproduzione di audio e video con Qt Multimedia: posizione esatta e immagine sincronizzata."""
+
+    def __init__(self, video_widget, percorso, con_audio=True):
+        self.player = QMediaPlayer()
+        if con_audio:
+            self.uscita = QAudioOutput()
+            self.player.setAudioOutput(self.uscita)
+        self.player.setVideoOutput(video_widget)
+        self.fine_t = None
+        self.audio = None
+        self._in_attesa = None  # (posizione, suona_dopo) finché il file non è pronto
+        self.player.mediaStatusChanged.connect(self._stato)
+        self.player.setSource(QUrl.fromLocalFile(str(percorso)))
+
+    def _pronto(self):
+        return self.player.mediaStatus() in (QMediaPlayer.MediaStatus.LoadedMedia, QMediaPlayer.MediaStatus.BufferedMedia,
+                                             QMediaPlayer.MediaStatus.BufferingMedia, QMediaPlayer.MediaStatus.EndOfMedia)
+
+    def _stato(self, stato):
+        if self._in_attesa and self._pronto():
+            pos, play = self._in_attesa
+            self._in_attesa = None
+            self.player.setPosition(pos)
+            if play:
+                self.player.play()
+            else:
+                self.player.pause()  # mostra il fotogramma in quel punto
+
+    def in_riproduzione(self):
+        return self.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState
+
+    def posizione(self):
+        if self._in_attesa:
+            return self._in_attesa[0] / 1000.0
+        return self.player.position() / 1000.0
+
+    def suona(self, da, a=None):
+        self.fine_t = a
+        ms = int(max(da, 0) * 1000)
+        if not self._pronto():
+            self._in_attesa = (ms, True)
+            return
+        self.player.setPosition(ms)
+        self.player.play()
+
+    def ferma(self):
+        if self.in_riproduzione():
+            self.player.pause()
+
+    def sposta(self, t):
+        ms = int(max(t, 0) * 1000)
+        if not self._pronto():
+            self._in_attesa = (ms, False)
+            return
+        self.player.setPosition(ms)
+        if not self.in_riproduzione():
+            self.player.pause()
+
+    def chiudi(self):
+        self._in_attesa = None
+        self.player.stop()
+        self.player.setSource(QUrl())
+
 
 class MarcaVociDialog(QDialog):
     """Ascolta un audio, marca i tratti di ogni persona e crea le impronte. Al termine: self.risultato = [(nome, wav)]."""
 
     def __init__(self, nomi_noti, file_audio=None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Crea impronte vocali da un audio")
-        self.resize(1000, 680)
+        self.setWindowTitle("Crea impronte vocali da un audio o da un video")
+        self.resize(1000, 720)
         self.nomi_noti = list(nomi_noti)
         self.audio = None
         self.file = None
@@ -451,21 +531,28 @@ class MarcaVociDialog(QDialog):
         self.colori = {}
 
         lay = QVBoxLayout(self)
-        intro = QLabel("Ascolta l'audio, <b>trascina sulla forma d'onda</b> per selezionare un tratto in cui parla una "
+        intro = QLabel("Ascolta l'audio (o guarda il video della call), <b>trascina sulla forma d'onda</b> per selezionare un tratto in cui parla una "
                        "sola persona e assegnalo. Rotella = zoom, Maiusc+rotella = scorri, clic = vai lì. "
                        "Se l'audio è già stato trascritto, sotto vedi i parlanti trovati: clic su un tratto per selezionarlo.")
         intro.setWordWrap(True)
         lay.addWidget(intro)
 
         r1 = QHBoxLayout()
-        b_apri = QPushButton("Apri audio…")
+        b_apri = QPushButton("Apri audio o video…")
         self.l_file = QLabel("Nessun audio")
         r1.addWidget(b_apri)
         r1.addWidget(self.l_file, 1)
         lay.addLayout(r1)
 
         self.onda = FormaOnda()
-        lay.addWidget(self.onda, 2)
+        self.video = QVideoWidget() if VIDEO_OK else None
+        self.sp = QSplitter(Qt.Vertical)
+        if self.video is not None:
+            self.video.setMinimumHeight(180)
+            self.sp.addWidget(self.video)
+            self.video.setVisible(False)
+        self.sp.addWidget(self.onda)
+        lay.addWidget(self.sp, 3)
 
         r2 = QHBoxLayout()
         self.b_play = QPushButton("▶ Ascolta")
@@ -557,13 +644,14 @@ class MarcaVociDialog(QDialog):
 
     # --- caricamento
     def apri(self):
-        filtro = "Audio/video (*.wav *.mp3 *.m4a *.aac *.flac *.ogg *.opus *.wma *.mp4 *.mov *.mkv *.webm);;Tutti i file (*)"
-        f, _ = QFileDialog.getOpenFileName(self, "Audio da marcare", str(Path.home()), filtro)
+        filtro = ("Audio o video (*.wav *.mp3 *.m4a *.aac *.flac *.ogg *.opus *.wma *.mp4 *.mov *.mkv *.webm *.m4v *.avi *.wmv)"
+                  ";;Tutti i file (*)")
+        f, _ = QFileDialog.getOpenFileName(self, "Audio o video da marcare", str(Path.home()), filtro)
         if f:
             self.carica(f)
 
     def carica(self, f):
-        self.lettore.ferma()
+        self.lettore.chiudi()
         self.l_file.setText("Leggo l'audio…")
         self.repaint()
         try:
@@ -573,13 +661,24 @@ class MarcaVociDialog(QDialog):
             QMessageBox.warning(self, "Audio", str(e))
             return
         self.audio, self.file = audio, Path(f)
+        e_video = self.video is not None and self.file.suffix.lower() in VIDEO_EXT
+        if e_video:
+            self.lettore = LettoreVideo(self.video, self.file)
+            self.video.setVisible(True)
+            self.sp.setSizes([340, 220])
+            if self.height() < 860:
+                self.resize(self.width(), 860)
+        else:
+            self.lettore = Lettore()
+            if self.video is not None:
+                self.video.setVisible(False)
         self.lettore.audio = audio
-        self.lettore.inizio_t = 0.0
+        self.lettore.sposta(0.0)
         self.onda.imposta_audio(audio)
         self.segni.clear()
         self._carica_diarizzazione()
         self._aggiorna()
-        extra = f" · {len(self.diar)} parlanti dalla trascrizione" if self.diar else ""
+        extra = (" · video" if e_video else "") + (f" · {len(self.diar)} parlanti dalla trascrizione" if self.diar else "")
         self.l_file.setText(f"{self.file.name} · {mmss(len(audio) / SR)}{extra}")
 
     def _carica_diarizzazione(self):
@@ -642,7 +741,7 @@ class MarcaVociDialog(QDialog):
         t = min(max(t, 0.0), self.onda.durata)
         suonava = self.lettore.in_riproduzione()
         self.lettore.ferma()
-        self.lettore.inizio_t = t
+        self.lettore.sposta(t)
         if suonava:
             try:
                 self.lettore.suona(t)
@@ -779,7 +878,7 @@ class MarcaVociDialog(QDialog):
             QMessageBox.warning(self, "Consenso", "Le impronte vocali sono dati biometrici: serve il consenso "
                                 "esplicito delle persone. Spunta la casella per confermarlo.")
             return
-        self.lettore.ferma()
+        self.lettore.chiudi()
         out = []
         pausa = np.zeros(int(0.3 * SR), dtype=np.int16)
         for nome in durate:
@@ -794,11 +893,11 @@ class MarcaVociDialog(QDialog):
         self.accept()
 
     def reject(self):
-        self.lettore.ferma()
+        self.lettore.chiudi()
         self.timer.stop()
         super().reject()
 
     def closeEvent(self, e):
-        self.lettore.ferma()
+        self.lettore.chiudi()
         self.timer.stop()
         super().closeEvent(e)
