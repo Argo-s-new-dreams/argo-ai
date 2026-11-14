@@ -25,7 +25,7 @@ import argo_attrezzi as attrezzi  # noqa: E402
 import llm_locale  # noqa: E402
 import voci_strumenti  # noqa: E402
 
-VERSIONE = "20261114.1615"
+VERSIONE = "20261114.1830"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -36,6 +36,7 @@ MODELLI = [
 ]
 LINGUE = [("it", "Italiano"), ("en", "Inglese"), ("de", "Tedesco"), ("fr", "Francese"), ("es", "Spagnolo"), ("", "Rilevamento automatico")]
 FASI = {  # testo nel log -> (nome fase, inizio %, fine %)
+    "Ricalcolo dei parlanti": ("Ricalcolo parlanti", 5, 98),
     "Performing transcription": ("Trascrizione", 5, 60),
     "Performing alignment": ("Allineamento", 60, 80),
     "Performing diarization": ("Riconoscimento parlanti", 80, 98),
@@ -126,6 +127,9 @@ class RevisioneDialog(QDialog):
         else:
             self.mappa = {s: f"Parlante {i}" for i, s in enumerate(core.parlanti_senza_embedding(self.dati), 1)}
             self.migliori = {}
+        for s, n in (self.dati.get(core.NOMI_KEY) or {}).items():  # nomi già corretti in passato
+            if s in self.mappa:
+                self.mappa[s] = n
         esempi, durate = {}, {}
         for seg in self.dati.get("segments", []):
             s = seg.get("speaker")
@@ -139,7 +143,9 @@ class RevisioneDialog(QDialog):
 
         lay = QVBoxLayout(self)
         lay.addWidget(QLabel(
-            "Controlla i nomi. Puoi correggerli scrivendo o scegliendo dall'elenco.\n"
+            "Controlla i nomi: puoi correggerli scrivendo o scegliendo dall'elenco. I nomi restano salvati.\n"
+            "Due etichette sono la stessa persona? Dai loro lo stesso nome e verranno unite.\n"
+            "Mancano persone o ce ne sono troppe? Chiudi e cambia «Partecipanti» nella coda: Argo rifà solo i parlanti.\n"
             "Spunta «Memorizza» per salvare l'impronta di quella voce nell'anagrafe: "
             "le prossime volte verrà riconosciuta da sola."))
         self.tab = QTableWidget(len(self.mappa), 5)
@@ -189,6 +195,8 @@ class RevisioneDialog(QDialog):
                     return
                 core.salva_impronta(nome, self.emb[spk])
                 memorizzate.append(nome)
+        core.salva_nomi(self.file_json, nuova)
+        self.dati[core.NOMI_KEY] = nuova
         self.out = core.scrivi_trascrizione(self.dati, nuova, self.file_json)
         msg = f"Trascrizione aggiornata:\n{self.out}"
         if memorizzate:
@@ -266,7 +274,7 @@ class Finestra(QMainWindow):
         self.b_avvia = QPushButton("▶ Avvia coda")
         self.b_avvia.setStyleSheet("font-weight: bold;")
         self.b_ris = QPushButton("Apri trascrizione")
-        self.b_rev = QPushButton("Rivedi parlanti…")
+        self.b_rev = QPushButton("✏️ Nomi dei parlanti…")
         self.b_cart = QPushButton("Apri cartella")
         self.b_verb = QPushButton("Crea verbale →")
         self.b_word = QPushButton("Esporta in Word")
@@ -282,6 +290,8 @@ class Finestra(QMainWindow):
         self.b_avvia.clicked.connect(self.avvia_o_ferma)
         self.b_ris.clicked.connect(self.apri_risultato)
         self.b_rev.clicked.connect(self.rivedi_parlanti)
+        self.tab_coda.cellDoubleClicked.connect(
+            lambda r, c: self.rivedi_parlanti() if r < len(self.jobs) and self.jobs[r]["stato"] == "Completata" else None)
         self.b_cart.clicked.connect(self.apri_cartella)
         self.b_verb.clicked.connect(self.crea_verbale)
         self.b_word.clicked.connect(self.esporta_word)
@@ -341,7 +351,9 @@ class Finestra(QMainWindow):
             spin.setRange(0, 20)
             spin.setSpecialValueText("Auto")
             spin.setValue(j["parlanti"])
-            spin.setEnabled(j["stato"] in ("In attesa", "Errore", "Interrotta"))
+            spin.setEnabled(j["stato"] in ("In attesa", "Errore", "Interrotta", "Completata"))
+            spin.setToolTip("Numero di persone che parlano. Su una trascrizione completata, cambiarlo "
+                            "rifà solo la separazione dei parlanti.")
             spin.valueChanged.connect(lambda v, jid=j["id"]: self._set_parlanti(jid, v))
             t.setCellWidget(r, self.COL_PARL, spin)
             stato = j["stato"] + (f" - {j['nota']}" if j.get("nota") else "")
@@ -351,9 +363,27 @@ class Finestra(QMainWindow):
             t.setCellWidget(r, self.COL_AVANZ, pb)
 
     def _set_parlanti(self, jid, v):
-        for j in self.jobs:
-            if j["id"] == jid:
-                j["parlanti"] = v
+        j = next((x for x in self.jobs if x["id"] == jid), None)
+        if j is None:
+            return
+        if j["stato"] == "Completata" and j.get("json") and Path(j["json"]).exists():
+            n = "automatico" if v == 0 else str(v)
+            r = QMessageBox.question(
+                self, "Cambiare i partecipanti?",
+                f"Rifaccio solo la separazione dei parlanti di «{Path(j['file']).name}» con partecipanti: {n}.\n\n"
+                "Il testo trascritto resta lo stesso, ci vuole meno tempo di una trascrizione completa. "
+                "I nomi corretti a mano finora andranno riassegnati.",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            if r != QMessageBox.Yes:
+                self._ridisegna_coda()  # rimette il numero di prima
+                return
+            j.update(parlanti=v, stato="In attesa", progresso=0, nota="solo parlanti", solo_parlanti=True)
+            self._ridisegna_coda()
+            self._salva_coda()
+            if not self.in_esecuzione:
+                self.avvia_o_ferma()
+            return
+        j["parlanti"] = v
         self._salva_coda()
 
     def _riga_di(self, job):
@@ -370,7 +400,7 @@ class Finestra(QMainWindow):
             pb.setValue(int(job.get("progresso", 0)))
         spin = self.tab_coda.cellWidget(r, self.COL_PARL)
         if spin:
-            spin.setEnabled(job["stato"] in ("In attesa", "Errore", "Interrotta"))
+            spin.setEnabled(job["stato"] in ("In attesa", "Errore", "Interrotta", "Completata"))
 
     def _selezionati(self):
         righe = sorted({i.row() for i in self.tab_coda.selectedIndexes()})
@@ -384,9 +414,23 @@ class Finestra(QMainWindow):
         self._salva_coda()
 
     def rimetti_in_coda(self):
-        for j in self._selezionati():
+        sel = [j for j in self._selezionati() if j is not self.job_corrente]
+        solo = False
+        if any(j["stato"] == "Completata" and j.get("json") and Path(j["json"]).exists() for j in sel):
+            box = QMessageBox(self)
+            box.setWindowTitle("Rimetti in coda")
+            box.setText("Cosa vuoi rifare per le trascrizioni già completate?")
+            b_parl = box.addButton("Solo i parlanti", QMessageBox.AcceptRole)
+            b_tutto = box.addButton("Tutta la trascrizione", QMessageBox.DestructiveRole)
+            box.addButton("Annulla", QMessageBox.RejectRole)
+            box.exec()
+            if box.clickedButton() not in (b_parl, b_tutto):
+                return
+            solo = box.clickedButton() is b_parl
+        for j in sel:
             if j is not self.job_corrente:
-                j.update(stato="In attesa", progresso=0, nota="")
+                da_json = solo and j["stato"] == "Completata" and j.get("json") and Path(j["json"]).exists()
+                j.update(stato="In attesa", progresso=0, nota="solo parlanti" if da_json else "", solo_parlanti=bool(da_json))
         self._ridisegna_coda()
         self._salva_coda()
 
@@ -447,9 +491,15 @@ class Finestra(QMainWindow):
         self._aggiorna_riga(job)
         self._salva_coda()
         imp = core.carica_impostazioni()
-        cmd = core.comando_whisperx(job["file"], job["parlanti"], imp, core.leggi_token())
-        self.log.appendPlainText(f"\n=== {Path(job['file']).name} | modello {imp['model']} | "
-                                 f"partecipanti {job['parlanti'] or 'auto'} ===")
+        if job.get("solo_parlanti") and job.get("json") and Path(job["json"]).exists():
+            cmd = [sys.executable, str(Path(core.__file__).resolve()), "ridiarizza", job["json"], job["file"],
+                   str(job["parlanti"] or 0), imp.get("device", "cpu")]
+            self.log.appendPlainText(f"\n=== {Path(job['file']).name} | solo parlanti | "
+                                     f"partecipanti {job['parlanti'] or 'auto'} ===")
+        else:
+            cmd = core.comando_whisperx(job["file"], job["parlanti"], imp, core.leggi_token())
+            self.log.appendPlainText(f"\n=== {Path(job['file']).name} | modello {imp['model']} | "
+                                     f"partecipanti {job['parlanti'] or 'auto'} ===")
         self.t_inizio = time.time()
         self._log_job = []
         self.filtro = FiltroRumore()
@@ -496,6 +546,7 @@ class Finestra(QMainWindow):
             job.update(stato="Interrotta", nota="fermata dall'utente", progresso=0)
         else:
             fj = core.json_atteso(job["file"])
+            job.pop("solo_parlanti", None)
             if codice == 0 and fj.exists():
                 try:
                     out, mappa, _, _ = core.identifica(fj)
