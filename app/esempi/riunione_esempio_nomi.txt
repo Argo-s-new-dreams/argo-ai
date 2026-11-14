@@ -1,0 +1,27 @@
+[00:00:04] Luca: Buongiorno a tutti e grazie per essere qui. Questa è la riunione di avvio del progetto di assistente AI per l'ufficio commerciale di Rossi Meccanica (esempio fittizio per la demo). Obiettivo di oggi: perimetro, tempi e responsabili.
+
+[00:00:31] Giulia: Per noi la priorità è una sola: le offerte e i listini non devono uscire dall'azienda. Il consiglio di amministrazione è stato chiaro su questo punto.
+
+[00:00:52] Luca: Perfetto, allora proponiamo una prima fase completamente in locale, su un portatile dedicato, senza servizi cloud. Se i risultati convincono, valuteremo insieme un'estensione.
+
+[00:01:20] Marco: Lato tecnico ho preparato la stima: due settimane per l'installazione e l'indicizzazione dei documenti, una settimana di prove con i commerciali.
+
+[00:01:45] Giulia: Quindi partiremmo quando?
+
+[00:01:49] Marco: Se riceviamo i documenti entro venerdì 20 novembre, possiamo iniziare lunedì 23.
+
+[00:02:05] Giulia: I documenti ve li mando io entro venerdì. Saranno circa duecento file tra offerte, capitolati e condizioni di fornitura.
+
+[00:02:30] Sara: Io mi occupo della parte privacy. Serve un'informativa per i commerciali e vorrei vedere una valutazione d'impatto prima del collaudo.
+
+[00:02:52] Luca: D'accordo. La bozza della valutazione d'impatto la prepariamo noi e te la mandiamo entro il 4 dicembre.
+
+[00:03:15] Marco: Una domanda aperta: il portatile lo forniamo noi o usate un vostro computer?
+
+[00:03:22] Giulia: Su questo devo sentire il nostro responsabile IT, vi faccio sapere la prossima settimana.
+
+[00:03:40] Luca: Ricapitolando: decidiamo di partire con la fase in locale, Giulia invia i documenti entro venerdì 20, Marco avvia l'installazione lunedì 23, noi prepariamo la valutazione d'impatto entro il 4 dicembre. Resta aperta la questione del computer.
+
+[00:04:05] Sara: Aggiungerei una sessione di formazione per i commerciali prima delle prove.
+
+[00:04:12] Luca: Ottima idea, la organizzo io nella settimana del 30 novembre. Grazie a tutti, ci aggiorniamo.
