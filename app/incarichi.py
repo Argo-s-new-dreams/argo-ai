@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 import argo_attrezzi as attrezzi
 import esporta_word as word
 import llm_locale as llm
+import m365
 import tema
 import voci_core as core
 
@@ -133,10 +134,15 @@ class Passo(QFrame):
         self.dettaglio.setWordWrap(True)
         col.addWidget(self.titolo)
         col.addWidget(self.dettaglio)
+        self.extra = QVBoxLayout()
+        col.addLayout(self.extra)
+        self.azioni = QHBoxLayout()
+        self.azioni.setSpacing(6)
+        self.azioni.addStretch()
+        col.addLayout(self.azioni)
+        self.icona.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
         lay.addWidget(self.icona)
         lay.addLayout(col, 1)
-        self.azioni = QHBoxLayout()
-        lay.addLayout(self.azioni)
         self.imposta("attesa")
 
     def imposta(self, stato, dettaglio=None):
@@ -149,10 +155,12 @@ class Passo(QFrame):
             self.dettaglio.setText(dettaglio)
 
     def pulisci_azioni(self):
-        while self.azioni.count():
-            w = self.azioni.takeAt(0).widget()
-            if w:
-                w.deleteLater()
+        for l in (self.azioni, self.extra):
+            while l.count():
+                it = l.takeAt(0)
+                if it.widget():
+                    it.widget().deleteLater()
+        self.azioni.addStretch()
 
     def aggiungi_azione(self, testo, fn, primario=False):
         b = QPushButton(testo)
@@ -165,7 +173,7 @@ class Passo(QFrame):
 
 class SchedaIncarichi(QWidget):
     PASSI = ["Trascrizione con i parlanti", "Nomi dei parlanti", "Verbale", "Verbale in Word", "Mail di recap",
-             "Task dalle azioni"]
+             "Task dalle azioni", "Bozza in Outlook", "Task in Planner"]
 
     def __init__(self, finestra, parent=None):
         super().__init__(parent)
@@ -229,9 +237,19 @@ class SchedaIncarichi(QWidget):
         rp.addStretch()
         l1.addLayout(rp)
         l1.addWidget(self._sezione("MAIL DI RECAP"))
+        rd = QHBoxLayout()
         self.e_dest = QLineEdit()
-        self.e_dest.setPlaceholderText("Destinatari (facoltativo), es. Markus Huber e Anna Gasser")
-        l1.addWidget(self.e_dest)
+        self.e_dest.setPlaceholderText("Destinatari (facoltativo), es. Markus Huber <markus@azienda.it>")
+        self.b_cal = QPushButton("Dal calendario")
+        self.b_cal.setToolTip("Microsoft 365: prende titolo e partecipanti della riunione registrata")
+        self.b_cal.clicked.connect(self.dal_calendario)
+        rd.addWidget(self.e_dest, 1)
+        rd.addWidget(self.b_cal)
+        l1.addLayout(rd)
+        self.l_riunione = QLabel("")
+        self.l_riunione.setProperty("ruolo", "tenue")
+        self.l_riunione.setWordWrap(True)
+        l1.addWidget(self.l_riunione)
         rl = QHBoxLayout()
         self.c_lingua = QComboBox()
         for n, v in LINGUE_MAIL:
@@ -272,6 +290,7 @@ class SchedaIncarichi(QWidget):
         l2.addWidget(self.stato)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setWidget(mid)
         sp.addWidget(scroll)
 
@@ -314,6 +333,14 @@ class SchedaIncarichi(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._controlla_trascrizione)
+        self.persone = []
+        self.aggiorna_m365()
+
+    def aggiorna_m365(self):
+        acc = m365.account()
+        self.b_cal.setEnabled(bool(acc))
+        if not acc:
+            self.b_cal.setToolTip("Collega Microsoft 365 in Impostazioni per usarlo")
 
     def _sezione(self, testo):
         l = QLabel(testo)
@@ -335,6 +362,30 @@ class SchedaIncarichi(QWidget):
         for p in self.passi:
             p.imposta("attesa", "")
             p.pulisci_azioni()
+
+    def dal_calendario(self):
+        if not self.file:
+            QMessageBox.information(self, "Calendario", "Scegli prima la registrazione della call.")
+            return
+        from datetime import datetime
+        quando = datetime.fromtimestamp(self.file.stat().st_mtime).astimezone()
+        self.l_riunione.setText("Cerco nel calendario…")
+        lav = attrezzi.Lavoro(lambda _l: m365.riunione_vicina(quando), self)
+
+        def fatto(ev):
+            self._lav_cal = None
+            if not ev:
+                self.l_riunione.setText("Nessuna riunione trovata nel calendario vicino all'ora della registrazione.")
+                return
+            self.persone = ev["persone"]
+            self.e_dest.setText(", ".join(f"{p['nome']} <{p['email']}>" for p in ev["persone"]))
+            self.l_riunione.setText(f"Riunione: «{ev['oggetto']}» · {ev['inizio']} · {len(ev['persone'])} persone. "
+                                    "Togli dai destinatari chi non deve ricevere il recap.")
+
+        lav.sig_fine.connect(fatto)
+        lav.sig_errore.connect(lambda e: self.l_riunione.setText(f"Calendario non disponibile: {e}"))
+        self._lav_cal = lav
+        lav.start()
 
     def log(self, testo):
         self.stato.setText(testo)
@@ -535,7 +586,101 @@ class SchedaIncarichi(QWidget):
         if "f_task" not in esiti:
             return self._fine("Incarico fermato prima della fine.")
         self.ris.setCurrentWidget(self.t_mail)
-        self._fine(f"Incarico completato: {len(self.task)} task, mail di recap pronta. Rileggi prima di inviare.")
+        self.passo_outlook()
+
+    # 7-8. Microsoft 365 (facoltativo, sempre con conferma)
+    def passo_outlook(self):
+        p = self.passi[6]
+        if not m365.account():
+            p.imposta("saltato", "Microsoft 365 non collegato: copia la mail con «Copia mail».")
+            self.passi[7].imposta("saltato", "Microsoft 365 non collegato: copia i task con «Copia task».")
+            return self._fine(f"Incarico completato: {len(self.task)} task, mail di recap pronta. Rileggi prima di inviare.")
+        self.dest = m365.destinatari_da_testo(self.e_dest.text())
+        chi = ", ".join(d["email"] for d in self.dest) or "nessun destinatario (li aggiungi in Outlook)"
+        p.imposta("chiede", f"Creo una BOZZA (non la invio) per: {chi}. Prima puoi modificare la mail a destra.")
+        p.pulisci_azioni()
+        p.aggiungi_azione("Salta", lambda: (p.pulisci_azioni(), p.imposta("saltato", "Saltato."), self.passo_planner()))
+        p.aggiungi_azione("Crea bozza", self._crea_bozza, primario=True)
+        self.log("In attesa di conferma per la bozza in Outlook.")
+
+    def _crea_bozza(self):
+        p = self.passi[6]
+        p.pulisci_azioni()
+        p.imposta("corso", "Creo la bozza in Outlook…")
+        mail = self.t_mail.toPlainText()
+        lav = attrezzi.Lavoro(lambda _l: m365.crea_bozza(mail, self.dest), self)
+
+        def ok(r):
+            p.imposta("fatto", f"Bozza «{r['oggetto']}» nelle Bozze di Outlook.")
+            if r.get("link"):
+                p.aggiungi_azione("Apri", lambda: QDesktopServices.openUrl(QUrl(r["link"])))
+            self.log(f"Bozza creata in Outlook: {r['oggetto']}")
+            self.passo_planner()
+
+        lav.sig_fine.connect(ok)
+        lav.sig_errore.connect(lambda e: (p.imposta("errore", e), self.log(f"Outlook: {e}"), self.passo_planner()))
+        self._lav_m365 = lav
+        lav.start()
+
+    def passo_planner(self):
+        p = self.passi[7]
+        if not self.task:
+            p.imposta("saltato", "Nessun task da creare.")
+            return self._fine("Incarico completato.")
+        p.imposta("corso", "Leggo i tuoi piani di Planner…")
+        lav = attrezzi.Lavoro(lambda _l: m365.piani(), self)
+
+        def scelta(piani):
+            if not piani:
+                p.imposta("errore", "Nessun piano Planner trovato: creane uno in Planner o Teams.")
+                return self._fine("Incarico completato (senza Planner).")
+            self.c_piano = QComboBox()
+            self.c_piano.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+            self.c_piano.setMinimumContentsLength(14)
+            for pi in piani:
+                self.c_piano.addItem(pi["titolo"], pi["id"])
+            p.imposta("chiede", f"Creo {len(self.task)} task nel piano scelto, nel primo bucket. "
+                                "Assegno le persone riconosciute tra i partecipanti della riunione.")
+            p.pulisci_azioni()
+            p.extra.addWidget(self.c_piano)
+            p.aggiungi_azione("Salta", lambda: (p.pulisci_azioni(), p.imposta("saltato", "Saltato."),
+                                                self._fine("Incarico completato.")))
+            p.aggiungi_azione("Crea task", self._crea_task, primario=True)
+            self.log("In attesa di conferma per i task in Planner.")
+
+        lav.sig_fine.connect(scelta)
+        lav.sig_errore.connect(lambda e: (p.imposta("errore", e), self._fine("Incarico completato (senza Planner).")))
+        self._lav_m365 = lav
+        lav.start()
+
+    def _crea_task(self):
+        p = self.passi[7]
+        piano = self.c_piano.currentData()
+        nome_piano = self.c_piano.currentText()
+        p.pulisci_azioni()
+        p.imposta("corso", f"Creo i task in «{nome_piano}»…")
+        task, persone = list(self.task), list(self.persone) or m365.destinatari_da_testo(self.e_dest.text())
+
+        def fn(_l):
+            b = m365.bucket(piano)
+            if not b:
+                raise m365.ErroreM365("il piano non ha bucket")
+            utenti = m365.trova_utenti(persone)
+            return m365.crea_task(piano, b[0]["id"], task, utenti), b[0]["nome"]
+
+        lav = attrezzi.Lavoro(fn, self)
+
+        def ok(r):
+            creati, nome_bucket = r
+            assegnati = sum(1 for c in creati if c["assegnato"])
+            p.imposta("fatto", f"{len(creati)} task in «{nome_piano}» › {nome_bucket} · {assegnati} assegnati.")
+            self.log(f"Planner: {len(creati)} task creati in {nome_piano} ({assegnati} assegnati).")
+            self._fine(f"Incarico completato: bozza in Outlook e {len(creati)} task in Planner. Rileggi prima di inviare.")
+
+        lav.sig_fine.connect(ok)
+        lav.sig_errore.connect(lambda e: (p.imposta("errore", e), self._fine(f"Planner: {e}")))
+        self._lav_m365 = lav
+        lav.start()
 
     def copia_task(self):
         righe = []

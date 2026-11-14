@@ -4,3 +4,4 @@ PySide6
 pypdf
 python-docx
 sounddevice
+msal

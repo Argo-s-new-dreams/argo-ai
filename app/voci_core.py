@@ -32,7 +32,9 @@ DEFAULT_SETTINGS = {
     "modello_embed": "",
     "modello_dettatura": "large-v3-turbo",
     "controlla_aggiornamenti": True,
-    "tema": "scuro",  # scuro | chiaro | sistema  # all'avvio legge da GitHub solo il numero di versione
+    "tema": "scuro",  # scuro | chiaro | sistema
+    "m365_client_id": "",  # Microsoft 365, facoltativo
+    "m365_tenant_id": "",  # all'avvio legge da GitHub solo il numero di versione
 }
 
 

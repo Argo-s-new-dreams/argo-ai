@@ -2,6 +2,15 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261114.2000: Microsoft 365 negli Incarichi (facoltativo)
+- **Collegamento a Microsoft 365** in *Impostazioni*, con accesso tramite codice dispositivo (MSAL) e permessi delegati.
+- Negli Incarichi:
+  - **Dal calendario** compila titolo e partecipanti della riunione;
+  - **Bozza in Outlook**, sempre con conferma e mai inviata;
+  - **Task in Planner**, con scelta del piano, scadenze e assegnazione solo quando il responsabile è certo.
+- Il bollino in basso indica quando Microsoft 365 è collegato.
+- Nuova libreria `msal` in `requisiti.txt`: l'aggiornamento dall'app la installa se trova `uv`.
+
 ## 20261114.1945: nuova interfaccia «Studio» e Incarichi
 - **Nuova grafica:**
   - menu laterale a icone;

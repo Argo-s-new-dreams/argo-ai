@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261114.1945 · riferita all'app versione 20261114.1945*
+*Versione del manuale: 20261114.2000 · riferita all'app versione 20261114.2000*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -284,11 +284,24 @@ Gli **Incarichi** funzionano in stile *Cowork*: Argo esegue più attrezzi in fil
 ### Le regole di sicurezza
 
 - **Niente viene sovrascritto:** se un file esiste già, Argo crea `_2`, `_3`…
-- **Niente viene inviato:** la mail è una bozza da copiare. Il collegamento a Microsoft 365 (bozza in Outlook, task in Planner) arriverà in una versione successiva e sarà facoltativo.
+- **Niente viene inviato:** la mail resta una bozza. Senza Microsoft 365 la copi; con Microsoft 365 collegato finisce nelle **Bozze** di Outlook e la invii tu.
 - **Registro:** ogni incarico scrive `nome_incarico_registro.txt` con ora e passi eseguiti, utile per sapere cosa ha fatto l'AI e quando.
 - **■ Ferma l'incarico** interrompe in qualsiasi momento; i file già creati restano.
 
 Le ricette *Contratti → confronto* e *Riunione DE → verbale IT* sono indicate come «prossimamente».
+
+### Con Microsoft 365 collegato (facoltativo)
+
+Se colleghi il tuo account (vedi [§11.5](#115-microsoft-365-facoltativo)), l'incarico ha tre aiuti in più.
+
+- **Dal calendario:** il pulsante accanto ai destinatari cerca nel tuo calendario la riunione più vicina all'ora della registrazione. Inserisce titolo e partecipanti con le email; togli chi non deve ricevere il recap.
+- **Bozza in Outlook** (passo 7): Argo ti mostra a chi andrà la mail e **chiede conferma**. Con *Crea bozza* la trovi nelle **Bozze** di Outlook, con *Apri* per aprirla; non viene mai inviata da sola. Prima di confermare puoi modificare il testo nella scheda *Mail*.
+- **Task in Planner** (passo 8):
+  - scegli il piano dall'elenco dei tuoi piani; i task finiscono nel primo bucket, con la scadenza quando è chiara;
+  - un task viene **assegnato** solo se il responsabile corrisponde senza ambiguità a un partecipante della riunione; gli altri restano da assegnare;
+  - *Salta* lascia tutto com'è.
+
+Su Microsoft 365 vanno solo **la bozza e i task che confermi**; Argo legge il calendario. Audio, trascrizioni e documenti restano sul computer.
 
 ---
 
@@ -521,6 +534,21 @@ Se il modello "ragiona" ad alta voce (per esempio `qwen3`), Argo nasconde automa
 
 Per salvare tutto premi **Salva impostazioni**. **Apri cartella dati** apre la cartella descritta qui sotto.
 
+
+### 11.5 Microsoft 365 (facoltativo)
+
+Serve solo agli Incarichi, per calendario, bozze di Outlook e Planner.
+
+1. Un amministratore registra l'app in **Microsoft Entra ID** (una volta per organizzazione):
+   - *App registrations → New registration*, nome **Argo AI**, solo questa organizzazione;
+   - *Authentication → Mobile and desktop applications* con l'indirizzo `https://login.microsoftonline.com/common/oauth2/nativeclient`, e *Allow public client flows = Yes*;
+   - *API permissions → Microsoft Graph → Delegated*: `Calendars.Read`, `Mail.ReadWrite`, `Tasks.ReadWrite`, `User.ReadBasic.All`, `Group.Read.All`, poi *Grant admin consent*.
+2. In *Impostazioni → Microsoft 365* inserisci **Client ID** e **Tenant ID** dell'app e premi **Collega**.
+3. Si apre la pagina di accesso Microsoft: inserisci il **codice** mostrato da Argo (è già copiato negli appunti), accedi e accetta.
+4. Lo stato diventa *Collegato come …* e il bollino in basso diventa *Locale · Microsoft 365 collegato*.
+
+Il token di accesso resta in `whisperx-env/m365_token.bin`, leggibile solo dal tuo utente. **Scollega** lo cancella.
+
 ---
 
 ## 11bis. I documenti Word
@@ -648,6 +676,7 @@ Se un file va in **Errore**, il log in fondo alla scheda Trascrittore riporta il
 ## 16. Privacy, GDPR e AI Act
 
 - **Tutto locale.** Audio e documenti non lasciano il computer. La telemetria anonima di pyannote è disattivata dall'app. L'unica connessione che Argo fa da sé è il controllo degli aggiornamenti su GitHub, che legge solo numero di versione e novità e si può disattivare in *Impostazioni → Aggiornamenti*.
+- **Microsoft 365 è facoltativo:** se lo colleghi, Argo legge il calendario e scrive su Microsoft 365 solo la bozza della mail e i task che confermi, nel tuo tenant. Audio, trascrizioni e documenti non vengono inviati.
 - **Informa sempre** i partecipanti che la riunione viene registrata e trascritta.
 - **Le impronte vocali sono dati biometrici** (art. 9 GDPR). Registra le voci di altre persone solo con il loro consenso esplicito e cancellale quando non servono più (**Elimina** nell'Anagrafe).
 - **Documenti riservati:** l'indice contiene estratti testuali dei documenti. Proteggi il computer (cifratura del disco, account con password) come faresti con gli originali.
@@ -676,6 +705,9 @@ Sì, qualsiasi modello installato in Ollama. Modelli più grandi scrivono meglio
 
 **Posso usare le registrazioni video delle call (Teams, Zoom, Meet)?**
 Sì. Trascrittore, Marca voci, Dettatura e Traduzione accettano anche file video come `mp4`, `mov`, `mkv` e `webm`: Argo ne estrae l'audio. In *Marca voci* il video si vede anche, così riconosci chi parla dal riquadro della call.
+
+**Gli Incarichi inviano la mail al cliente?**
+No, mai. Senza Microsoft 365 ottieni il testo da copiare; con Microsoft 365 collegato la trovi nelle Bozze di Outlook e la invii tu.
 
 **Le trascrizioni restano anche se cancello la coda?**
 Sì: i file `.json` e `_nomi.txt` stanno accanto agli audio. Rimuovere una riga dalla coda non cancella nulla.
