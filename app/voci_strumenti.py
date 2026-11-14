@@ -32,6 +32,7 @@ except Exception:  # pragma: no cover
 
 VIDEO_EXT = {".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 
+import tema
 import voci_core as core
 
 SR = 16000
@@ -130,7 +131,7 @@ class RegistraVoceDialog(QDialog):
         lay.addWidget(self.cb_consenso)
         bar = QHBoxLayout()
         self.b_reg = QPushButton("● Registra")
-        self.b_reg.setStyleSheet("font-weight: bold;")
+        self.b_reg.setProperty("primario", True)
         self.b_ascolta = QPushButton("▶ Riascolta")
         self.b_ascolta.setEnabled(False)
         self.b_salva = QPushButton("Crea impronta")
@@ -315,7 +316,8 @@ class FormaOnda(QWidget):
     # --- disegno
     def paintEvent(self, _):
         p = QPainter(self)
-        p.fillRect(self.rect(), QColor("#f8fafc"))
+        tc = tema.colori()
+        p.fillRect(self.rect(), QColor(tc["pannello"]))
         h_onda = self._alto_onda()
         mezzo = h_onda / 2
         if self.durata > 0 and len(self.picchi):
@@ -329,7 +331,7 @@ class FormaOnda(QWidget):
                 c.setAlpha(110)
                 a, b = sorted(self.sel)
                 p.fillRect(QRectF(self.x_da_t(a), 0, max(self.x_da_t(b) - self.x_da_t(a), 1), h_onda), c)
-            p.setPen(QPen(QColor("#334155")))
+            p.setPen(QPen(QColor(tc["tenue"])))
             w = self.width()
             for x in range(w):
                 i0 = int(self.t_da_x(x) * SR / BLOCCO)
@@ -357,9 +359,9 @@ class FormaOnda(QWidget):
             p.setPen(QPen(QColor("#ef4444"), 2))
             p.drawLine(int(px), 0, int(px), self.height())
         else:
-            p.setPen(QColor("#64748b"))
+            p.setPen(QColor(tc["tenue"]))
             p.drawText(self.rect(), Qt.AlignCenter, "Apri un audio per vedere la forma d'onda")
-        p.setPen(QColor("#64748b"))
+        p.setPen(QColor(tc["tenue"]))
         f = QFont(p.font())
         f.setPointSize(max(f.pointSize() - 2, 7))
         p.setFont(f)
@@ -580,7 +582,7 @@ class MarcaVociDialog(QDialog):
         self.c_persona.setMinimumWidth(200)
         r3.addWidget(self.c_persona)
         b_ass = QPushButton("✚ Assegna selezione")
-        b_ass.setStyleSheet("font-weight: bold;")
+        b_ass.setProperty("primario", True)
         r3.addWidget(b_ass)
         r3.addSpacing(20)
         self.l_diar = QLabel("Parlante rilevato:")
@@ -614,7 +616,7 @@ class MarcaVociDialog(QDialog):
         r5.addStretch()
         b_ann = QPushButton("Annulla")
         self.b_crea = QPushButton("Crea impronte")
-        self.b_crea.setStyleSheet("font-weight: bold;")
+        self.b_crea.setProperty("primario", True)
         r5.addWidget(b_ann)
         r5.addWidget(self.b_crea)
         lay.addLayout(r5)

@@ -11,7 +11,7 @@ import uuid
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QThread, QUrl, Signal
-from PySide6.QtGui import QDesktopServices, QFont, QIcon, QKeySequence, QShortcut
+from PySide6.QtGui import QColor, QDesktopServices, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
     QDoubleSpinBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView, QInputDialog,
@@ -25,8 +25,10 @@ import argo_attrezzi as attrezzi  # noqa: E402
 import llm_locale  # noqa: E402
 import voci_strumenti  # noqa: E402
 import aggiornamenti  # noqa: E402
+import tema  # noqa: E402
+import dettaglio  # noqa: E402
 
-VERSIONE = "20261114.1930"
+VERSIONE = "20261114.1945"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -242,7 +244,7 @@ class Finestra(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(f"Argo · Cassetta degli attrezzi AI - versione {VERSIONE}")
-        self.resize(1150, 720)
+        self.resize(1280, 800)
         self.setAcceptDrops(True)
         self.jobs = []
         self.worker = None          # trascrizione in corso
@@ -253,17 +255,38 @@ class Finestra(QMainWindow):
 
         self.tabs = QTabWidget()
         self.tab_verbale = attrezzi.SchedaVerbale()
+        import incarichi
+        self.tab_incarichi = incarichi.SchedaIncarichi(self)
+        self.tabs.addTab(self.tab_incarichi, "Incarichi")
         self.tabs.addTab(self._tab_coda(), "Trascrittore")
-        self.tabs.addTab(self.tab_verbale, "Verbale")
-        self.tabs.addTab(attrezzi.SchedaDocumenti(), "Documenti riservati")
-        self.tabs.addTab(attrezzi.SchedaDettatura(), "Dettatura")
-        self.tabs.addTab(attrezzi.SchedaTraduzione(), "Traduzione")
-        self.tabs.addTab(self._tab_voci(), "Anagrafe voci")
+        self.tabs.addTab(self._pagina(self.tab_verbale, "Verbale", "Dalla trascrizione al verbale, in locale"), "Verbale")
+        self.tabs.addTab(self._pagina(attrezzi.SchedaDocumenti(), "Documenti riservati",
+                                      "Domande su contratti e capitolati, con le fonti"), "Documenti riservati")
+        self.tabs.addTab(self._pagina(attrezzi.SchedaDettatura(), "Dettatura", "Parli, Argo scrive"), "Dettatura")
+        self.tabs.addTab(self._pagina(attrezzi.SchedaTraduzione(), "Traduzione", "IT · EN · DE con glossario"), "Traduzione")
+        self.pag_voci = self._pagina(self._tab_voci(), "Anagrafe voci", "Impronte vocali, solo con il consenso delle persone")
+        self.tabs.addTab(self.pag_voci, "Anagrafe voci")
         self.tab_imp = QScrollArea()
         self.tab_imp.setWidgetResizable(True)
-        self.tab_imp.setWidget(self._tab_impostazioni())
+        self.tab_imp.setWidget(self._pagina(self._tab_impostazioni(), "Impostazioni", f"Argo versione {VERSIONE}"))
         self.tabs.addTab(self.tab_imp, "Impostazioni")
-        self.setCentralWidget(self.tabs)
+        self.tabs.tabBar().hide()
+        self.nav = tema.NavLaterale([
+            ("incarichi", "Incarichi", "Incarichi"), ("trascrittore", "Trascrittore", "Trascrivi"),
+            ("verbale", "Verbale", "Verbale"), ("documenti", "Documenti riservati", "Documenti"),
+            ("dettatura", "Dettatura", "Dettatura"), ("traduzione", "Traduzione", "Traduci"),
+            ("voci", "Anagrafe voci", "Voci"), ("impostazioni", "Impostazioni", "Impostaz.")])
+        self.nav.scelto.connect(self.tabs.setCurrentIndex)
+        self.tabs.currentChanged.connect(self.nav.seleziona)
+        centro = QWidget()
+        cl = QHBoxLayout(centro)
+        cl.setContentsMargins(0, 0, 0, 0)
+        cl.setSpacing(0)
+        cl.addWidget(self.nav)
+        cl.addWidget(self.tabs, 1)
+        self.setCentralWidget(centro)
+        self.tabs.setCurrentIndex(1)
+        self.nav.seleziona(1)
         self.badge = QLabel()
         self.statusBar().addPermanentWidget(self.badge)
         self._aggiorna_badge()
@@ -276,23 +299,64 @@ class Finestra(QMainWindow):
             QMessageBox.information(self, "Primo avvio",
                                     "Benvenuto! Inserisci il token Hugging Face nelle Impostazioni e premi «Verifica».")
 
+    def _pagina(self, contenuto, titolo, sottotitolo=""):
+        w = QWidget()
+        w.setObjectName("pagina")
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(20, 16, 20, 12)
+        lay.setSpacing(10)
+        tl = QLabel(titolo)
+        tl.setProperty("ruolo", "titolo")
+        lay.addWidget(tl)
+        if sottotitolo:
+            sl = QLabel(sottotitolo)
+            sl.setProperty("ruolo", "tenue")
+            lay.addWidget(sl)
+        if contenuto.layout():
+            contenuto.layout().setContentsMargins(0, 0, 0, 0)
+        lay.addWidget(contenuto, 1)
+        self._pagine = getattr(self, "_pagine", {})
+        self._pagine[id(contenuto)] = w
+        return w
+
+    def vai_a(self, contenuto):
+        self.tabs.setCurrentWidget(self._pagine.get(id(contenuto), contenuto))
+
     # ------------------------------------------------------------ tab coda
     def _tab_coda(self):
         w = QWidget()
-        lay = QVBoxLayout(w)
-        info = QLabel("Trascina qui i file audio, oppure usa «Aggiungi file». "
-                      "Imposta il numero di partecipanti (0 = automatico) e avvia la coda.")
-        info.setWordWrap(True)
-        lay.addWidget(info)
+        w.setObjectName("pagina")
+        esterno = QHBoxLayout(w)
+        esterno.setContentsMargins(0, 0, 0, 0)
+        sinistra = QWidget()
+        lay = QVBoxLayout(sinistra)
+        lay.setContentsMargins(20, 16, 12, 12)
+        testa = QHBoxLayout()
+        tit = QLabel("Trascrittore")
+        tit.setProperty("ruolo", "titolo")
+        sotto = QLabel("Trascina qui audio o video · nulla esce da questo computer")
+        sotto.setProperty("ruolo", "tenue")
+        col = QVBoxLayout()
+        col.setSpacing(2)
+        col.addWidget(tit)
+        col.addWidget(sotto)
+        testa.addLayout(col)
+        testa.addStretch()
+        lay.addLayout(testa)
 
         self.tab_coda = QTableWidget(0, 4)
         self.tab_coda.setHorizontalHeaderLabels(["File", "Partecipanti", "Stato", "Avanzamento"])
         h = self.tab_coda.horizontalHeader()
-        h.setSectionResizeMode(self.COL_FILE, QHeaderView.Interactive)
-        h.setSectionResizeMode(self.COL_STATO, QHeaderView.Stretch)
-        self.tab_coda.setColumnWidth(self.COL_FILE, 320)
-        self.tab_coda.setColumnWidth(self.COL_PARL, 95)
-        self.tab_coda.setColumnWidth(self.COL_AVANZ, 180)
+        h.setSectionResizeMode(self.COL_FILE, QHeaderView.Stretch)
+        h.setSectionResizeMode(self.COL_STATO, QHeaderView.Interactive)
+        self.tab_coda.setColumnWidth(self.COL_PARL, 92)
+        self.tab_coda.setColumnWidth(self.COL_STATO, 170)
+        self.tab_coda.setColumnWidth(self.COL_AVANZ, 110)
+        self.tab_coda.verticalHeader().setVisible(False)
+        self.tab_coda.setShowGrid(False)
+        self.tab_coda.verticalHeader().setDefaultSectionSize(40)
+        self.tab_coda.setWordWrap(False)
+        self.tab_coda.itemSelectionChanged.connect(self._aggiorna_dettaglio)
         self.tab_coda.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tab_coda.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tab_coda.customContextMenuRequested.connect(self._menu_coda)
@@ -302,11 +366,11 @@ class Finestra(QMainWindow):
         self.tab_coda.doubleClicked.connect(lambda _: self.apri_risultato())
 
         bar = QHBoxLayout()
-        self.b_agg = QPushButton("➕ Aggiungi file…")
+        self.b_agg = QPushButton("+ Aggiungi file…")
         self.b_rim = QPushButton("Rimuovi")
         self.b_rip = QPushButton("Rimetti in coda")
         self.b_avvia = QPushButton("▶ Avvia coda")
-        self.b_avvia.setStyleSheet("font-weight: bold;")
+        self.b_avvia.setProperty("primario", True)
         self.b_ris = QPushButton("Apri trascrizione")
         self.b_rev = QPushButton("✏️ Nomi dei parlanti…")
         self.b_cart = QPushButton("Apri cartella")
@@ -316,8 +380,13 @@ class Finestra(QMainWindow):
         for b in (self.b_agg, self.b_rim, self.b_rip):
             bar.addWidget(b)
         bar.addStretch()
-        for b in (self.b_ris, self.b_rev, self.b_marca_job, self.b_word, self.b_verb, self.b_cart, self.b_avvia):
-            bar.addWidget(b)
+        bar.addWidget(self.b_avvia)
+        testa.addWidget(self.b_agg)
+        testa.addWidget(self.b_avvia)
+        bar.removeWidget(self.b_agg)
+        bar.removeWidget(self.b_avvia)
+        for b in (self.b_ris, self.b_rev, self.b_marca_job, self.b_word, self.b_verb):
+            b.setVisible(False)  # le azioni stanno nel pannello di dettaglio e nel menu col tasto destro
         self.b_agg.clicked.connect(self.scegli_file)
         self.b_rim.clicked.connect(self.rimuovi_job)
         self.b_rip.clicked.connect(self.rimetti_in_coda)
@@ -336,14 +405,35 @@ class Finestra(QMainWindow):
         self.log.setReadOnly(True)
         self.log.setMaximumBlockCount(3000)
         self.log.setFont(QFont("Consolas" if os.name == "nt" else "Menlo", 9))
+        self.fase.setProperty("ruolo", "tenue")
         split = QSplitter(Qt.Vertical)
         split.addWidget(self.tab_coda)
         split.addWidget(self.log)
-        split.setSizes([400, 160])
-        lay.addLayout(bar)
-        lay.addWidget(split)
+        split.setSizes([420, 120])
+        lay.addWidget(split, 1)
         lay.addWidget(self.fase)
+        lay.addLayout(bar)
+        self.b_cart.setParent(sinistra)
+        bar.insertWidget(3, self.b_cart)
+
+        self.dettaglio = dettaglio.DettaglioTrascrizione()
+        self.dettaglio.nomi.connect(self.rivedi_parlanti)
+        self.dettaglio.marca.connect(lambda: (lambda j: j and self.marca_voci(j["file"]))(self._job_selezionato()))
+        self.dettaglio.word.connect(self.esporta_word)
+        self.dettaglio.verbale.connect(self.crea_verbale)
+        self.dettaglio.apri.connect(self.apri_risultato)
+        sp = QSplitter(Qt.Horizontal)
+        sp.addWidget(sinistra)
+        sp.addWidget(self.dettaglio)
+        sp.setSizes([560, 620])
+        esterno.addWidget(sp)
         return w
+
+    def _aggiorna_dettaglio(self):
+        if not hasattr(self, "dettaglio"):
+            return
+        sel = self._selezionati()
+        self.dettaglio.mostra(sel[0] if sel else None)
 
     def dragEnterEvent(self, e):
         if e.mimeData().hasUrls():
@@ -391,10 +481,26 @@ class Finestra(QMainWindow):
             spin.valueChanged.connect(lambda v, jid=j["id"]: self._set_parlanti(jid, v))
             t.setCellWidget(r, self.COL_PARL, spin)
             stato = j["stato"] + (f" - {j['nota']}" if j.get("nota") else "")
-            t.setItem(r, self.COL_STATO, QTableWidgetItem(stato))
+            t.setItem(r, self.COL_STATO, self._item_stato(j["stato"], stato))
+            box = QWidget()
+            bl = QVBoxLayout(box)
+            bl.setContentsMargins(8, 0, 10, 0)
             pb = QProgressBar()
+            pb.setFixedHeight(8)
+            pb.setTextVisible(False)
             pb.setValue(int(j.get("progresso", 0)))
-            t.setCellWidget(r, self.COL_AVANZ, pb)
+            pb.setVisible(j["stato"] == "In corso")
+            bl.addWidget(pb)
+            box.pb = pb
+            t.setCellWidget(r, self.COL_AVANZ, box)
+
+    def _item_stato(self, stato, testo):
+        c = tema.colori()
+        it = QTableWidgetItem(("●  " if stato in ("In corso", "Completata", "Errore", "Interrotta") else "○  ") + testo)
+        it.setToolTip(testo)
+        colore = {"Completata": c["ok"], "In corso": c["accento"], "Errore": c["err"], "Interrotta": c["warn"]}.get(stato, c["tenue"])
+        it.setForeground(QColor(colore))
+        return it
 
     def _set_parlanti(self, jid, v):
         j = next((x for x in self.jobs if x["id"] == jid), None)
@@ -428,10 +534,12 @@ class Finestra(QMainWindow):
         if r < 0:
             return
         stato = job["stato"] + (f" - {job['nota']}" if job.get("nota") else "")
-        self.tab_coda.setItem(r, self.COL_STATO, QTableWidgetItem(stato))
-        pb = self.tab_coda.cellWidget(r, self.COL_AVANZ)
+        self.tab_coda.setItem(r, self.COL_STATO, self._item_stato(job["stato"], stato))
+        box = self.tab_coda.cellWidget(r, self.COL_AVANZ)
+        pb = getattr(box, "pb", None)
         if pb:
             pb.setValue(int(job.get("progresso", 0)))
+            pb.setVisible(job["stato"] == "In corso")
         spin = self.tab_coda.cellWidget(r, self.COL_PARL)
         if spin:
             spin.setEnabled(job["stato"] in ("In attesa", "Errore", "Interrotta", "Completata"))
@@ -632,6 +740,7 @@ class Finestra(QMainWindow):
             else:
                 job.update(stato="Errore", nota=self._spiega_errore(), progresso=0)
         self.log.appendPlainText(f"--- {job['stato']}: {job.get('nota', '')}")
+        self._aggiorna_dettaglio()
         self._aggiorna_riga(job)
         self._salva_coda()
         self._prossimo()
@@ -674,6 +783,20 @@ class Finestra(QMainWindow):
             j["txt"] = str(dlg.out)
             self._salva_coda()
             self._aggiorna_voci()
+            self._aggiorna_dettaglio()
+
+    def rivedi_json(self, file_json):
+        """Usato dagli Incarichi: apre la revisione dei nomi su una trascrizione qualsiasi."""
+        dlg = RevisioneDialog(str(file_json), self)
+        if dlg.exec():
+            for j in self.jobs:
+                if j.get("json") and Path(j["json"]) == Path(file_json):
+                    j["txt"] = str(dlg.out)
+            self._salva_coda()
+            self._aggiorna_voci()
+            self._aggiorna_dettaglio()
+            return True
+        return False
 
     def crea_verbale(self):
         j = self._job_selezionato()
@@ -683,7 +806,7 @@ class Finestra(QMainWindow):
             QMessageBox.information(self, "Non pronta", "Prima completa la trascrizione.")
             return
         self.tab_verbale.carica(j["txt"])
-        self.tabs.setCurrentWidget(self.tab_verbale)
+        self.vai_a(self.tab_verbale)
 
     def esporta_word(self):
         j = self._job_selezionato()
@@ -702,10 +825,10 @@ class Finestra(QMainWindow):
         url = core.carica_impostazioni().get("ollama_url", "")
         if llm_locale.e_locale(url):
             self.badge.setText("🔒 100% locale: audio e testi non lasciano questo computer")
-            self.badge.setStyleSheet("color: #1b7f3b; font-weight: bold;")
+            self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
         else:
             self.badge.setText("⚠️ Il modello linguistico punta a un server esterno")
-            self.badge.setStyleSheet("color: #b45309; font-weight: bold;")
+            self.badge.setStyleSheet(f"color: {tema.colori()['warn']}; font-weight: 600; padding-right: 8px;")
 
     def apri_cartella(self):
         j = self._job_selezionato()
@@ -805,7 +928,7 @@ class Finestra(QMainWindow):
             return
         dlg = voci_strumenti.MarcaVociDialog([n for n, _ in core.elenco_voci()], file_audio, self)
         if dlg.exec() and dlg.risultato:
-            self.tabs.setCurrentWidget(self.tab_voci.parentWidget())
+            self.tabs.setCurrentWidget(self.pag_voci)
             self._avvia_iscrizioni(dlg.risultato)
 
     def _avvia_iscrizioni(self, coppie):
@@ -939,6 +1062,18 @@ class Finestra(QMainWindow):
         self.pannello_ollama.cambiato.connect(lambda: self._aggiorna_badge() if hasattr(self, "badge") else None)
         lay.addWidget(self.pannello_ollama)
 
+        g5 = QGroupBox("Aspetto")
+        f5 = QHBoxLayout(g5)
+        f5.addWidget(QLabel("Tema:"))
+        self.c_tema = QComboBox()
+        for etichetta, val in (("Scuro", "scuro"), ("Chiaro", "chiaro"), ("Come il sistema", "sistema")):
+            self.c_tema.addItem(etichetta, val)
+        self.c_tema.setCurrentIndex(max(0, self.c_tema.findData(imp.get("tema", "scuro"))))
+        self.c_tema.currentIndexChanged.connect(lambda _: self.cambia_tema(self.c_tema.currentData()))
+        f5.addWidget(self.c_tema)
+        f5.addStretch()
+        lay.addWidget(g5)
+
         g4 = QGroupBox(f"Aggiornamenti · versione installata {VERSIONE}")
         f4 = QVBoxLayout(g4)
         self.cb_agg = QCheckBox("Controlla all'avvio se su GitHub c'è una versione nuova")
@@ -973,6 +1108,16 @@ class Finestra(QMainWindow):
         lay.addStretch()
         lay.addWidget(QLabel(f"Dati in: {core.APP_HOME}  ·  L'audio non lascia mai questo computer."))
         return w
+
+    def cambia_tema(self, nome):
+        imp = core.carica_impostazioni()
+        imp["tema"] = nome
+        core.salva_impostazioni(imp)
+        tema.applica(QApplication.instance(), nome)
+        self.nav.ricolora()
+        self._aggiorna_badge()
+        self._ridisegna_coda()
+        self._aggiorna_dettaglio()
 
     # ------------------------------------------------------------ aggiornamenti
     def _salva_pref_agg(self, on):
@@ -1024,7 +1169,7 @@ class Finestra(QMainWindow):
         lay.addWidget(box, 1)
         bar = QHBoxLayout()
         b_ora = QPushButton("Aggiorna ora")
-        b_ora.setStyleSheet("font-weight: bold;")
+        b_ora.setProperty("primario", True)
         b_dopo = QPushButton("Più tardi")
         b_gh = QPushButton("Apri GitHub")
         bar.addWidget(b_gh)
@@ -1111,6 +1256,7 @@ class Finestra(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Argo AI")
+    tema.applica(app, core.carica_impostazioni().get("tema", "scuro"))
     icona = Path(__file__).resolve().parent / "icon.png"
     if icona.exists():
         app.setWindowIcon(QIcon(str(icona)))

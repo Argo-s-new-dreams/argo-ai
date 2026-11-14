@@ -2,6 +2,19 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261114.1945: nuova interfaccia «Studio» e Incarichi
+- **Nuova grafica:**
+  - menu laterale a icone;
+  - tema scuro predefinito, oppure chiaro o come il sistema, da *Impostazioni → Aspetto*;
+  - titoli di pagina, pulsanti principali evidenziati, stati della coda colorati.
+- **Trascrittore:** pannello di dettaglio con le **corsie colorate dei parlanti** e la trascrizione con i nomi colorati; azioni a portata di clic.
+- **Incarichi**, in stile Cowork, con la ricetta **Call → recap + task**:
+  - trascrizione, conferma dei nomi, verbale, Word, mail di recap e task;
+  - i risultati sono file nuovi nella cartella della call, con un registro dei passi;
+  - nulla viene sovrascritto o inviato.
+- Revisione dei nomi richiamabile anche dagli Incarichi.
+- Nuovi screenshot nel README e nel manuale.
+
 ## 20261114.1930: coda più affidabile
 - Corretto: dopo **Ferma coda** alcune righe *Interrotta* restavano bloccate, senza poterle rimuovere né rimettere in coda.
 - **Ferma** chiude anche i processi figli di WhisperX; se dopo 3 secondi sono ancora attivi, li chiude d'autorità.
