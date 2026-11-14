@@ -64,6 +64,17 @@ Gli installer non sono firmati digitalmente: per questo Windows e macOS mostrano
 - I dati stanno in `whisperx-env` nella cartella utente: `voci/` (impronte), `.hf_token`, impostazioni e coda. Le trascrizioni vengono salvate accanto ai file audio.
 - **Le impronte vocali sono dati biometrici** (art. 9 GDPR): registra e memorizza le voci altrui solo con il consenso esplicito delle persone interessate e informa sempre i partecipanti che la riunione viene registrata.
 
+### AI Act
+
+Riconoscere una persona confrontando la sua voce con un'anagrafe di impronte è **identificazione biometrica** ai sensi del Regolamento (UE) 2024/1689 (art. 3, punto 35).
+
+- **Uso personale e non professionale:** gli obblighi del regolamento per chi usa il sistema non si applicano (art. 2, par. 10).
+- **Uso professionale** (riunioni di lavoro, clienti, colleghi): il riconoscimento dei partecipanti può rientrare tra i sistemi di identificazione biometrica remota ad alto rischio (Allegato III, punto 1(a)), i cui obblighi si applicano dal 2 dicembre 2027 dopo l'Omnibus digitale. Valutalo con il tuo consulente prima di usarlo in azienda.
+- **Funzioni da non aggiungere:** l'art. 5 vieta il riconoscimento delle emozioni sul luogo di lavoro e la categorizzazione biometrica su caratteristiche sensibili.
+- La sola trascrizione con parlanti anonimi ("Parlante 1", "Parlante 2"), senza anagrafe, è l'uso meno delicato.
+
+Queste note sono informative e non costituiscono consulenza legale.
+
 ## Struttura
 
 | Percorso | Contenuto |
@@ -91,4 +102,4 @@ Codice rilasciato con licenza [MIT](LICENSE). Le dipendenze e i modelli hanno le
 2. Run `Installa-Trascrittore.bat` (Windows) or `Installa-Trascrittore.command` (macOS, right-click → Open).
 3. Open the app, paste the token in *Impostazioni* (Settings), enroll voices, queue your files.
 
-The UI is in Italian. Voiceprints are biometric data: enroll other people's voices only with their explicit consent. Personal project, provided as is, MIT licensed.
+The UI is in Italian. Voiceprints are biometric data: enroll other people's voices only with their explicit consent. Under the EU AI Act, recognising people from their voice against a stored registry is biometric identification: personal non-professional use is outside the deployer obligations, while professional use may fall under the high-risk category (Annex III, point 1(a)), applicable from 2 December 2027. Personal project, provided as is, MIT licensed; not legal advice.
