@@ -31,7 +31,8 @@ DEFAULT_SETTINGS = {
     "modello_chat": "",
     "modello_embed": "",
     "modello_dettatura": "large-v3-turbo",
-    "controlla_aggiornamenti": True,  # all'avvio legge da GitHub solo il numero di versione
+    "controlla_aggiornamenti": True,
+    "tema": "scuro",  # scuro | chiaro | sistema  # all'avvio legge da GitHub solo il numero di versione
 }
 
 
@@ -245,9 +246,9 @@ def scrivi_trascrizione(dati, mappa, file_json):
     return out
 
 
-def identifica(file_json, soglia=None):
+def mappa_nomi(dati, soglia=None):
+    """Chi è chi in una trascrizione (senza scrivere file): impronte + nomi corretti a mano."""
     soglia = carica_impostazioni()["soglia"] if soglia is None else soglia
-    dati = leggi_json(file_json)
     emb = dati.get("speaker_embeddings") or {}
     if emb:
         mappa, migliori, coppie = abbina(emb, carica_voci(), soglia)
@@ -257,6 +258,12 @@ def identifica(file_json, soglia=None):
     for s, n in (dati.get(NOMI_KEY) or {}).items():  # nomi corretti a mano: hanno la precedenza
         if s in mappa:
             mappa[s] = n
+    return mappa, migliori, coppie
+
+
+def identifica(file_json, soglia=None):
+    dati = leggi_json(file_json)
+    mappa, migliori, coppie = mappa_nomi(dati, soglia)
     out = scrivi_trascrizione(dati, mappa, file_json)
     return out, mappa, migliori, coppie
 

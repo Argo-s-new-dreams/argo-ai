@@ -5,6 +5,7 @@
 
 | Attrezzo | Cosa fa | Motore locale |
 | --- | --- | --- |
+| **Incarichi** | In stile Cowork: «Call → recap + task» esegue trascrizione, verbale, Word, mail di recap e task in fila, con conferma dei nomi | Tutti i motori qui sotto |
 | **Trascrittore** | Trascrive riunioni, separa le voci e riconosce chi parla grazie all'anagrafe delle voci | WhisperX + pyannote |
 | **Verbale** | Dalla trascrizione al verbale: decisioni, azioni, responsabili, scadenze; oppure mail di sintesi al cliente | LLM via [Ollama](https://ollama.com) |
 | **Documenti riservati** | Domande su NDA, contratti e capitolati (PDF, DOCX, TXT) con citazione delle fonti | Embedding + LLM via Ollama |
@@ -15,12 +16,15 @@ Nato come Trascrittore, costruito su [WhisperX](https://github.com/m-bain/whispe
 
 L'audio non lascia mai il computer: Internet serve solo per installare i pacchetti e scaricare i modelli la prima volta.
 
-![Argo · Trascrittore](docs/screenshot-coda.png)
+![Argo · Trascrittore con le corsie dei parlanti](docs/screenshot-coda.png)
+
+![Argo · Incarichi: Call → recap + task](docs/screenshot-incarichi.png)
 
 ![Argo · Documenti riservati](docs/screenshot-documenti.png)
 
 ## Funzionalità
 
+- **Nuova interfaccia «Studio»**: menu laterale, tema scuro o chiaro, corsie colorate dei parlanti nel Trascrittore.
 - **Aggiornamenti dall'app**: Argo controlla su GitHub se c'è una versione nuova e si aggiorna con un clic (voci e impostazioni restano).
 - **Anche i video delle call**: mp4, mov, mkv, webm (Teams, Zoom, Meet…); in *Marca voci* il video si vede, sincronizzato con l'audio.
 - **Coda di trascrizioni**: trascini file o cartelle, imposti il numero di partecipanti, la coda lavora da sola e resta salvata anche chiudendo l'app.
@@ -112,6 +116,10 @@ Queste note sono informative e non costituiscono consulenza legale.
 | `app/trascrittore.py` | Interfaccia grafica (PySide6): coda, anagrafe, impostazioni, revisione |
 | `app/voci_core.py` | Motore: impronte vocali, identificazione, comando WhisperX; usabile anche da riga di comando |
 | `app/argo_attrezzi.py` | Attrezzi Verbale, Documenti riservati, Dettatura, Traduzione e pannello Ollama |
+| `app/incarichi.py` | Incarichi in stile Cowork: ricetta Call → verbale + recap + task |
+| `app/tema.py` | Tema scuro/chiaro, icone e menu laterale |
+| `app/dettaglio.py` | Dettaglio della trascrizione con le corsie dei parlanti |
+| `app/aggiornamenti.py` | Controllo e installazione degli aggiornamenti da GitHub |
 | `app/voci_strumenti.py` | Registrazione delle voci dal microfono e marcatura delle voci su forma d'onda |
 | `app/esporta_word.py` | Esportazione in Word (.docx) dei testi prodotti dagli attrezzi |
 | `app/llm_locale.py` | Client minimale per Ollama: chat in streaming, embedding, download modelli |

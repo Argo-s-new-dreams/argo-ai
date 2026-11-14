@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261114.1930 · riferita all'app versione 20261114.1930*
+*Versione del manuale: 20261114.1945 · riferita all'app versione 20261114.1945*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -19,8 +19,8 @@ Audio, documenti e testi non vengono mai inviati a servizi cloud.
 1. [Come è fatta Argo](#1-come-è-fatta-argo)
 2. [Requisiti](#2-requisiti)
 3. [Installazione](#3-installazione)
-4. [Primo avvio e configurazione](#4-primo-avvio-e-configurazione)
-5. [Trascrittore](#5-trascrittore)
+4. [Primo avvio e configurazione](#4-primo-avvio-e-configurazione) · [L'interfaccia](#4bis-linterfaccia)
+5. [Trascrittore](#5-trascrittore) · [Incarichi](#5bis-incarichi)
 6. [Anagrafe voci](#6-anagrafe-voci)
 7. [Verbale](#7-verbale)
 8. [Documenti riservati](#8-documenti-riservati)
@@ -150,9 +150,24 @@ Senza Ollama il Trascrittore e l'Anagrafe voci funzionano lo stesso. La Dettatur
 
 ---
 
+## 4bis. L'interfaccia
+
+- **Menu laterale a icone:** Incarichi, Trascrivi, Verbale, Documenti, Dettatura, Traduci, Voci e, in fondo, Impostazioni. Passando il mouse su un'icona compare il nome completo.
+- **Tema:** scuro (predefinito), chiaro, oppure come il sistema. Si sceglie in *Impostazioni → Aspetto* e cambia subito, senza riavviare.
+- **Bollino in basso a destra:** *100% locale* finché il modello linguistico gira su questo computer. Se punti Ollama a un'altra macchina, il bollino lo segnala.
+
+![Trascrittore](screenshot-coda.png)
+
+---
+
 ## 5. Trascrittore
 
-La scheda principale: una **coda** di file audio o video da trascrivere, con riconoscimento dei parlanti.
+La scheda principale. A sinistra c'è la **coda** di file audio o video da trascrivere; a destra il **dettaglio** del file selezionato:
+- le **corsie dei parlanti**, una per persona, colorate, che mostrano quando parla ciascuno lungo la registrazione;
+- la **trascrizione** con i nomi colorati allo stesso modo;
+- i pulsanti *Nomi dei parlanti*, *Marca voci*, *Apri testo*, *Word* e *Verbale →*.
+
+Le stesse azioni sono anche nel menu col **tasto destro** sulle righe della coda.
 
 ### 5.1 Formati accettati
 
@@ -236,6 +251,44 @@ I nomi scelti restano **salvati** (dentro il file `.json` della trascrizione): r
 - Imposta il numero esatto di partecipanti.
 - In *Parole chiave* metti termini tecnici, nomi di aziende e nomi dei partecipanti: il modello li scrive meglio.
 - Le voci sovrapposte restano il punto debole di qualsiasi sistema di separazione dei parlanti.
+
+---
+
+## 5bis. Incarichi
+
+Gli **Incarichi** funzionano in stile *Cowork*: Argo esegue più attrezzi in fila al posto tuo. Tu vedi il piano, approvi i passi importanti e alla fine trovi i risultati nella cartella della call.
+
+![Incarichi](screenshot-incarichi.png)
+
+### La ricetta «Call → recap + task»
+
+1. **Scegli audio o video** della call. Se è già stata trascritta (c'è il `.json` accanto), la trascrizione viene saltata.
+2. Indica, se vuoi:
+   - il numero di **partecipanti**;
+   - i **destinatari** della mail;
+   - la **lingua** della mail (italiano, inglese o tedesco) e il **tono**;
+   - **indicazioni aggiuntive**, per esempio «metti in evidenza le scadenze».
+3. Premi **▶ Esegui l'incarico**. Il piano ha sei passi:
+
+| Passo | Cosa fa | Risultato nella cartella |
+| --- | --- | --- |
+| Trascrizione con i parlanti | Mette il file nella coda del Trascrittore e aspetta che finisca | `nome.json`, `nome_nomi.txt` |
+| Nomi dei parlanti | **Si ferma e chiede conferma**: *Correggi nomi…* apre la revisione, *Conferma* va avanti | — |
+| Verbale | Verbale con decisioni, azioni e punti aperti (anche per riunioni lunghe) | `nome_verbale.md` |
+| Verbale in Word | Lo stesso verbale impaginato | `nome_verbale.docx` |
+| Mail di recap | Bozza di mail con oggetto, sintesi e prossimi passi | `nome_recap_mail.txt` |
+| Task dalle azioni | Elenco di cose da fare con responsabile e scadenza | `nome_task.csv`, `nome_task.json` |
+
+4. A destra, in **Risultati**, trovi la mail (modificabile), la tabella dei task, il verbale e l'elenco dei file. Con **Copia mail** e **Copia task** li incolli in Outlook, Teams o Planner.
+
+### Le regole di sicurezza
+
+- **Niente viene sovrascritto:** se un file esiste già, Argo crea `_2`, `_3`…
+- **Niente viene inviato:** la mail è una bozza da copiare. Il collegamento a Microsoft 365 (bozza in Outlook, task in Planner) arriverà in una versione successiva e sarà facoltativo.
+- **Registro:** ogni incarico scrive `nome_incarico_registro.txt` con ora e passi eseguiti, utile per sapere cosa ha fatto l'AI e quando.
+- **■ Ferma l'incarico** interrompe in qualsiasi momento; i file già creati restano.
+
+Le ricette *Contratti → confronto* e *Riunione DE → verbale IT* sono indicate come «prossimamente».
 
 ---
 
@@ -447,6 +500,10 @@ Contiene il token, il pulsante **Mostra** e **Salva e verifica**, più i link al
 ### 11.3 Riconoscimento voci
 
 **Somiglianza minima**: vedi [§6](#6-anagrafe-voci).
+
+### 11.3bis Aspetto
+
+**Tema:** Scuro, Chiaro o Come il sistema. Il cambio è immediato.
 
 ### 11.4 Modello linguistico locale (Ollama)
 
