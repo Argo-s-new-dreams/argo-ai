@@ -29,7 +29,7 @@ import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261114.2030"
+VERSIONE = "20261115.1400"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -259,7 +259,13 @@ class Finestra(QMainWindow):
         import incarichi
         self.tab_incarichi = incarichi.SchedaIncarichi(self)
         self.tabs.addTab(self.tab_incarichi, "Incarichi")
-        self.tabs.addTab(self._tab_coda(), "Trascrittore")
+        import agenda_posta
+        self.tab_agenda = agenda_posta.SchedaAgenda(self)
+        self.tab_posta = agenda_posta.SchedaPosta(self)
+        self.tabs.addTab(self.tab_agenda, "Agenda")
+        self.tabs.addTab(self.tab_posta, "Posta AI")
+        self.pag_coda = self._tab_coda()
+        self.tabs.addTab(self.pag_coda, "Trascrittore")
         self.tabs.addTab(self._pagina(self.tab_verbale, "Verbale", "Dalla trascrizione al verbale, in locale"), "Verbale")
         self.tabs.addTab(self._pagina(attrezzi.SchedaDocumenti(), "Documenti riservati",
                                       "Domande su contratti e capitolati, con le fonti"), "Documenti riservati")
@@ -273,7 +279,8 @@ class Finestra(QMainWindow):
         self.tabs.addTab(self.tab_imp, "Impostazioni")
         self.tabs.tabBar().hide()
         self.nav = tema.NavLaterale([
-            ("incarichi", "Incarichi", "Incarichi"), ("trascrittore", "Trascrittore", "Trascrivi"),
+            ("incarichi", "Incarichi", "Incarichi"), ("agenda", "Agenda", "Agenda"), ("posta", "Posta AI", "Posta"),
+            ("trascrittore", "Trascrittore", "Trascrivi"),
             ("verbale", "Verbale", "Verbale"), ("documenti", "Documenti riservati", "Documenti"),
             ("dettatura", "Dettatura", "Dettatura"), ("traduzione", "Traduzione", "Traduci"),
             ("voci", "Anagrafe voci", "Voci"), ("impostazioni", "Impostazioni", "Impostaz.")])
@@ -286,8 +293,8 @@ class Finestra(QMainWindow):
         cl.addWidget(self.nav)
         cl.addWidget(self.tabs, 1)
         self.setCentralWidget(centro)
-        self.tabs.setCurrentIndex(1)
-        self.nav.seleziona(1)
+        self.tabs.setCurrentWidget(self.pag_coda)
+        self.nav.seleziona(self.tabs.indexOf(self.pag_coda))
         self.badge = QLabel()
         self.statusBar().addPermanentWidget(self.badge)
         self._aggiorna_badge()
@@ -1086,8 +1093,13 @@ class Finestra(QMainWindow):
         r6.addWidget(self.b_m365_off)
         r6.addWidget(self.l_m365, 1)
         f6.addRow("", r6)
-        n6 = QLabel("Su Microsoft 365 vanno solo i risultati che confermi negli Incarichi (bozza della mail, task in "
-                    "Planner) e Argo legge la riunione dal calendario. Audio, trascrizioni e documenti restano qui.")
+        self.cb_posta = QCheckBox("Leggi la posta per «Posta AI» (le mail vengono elaborate solo su questo computer)")
+        self.cb_posta.setChecked(bool(imp.get("m365_leggi_posta")))
+        self.cb_posta.toggled.connect(self._pref_posta)
+        f6.addRow("", self.cb_posta)
+        n6 = QLabel("Su Microsoft 365 vanno solo i risultati che confermi (bozze di Outlook, task in Planner). Argo legge "
+                    "il calendario per Agenda e Incarichi e, solo se lo attivi, la posta per Posta AI: i testi vengono "
+                    "elaborati dal modello locale. Audio, trascrizioni e documenti restano qui.")
         n6.setWordWrap(True)
         n6.setProperty("ruolo", "tenue")
         f6.addRow("", n6)
@@ -1147,7 +1159,18 @@ class Finestra(QMainWindow):
             self.b_m365_off.setEnabled(bool(acc))
         if hasattr(self, "tab_incarichi"):
             self.tab_incarichi.aggiorna_m365()
+        for s in ("tab_agenda", "tab_posta"):
+            if hasattr(self, s):
+                getattr(self, s).aggiorna_stato()
         self._aggiorna_badge()
+
+    def _pref_posta(self, on):
+        imp = core.carica_impostazioni()
+        imp["m365_leggi_posta"] = bool(on)
+        core.salva_impostazioni(imp)
+        if hasattr(self, "tab_posta"):
+            self.tab_posta.mail = []
+            self.tab_posta.aggiorna_stato()
 
     def collega_m365(self):
         imp = core.carica_impostazioni()

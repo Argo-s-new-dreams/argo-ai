@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261114.2030 · riferita all'app versione 20261114.2030*
+*Versione del manuale: 20261115.1400 · riferita all'app versione 20261115.1400*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -20,7 +20,7 @@ Audio, documenti e testi non vengono mai inviati a servizi cloud.
 2. [Requisiti](#2-requisiti)
 3. [Installazione](#3-installazione)
 4. [Primo avvio e configurazione](#4-primo-avvio-e-configurazione) · [L'interfaccia](#4bis-linterfaccia)
-5. [Trascrittore](#5-trascrittore) · [Incarichi](#5bis-incarichi)
+5. [Trascrittore](#5-trascrittore) · [Incarichi](#5bis-incarichi) · [Agenda](#5ter-agenda) · [Posta AI](#5quater-posta-ai)
 6. [Anagrafe voci](#6-anagrafe-voci)
 7. [Verbale](#7-verbale)
 8. [Documenti riservati](#8-documenti-riservati)
@@ -305,6 +305,45 @@ Su Microsoft 365 vanno solo **la bozza e i task che confermi**; Argo legge il ca
 
 ---
 
+## 5ter. Agenda
+
+*Richiede Microsoft 365 collegato (sezione 11.5).*
+
+![Agenda](screenshot-agenda.png)
+
+L'Agenda mostra le tue riunioni da Microsoft 365, raggruppate per giorno: oggi e domani, 7 o 14 giorni. La riunione in corso è evidenziata e quelle passate sono in grigio. Selezionando una riunione vedi orario, luogo o Teams, partecipanti e testo dell'invito.
+
+| Pulsante | Cosa fa |
+| --- | --- |
+| **Prepara** | Briefing **locale** in Markdown: obiettivo probabile, partecipanti, cosa è emerso nelle riunioni precedenti, azioni aperte, tre domande utili. Argo cerca fino a 3 verbali recenti (`*_verbale*.md`) che citano i partecipanti, nelle cartelle dei file in coda e in quella delle registrazioni, e li elenca come *Fonti* in fondo. |
+| **● Registra** | Registra dal microfono in un WAV (16 kHz, mono) nella cartella delle registrazioni (predefinita `Documenti/Argo/Registrazioni`), con nome `data ora oggetto.wav`. Avvisa se non sente audio. Premi di nuovo per fermare. |
+| **Partecipa** | Apre il link Teams della riunione. |
+| **Apri in Outlook** | Apre l'evento in Outlook sul web. |
+| **Incarico →** | Passa agli Incarichi con i destinatari del recap già compilati dai partecipanti e, se hai appena registrato, con la registrazione già scelta. |
+
+Il flusso tipico: **Prepara** prima della call, **Registra** durante, **Incarico →** subito dopo per verbale, recap e task.
+
+> Sul Mac, la prima volta macOS chiede il permesso al microfono. Se l'hai negato: *Impostazioni di Sistema → Privacy e sicurezza → Microfono → Argo AI*. Registra la tua voce nella stanza: per una call Teams in cuffia registri solo te stesso, quindi è meglio usare la registrazione di Teams e passarla agli Incarichi.
+
+## 5quater. Posta AI
+
+*Richiede Microsoft 365 collegato e la lettura della posta attivata (sezione 11.5).*
+
+![Posta AI](screenshot-posta.png)
+
+Non è un client di posta completo: è un **assistente** accanto a Outlook. Mostra le mail **non lette** o le ultime 40 della posta in arrivo; per ciascuna vedi mittente, ora, importanza (!) e allegati (📎).
+
+| Pulsante | Cosa fa |
+| --- | --- |
+| **Riassumi** | 3-6 punti sulla conversazione intera (ultimi 6 messaggi del thread). |
+| **Cosa mi si chiede** | Una riga per ogni richiesta rivolta a te, con scadenza se c'è. |
+| **Scrivi risposta** | Bozza nella lingua della mail, col tono scelto e con le tue indicazioni (es. «accetto, propongo giovedì alle 10»). Il testo è modificabile. |
+| **Salva come bozza in Outlook** | Crea la risposta, o *Rispondi a tutti*, nelle **Bozze** di Outlook, con la mail originale citata. **Non la invia**: la rileggi e la invii tu da Outlook. |
+| **Crea task in Planner** | Estrae le richieste come task, ti mostra l'elenco e ti fa scegliere il piano. I task non vengono assegnati ad altri. |
+| **Segna come letta** · **Apri in Outlook** | Come in Outlook. Gli allegati si aprono in Outlook. |
+
+**Privacy:** il testo delle mail arriva dal tuo tenant Microsoft 365 al tuo computer e viene elaborato dal **modello locale** (Ollama). Non passa da nessun servizio AI esterno e Argo non conserva le mail su disco. La lettura è **disattivata** finché non la attivi.
+
 ## 6. Anagrafe voci
 
 L'anagrafe contiene un'**impronta vocale** (un vettore numerico) per ogni persona. Più campioni ha una persona, più il riconoscimento è stabile: Argo ne fa la media.
@@ -537,7 +576,7 @@ Per salvare tutto premi **Salva impostazioni**. **Apri cartella dati** apre la c
 
 ### 11.5 Microsoft 365 (facoltativo)
 
-Serve solo agli Incarichi, per calendario, bozze di Outlook e Planner.
+Serve ad Agenda, Posta AI e Incarichi: calendario, posta, bozze di Outlook e Planner.
 
 1. Un amministratore registra l'app in **Microsoft Entra ID** (una volta per organizzazione):
    - *App registrations → New registration*, nome **Argo AI**, solo questa organizzazione;
@@ -547,7 +586,11 @@ Serve solo agli Incarichi, per calendario, bozze di Outlook e Planner.
 3. Si apre il **browser** sulla pagina di accesso Microsoft: accedi con il tuo account e accetta i permessi. Quando compare «Argo è collegato a Microsoft 365» puoi chiudere la scheda. Hai 5 minuti.
 4. Lo stato diventa *Collegato come …* e il bollino in basso diventa *Locale · Microsoft 365 collegato*.
 
+5. Per **Posta AI** spunta *Leggi la posta per «Posta AI»*. Senza la spunta Argo non legge la posta, anche se il permesso `Mail.ReadWrite` è concesso (serve comunque per le bozze).
+
 Il token di accesso resta in `whisperx-env/m365_token.bin`, leggibile solo dal tuo utente. **Scollega** lo cancella.
+
+Se usavi già Argo con Microsoft 365 non servono nuovi permessi: Agenda e Posta AI usano gli stessi.
 
 ---
 
@@ -669,6 +712,8 @@ Il controllo legge da GitHub solo il numero di versione e le novità: nessun dat
 | Dopo «Aggiorna ora» Argo si chiude e non si riapre (fino alla 2000) | Il riavvio automatico non partiva sul Mac | Riapri *Argo AI* da Applicazioni: l'aggiornamento è già installato. Corretto dalla 2015 |
 | Microsoft 365: «You don't have access to this», errore **53003** | Un criterio di accesso condizionale del tenant blocca l'accesso (per esempio il blocco del *device code flow*, usato fino alla 2015) | Aggiorna alla 2030, che accede dal browser; aggiungi il redirect `http://localhost` all'app. Se resta bloccato, in *Entra → Log di accesso → Accesso condizionale* trovi il criterio responsabile |
 | Microsoft 365: errore **50011** | Manca il redirect URI | Aggiungi `http://localhost` in *Authentication → Mobile and desktop applications* |
+| Posta AI dice «lettura della posta disattivata» | La spunta non è attiva | *Impostazioni → Microsoft 365 → Leggi la posta per «Posta AI»* |
+| Agenda: «Impossibile registrare» | Permesso del microfono negato | *Impostazioni di Sistema → Privacy e sicurezza → Microfono → Argo AI* |
 | "Controllo non riuscito" negli aggiornamenti | Nessuna connessione, oppure un firewall blocca GitHub | Riprova più tardi o aggiorna a mano dal pacchetto; puoi disattivare il controllo in *Impostazioni → Aggiornamenti* |
 | "Homebrew non trovato" (versioni fino alla 1830) | L'installer vecchio richiedeva Homebrew | Usa l'installer dalla versione 1845 in poi: Homebrew non serve più |
 

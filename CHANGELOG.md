@@ -2,6 +2,16 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261115.1400: Agenda e Posta AI
+- **Agenda** (Microsoft 365): riunioni per giorno, con
+  - **Prepara**: briefing locale con i verbali precedenti che citano i partecipanti e le azioni aperte;
+  - **Registra**: registrazione dal microfono nella cartella `Documenti/Argo/Registrazioni`;
+  - **Incarico →**: passa la registrazione e i partecipanti alla ricetta Call → recap + task;
+  - **Partecipa** (Teams) e **Apri in Outlook**.
+- **Posta AI** (Microsoft 365, lettura da attivare in *Impostazioni*): non lette o ultime 40, **Riassumi**, **Cosa mi si chiede**, **Scrivi risposta** col modello locale, **Salva come bozza in Outlook** (mai inviata), **Crea task in Planner**, **Segna come letta**.
+- Le mail vengono elaborate solo sul computer, col modello locale; nessun nuovo permesso Microsoft 365.
+- Connettore Microsoft 365 più robusto: errori di rete spiegati e filtri delle richieste codificati correttamente.
+
 ## 20261114.2030: accesso a Microsoft 365 dal browser
 - **Collega** apre il browser di sistema (codice di autorizzazione con PKCE, risposta su `http://localhost`) invece del codice dispositivo, che molti tenant bloccano con l'accesso condizionale (errore AADSTS53003).
 - Messaggi chiari per gli errori più comuni: 53003 (accesso condizionale), 50011 (redirect URI mancante), 65001 (consenso mancante).

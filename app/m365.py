@@ -153,12 +153,12 @@ def _contesti():
         pass
 
 
-def graph(metodo, percorso, corpo=None, token=None):
+def graph(metodo, percorso, corpo=None, token=None, testo=False):
     url = percorso if percorso.startswith("http") else GRAPH + percorso
     dati = json.dumps(corpo).encode() if corpo is not None else None
+    prefer = 'outlook.timezone="Europe/Rome"' + (', outlook.body-content-type="text"' if testo else "")
     req = urllib.request.Request(url, data=dati, method=metodo, headers={
-        "Authorization": f"Bearer {token or _token()}", "Content-Type": "application/json",
-        "Prefer": 'outlook.timezone="Europe/Rome"'})
+        "Authorization": f"Bearer {token or _token()}", "Content-Type": "application/json", "Prefer": prefer})
     ultimo = None
     for ctx in _contesti():
         try:
@@ -176,6 +176,8 @@ def graph(metodo, percorso, corpo=None, token=None):
                 ultimo = e
                 continue
             raise ErroreM365(f"Microsoft 365 non raggiungibile: {e.reason}") from None
+        except (OSError, ValueError) as e:  # connessione caduta, risposta non valida
+            raise ErroreM365(f"Microsoft 365 non raggiungibile: {e}") from None
     raise ErroreM365(f"certificato non verificato: {ultimo}")
 
 
@@ -186,7 +188,7 @@ def riunione_vicina(quando, ore=4):
     q = urllib.parse.urlencode({
         "startDateTime": (t - timedelta(hours=ore)).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "endDateTime": (t + timedelta(hours=ore)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "$select": "subject,start,end,attendees,organizer", "$orderby": "start/dateTime", "$top": "50"})
+        "$select": "subject,start,end,attendees,organizer", "$orderby": "start/dateTime", "$top": "50"}, quote_via=urllib.parse.quote)
     eventi = graph("GET", f"/me/calendarView?{q}").get("value", [])
     if not eventi:
         return None
@@ -286,3 +288,104 @@ def crea_task(piano_id, bucket_id, task, utenti):
         r = graph("POST", "/planner/tasks", corpo)
         creati.append({"titolo": t["titolo"], "id": r.get("id"), "assegnato": bool(uid)})
     return creati
+
+
+# ---------------------------------------------------------------- Agenda
+def _persone(ev):
+    persone = []
+    org = (ev.get("organizer") or {}).get("emailAddress") or {}
+    for a in [{"emailAddress": org}] + (ev.get("attendees") or []):
+        e = a.get("emailAddress") or {}
+        if e.get("address") and e["address"].lower() not in {p["email"].lower() for p in persone}:
+            persone.append({"nome": e.get("name") or e["address"], "email": e["address"]})
+    return persone
+
+
+def eventi(giorni=7, da=None):
+    """Riunioni da oggi (ore 00:00 locali) ai prossimi `giorni` giorni, in ordine di inizio."""
+    inizio = (da or datetime.now().astimezone()).replace(hour=0, minute=0, second=0, microsecond=0)
+    fine = inizio + timedelta(days=giorni)
+    q = urllib.parse.urlencode({
+        "startDateTime": inizio.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "endDateTime": fine.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "$select": "subject,start,end,attendees,organizer,location,isOnlineMeeting,onlineMeeting,webLink,"
+                   "bodyPreview,isAllDay,isCancelled",
+        "$orderby": "start/dateTime", "$top": "100"}, quote_via=urllib.parse.quote)
+    out = []
+    for ev in graph("GET", f"/me/calendarView?{q}").get("value", []):
+        if ev.get("isCancelled"):
+            continue
+        out.append({
+            "oggetto": ev.get("subject") or "(senza titolo)",
+            "inizio": ev["start"]["dateTime"][:16], "fine": ev["end"]["dateTime"][:16],
+            "giornata": bool(ev.get("isAllDay")),
+            "luogo": (ev.get("location") or {}).get("displayName", ""),
+            "online": bool(ev.get("isOnlineMeeting")),
+            "link_riunione": ((ev.get("onlineMeeting") or {}).get("joinUrl") or ""),
+            "link": ev.get("webLink", ""), "anteprima": ev.get("bodyPreview", ""),
+            "persone": _persone(ev)})
+    return out
+
+
+# ---------------------------------------------------------------- Posta (solo se attivata dall'utente)
+def lettura_posta_attiva():
+    return bool(core.carica_impostazioni().get("m365_leggi_posta"))
+
+
+def _mittente(m):
+    e = ((m.get("from") or {}).get("emailAddress") or {})
+    return {"nome": e.get("name") or e.get("address", ""), "email": e.get("address", "")}
+
+
+def posta(solo_non_lette=True, quante=40):
+    if not lettura_posta_attiva():
+        raise ErroreM365("La lettura della posta è disattivata: attivala in Impostazioni → Microsoft 365.")
+    filtro = "receivedDateTime ge 1900-01-01T00:00:00Z" + (" and isRead eq false" if solo_non_lette else "")
+    q = urllib.parse.urlencode({
+        "$select": "subject,from,receivedDateTime,bodyPreview,isRead,conversationId,webLink,hasAttachments,importance",
+        "$filter": filtro, "$orderby": "receivedDateTime desc", "$top": str(quante)}, quote_via=urllib.parse.quote)
+    out = []
+    for m in graph("GET", f"/me/mailFolders/inbox/messages?{q}").get("value", []):
+        out.append({"id": m["id"], "oggetto": m.get("subject") or "(senza oggetto)", "da": _mittente(m),
+                    "quando": (m.get("receivedDateTime") or "")[:16].replace("T", " "),
+                    "anteprima": m.get("bodyPreview", ""), "letta": bool(m.get("isRead")),
+                    "conversazione": m.get("conversationId", ""), "link": m.get("webLink", ""),
+                    "allegati": bool(m.get("hasAttachments")), "importante": m.get("importance") == "high"})
+    return out
+
+
+def messaggio(mid):
+    if not lettura_posta_attiva():
+        raise ErroreM365("La lettura della posta è disattivata.")
+    m = graph("GET", f"/me/messages/{urllib.parse.quote(mid)}?$select=subject,from,toRecipients,ccRecipients,"
+                     "receivedDateTime,body,conversationId,webLink,hasAttachments", testo=True)
+    return {"id": m.get("id", mid), "oggetto": m.get("subject") or "", "da": _mittente(m),
+            "a": [((r.get("emailAddress") or {}).get("name") or (r.get("emailAddress") or {}).get("address", ""))
+                  for r in (m.get("toRecipients") or []) + (m.get("ccRecipients") or [])],
+            "quando": (m.get("receivedDateTime") or "")[:16].replace("T", " "),
+            "testo": ((m.get("body") or {}).get("content") or "").strip(),
+            "conversazione": m.get("conversationId", ""), "link": m.get("webLink", ""),
+            "allegati": bool(m.get("hasAttachments"))}
+
+
+def conversazione(conv_id, massimo=15):
+    """I messaggi della stessa conversazione, dal più vecchio, in testo semplice."""
+    if not conv_id:
+        return []
+    q = urllib.parse.urlencode({"$filter": f"conversationId eq '{conv_id}'", "$top": str(massimo),
+                                "$select": "subject,from,receivedDateTime,body"}, quote_via=urllib.parse.quote)
+    msgs = graph("GET", f"/me/messages?{q}", testo=True).get("value", [])
+    msgs.sort(key=lambda m: m.get("receivedDateTime", ""))
+    return [{"da": _mittente(m), "quando": (m.get("receivedDateTime") or "")[:16].replace("T", " "),
+             "testo": ((m.get("body") or {}).get("content") or "").strip()} for m in msgs]
+
+
+def segna_letta(mid, letta=True):
+    graph("PATCH", f"/me/messages/{urllib.parse.quote(mid)}", {"isRead": bool(letta)})
+
+
+def bozza_risposta(mid, testo, a_tutti=False):
+    """Crea la risposta come BOZZA in Outlook (con il messaggio originale citato sotto). Non la invia."""
+    azione = "createReplyAll" if a_tutti else "createReply"
+    r = graph("POST", f"/me/messages/{urllib.parse.quote(mid)}/{azione}", {"comment": testo})
+    return {"id": r.get("id"), "link": r.get("webLink"), "oggetto": r.get("subject", "")}
