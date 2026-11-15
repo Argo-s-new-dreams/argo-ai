@@ -2,6 +2,10 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261115.1415: riapertura dopo l'aggiornamento (Mac)
+- Corretto di nuovo: sul Mac Argo non si riapriva dopo **Aggiorna ora**. macOS chiudeva il comando di riavvio insieme alla vecchia finestra; ora la nuova istanza viene chiesta subito a macOS (`open -n`), prima di chiudere quella vecchia.
+- La correzione vale dall'aggiornamento **successivo**: questo aggiornamento usa ancora il vecchio codice di riavvio, quindi dopo averlo installato riapri Argo a mano.
+
 ## 20261115.1400: Agenda e Posta AI
 - **Agenda** (Microsoft 365): riunioni per giorno, con
   - **Prepara**: briefing locale con i verbali precedenti che citano i partecipanti e le azioni aperte;
