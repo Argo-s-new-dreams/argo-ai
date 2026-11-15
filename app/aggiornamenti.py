@@ -166,18 +166,25 @@ def installa(cartella_app, stato=lambda t: None):
 
 def riavvia():
     """Riapre Argo dopo l'aggiornamento.
-    Sul Mac passa dall'app «Argo AI» (open -n), dopo una breve attesa perché la vecchia finestra si chiuda;
+    Sul Mac passa dall'app «Argo AI» (open -n, subito, prima di chiudere la vecchia finestra);
     altrove rilancia lo stesso Python con lo stesso script. Uscite scollegate: il processo nuovo non dipende
     da quello vecchio."""
     script = Path(sys.argv[0]).resolve()
     nulla = subprocess.DEVNULL
     if sys.platform == "darwin":
+        # Sul Mac, quando un'app si chiude, macOS termina anche i processi figli rimasti (anche se staccati):
+        # un «sleep 2; open» lanciato da qui moriva prima di riaprire Argo. Quindi chiediamo SUBITO a
+        # LaunchServices di avviare una nuova istanza: la lancia launchd, non noi, e sopravvive alla chiusura.
         bundle = Path.home() / "Applications" / "Argo AI.app"
         if bundle.exists():
-            cmd = f'sleep 2; open -n "{bundle}"'
-        else:
-            cmd = f'sleep 2; "{sys.executable}" "{script}"'
-        subprocess.Popen(["/bin/sh", "-c", cmd], stdin=nulla, stdout=nulla, stderr=nulla,
+            try:
+                r = subprocess.run(["/usr/bin/open", "-n", str(bundle)], stdin=nulla, stdout=nulla,
+                                   stderr=subprocess.PIPE, timeout=15)
+                if r.returncode == 0:
+                    return
+            except (OSError, subprocess.SubprocessError):
+                pass
+        subprocess.Popen([sys.executable, str(script)], stdin=nulla, stdout=nulla, stderr=nulla,
                          close_fds=True, start_new_session=True)
         return
     if os.name == "nt":

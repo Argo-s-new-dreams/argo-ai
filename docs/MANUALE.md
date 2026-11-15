@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261115.1400 · riferita all'app versione 20261115.1400*
+*Versione del manuale: 20261115.1415 · riferita all'app versione 20261115.1415*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
