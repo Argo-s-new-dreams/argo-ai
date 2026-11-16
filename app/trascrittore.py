@@ -30,7 +30,7 @@ import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261116.0951"
+VERSIONE = "20261116.1611"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -265,6 +265,10 @@ class Finestra(QMainWindow):
         self.tab_posta = agenda_posta.SchedaPosta(self)
         self.tabs.addTab(self.tab_agenda, "Agenda")
         self.tabs.addTab(self.tab_posta, "Posta AI")
+        import registrazione
+        self.tab_registra = registrazione.SchedaRegistra(self)
+        self.tabs.addTab(self._pagina(self.tab_registra, "Registra", "Riunioni e call Teams · Live o in archivio"),
+                         "Registra")
         self.pag_coda = self._tab_coda()
         self.tabs.addTab(self.pag_coda, "Trascrittore")
         self.tabs.addTab(self._pagina(self.tab_verbale, "Verbale", "Dalla trascrizione al verbale, in locale"), "Verbale")
@@ -281,7 +285,7 @@ class Finestra(QMainWindow):
         self.tabs.tabBar().hide()
         self.nav = tema.NavLaterale([
             ("incarichi", "Incarichi", "Incarichi"), ("agenda", "Agenda", "Agenda"), ("posta", "Posta AI", "Posta"),
-            ("trascrittore", "Trascrittore", "Trascrivi"),
+            ("registra", "Registra", "Registra"), ("trascrittore", "Trascrittore", "Trascrivi"),
             ("verbale", "Verbale", "Verbale"), ("documenti", "Documenti riservati", "Documenti"),
             ("dettatura", "Dettatura", "Dettatura"), ("traduzione", "Traduzione", "Traduci"),
             ("voci", "Anagrafe voci", "Voci"), ("impostazioni", "Impostazioni", "Impostaz.")])
@@ -1383,6 +1387,13 @@ class Finestra(QMainWindow):
         self.statusBar().showMessage("Impostazioni salvate.", 5000)
 
     def closeEvent(self, e):
+        if self.tab_registra.occupata():
+            if QMessageBox.question(self, "Uscire?", "C'è una registrazione in corso: verrà fermata. In modalità Live "
+                                    "l'audio non ancora trascritto resta in una cartella privata e Argo ti chiederà "
+                                    "cosa farne al prossimo avvio. Uscire comunque?") != QMessageBox.Yes:
+                e.ignore()
+                return
+            self.tab_registra.chiudi()
         if self.worker or self.worker_voce:
             if QMessageBox.question(self, "Uscire?", "C'è un'elaborazione in corso: verrà interrotta. Uscire comunque?") != QMessageBox.Yes:
                 e.ignore()

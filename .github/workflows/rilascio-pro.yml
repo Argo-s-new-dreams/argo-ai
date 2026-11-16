@@ -27,6 +27,13 @@ jobs:
           pip install --quiet cryptography
           python strumenti/prova_aggiornamenti.py
 
+      - name: Prova di Registra e Live (audio sintetico)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          pip install --quiet numpy scipy PySide6
+          python strumenti/prova_live.py
+
       - name: Prepara pacchetto, manifesto e firma
         env:
           ARGO_FIRMA_PRIVATA: ${{ secrets.ARGO_FIRMA_PRIVATA }}
