@@ -2,6 +2,8 @@
 from PySide6.QtCore import QByteArray, QRectF, QSize, Qt, Signal
 from pathlib import Path
 
+QUI = Path(__file__).resolve().parent
+
 from PySide6.QtGui import QColor, QFontDatabase, QGuiApplication, QIcon, QPainter, QPalette, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QButtonGroup, QLabel, QSizePolicy, QToolButton, QVBoxLayout, QWidget
@@ -199,9 +201,9 @@ def icona_stato(nome):
 
 
 def marchio(lato):
-    """Il marchio di Argo's New Dreams nel menu: il disco con le due sfere, come nella favicon, ricavato da
-    Icona_AND.psd del Brand Book (app/marchio.png)."""
-    pm = QPixmap(str(Path(__file__).resolve().parent / "marchio.png"))
+    """Il logo di Argo's New Dreams nel menu, intero e quadrato (angoli appena arrotondati):
+    l'illustrazione «Dove il fantastico è il quotidiano» del Brand Book (app/illustrazione.png)."""
+    pm = QPixmap(str(QUI / "illustrazione.png"))
     if pm.isNull():
         return QPixmap()
     pm = pm.scaled(lato * 2, lato * 2, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -209,13 +211,56 @@ def marchio(lato):
     return pm
 
 
+def filigrana(lato=380):
+    """L'illustrazione del logo come sfondo tenue dei pannelli vuoti, sfumata ai bordi e fusa col colore del
+    pannello del tema attuale. Ritorna il percorso di un PNG in cache (rigenerato a ogni cambio di tema)."""
+    import tempfile
+
+    from PySide6.QtGui import QImage, QRadialGradient
+    c = colori()
+    f = Path(tempfile.gettempdir()) / f"argo_filigrana_{_attuale['nome']}_{lato}.png"
+    if f.exists():
+        return f
+    src = QImage(str(QUI / "illustrazione.png"))
+    img = QImage(lato, lato, QImage.Format_ARGB32_Premultiplied)
+    img.fill(Qt.transparent)
+    p = QPainter(img)
+    p.setRenderHint(QPainter.SmoothPixmapTransform)
+    p.setOpacity(0.10 if _attuale["nome"] == "chiaro" else 0.06)
+    p.drawImage(QRectF(0, 0, lato, lato), src)
+    p.setOpacity(1.0)
+    p.setCompositionMode(QPainter.CompositionMode_DestinationIn)  # bordi sfumati: niente quadrato visibile
+    g = QRadialGradient(lato / 2, lato / 2, lato / 2)
+    g.setColorAt(0.0, QColor(0, 0, 0, 255))
+    g.setColorAt(0.65, QColor(0, 0, 0, 255))
+    g.setColorAt(1.0, QColor(0, 0, 0, 0))
+    p.fillRect(img.rect(), g)
+    p.end()
+    fondo = QImage(lato, lato, QImage.Format_ARGB32_Premultiplied)
+    fondo.fill(QColor(c["pannello"]))
+    p = QPainter(fondo)
+    p.drawImage(0, 0, img)
+    p.end()
+    fondo.save(str(f))
+    return f
+
+
+def imposta_filigrana(widget, attiva):
+    """Mostra o toglie la filigrana del logo al centro di un pannello di testo (QTextBrowser, QPlainTextEdit…)."""
+    if attiva:
+        url = filigrana().as_posix()
+        widget.setStyleSheet(f"background-color: {colori()['pannello']}; background-image: url('{url}'); "
+                             "background-position: center; background-repeat: no-repeat; background-origin: content;")
+    else:
+        widget.setStyleSheet("")
+
+
 def stato_vuoto(testo):
-    """HTML per i pannelli vuoti: l'illustrazione del Brand Book e il motto, con un invito a cosa fare."""
+    """HTML per i pannelli vuoti: il motto e un invito a cosa fare (la filigrana la mette imposta_filigrana)."""
     from html import escape
     c = colori()
-    img = (Path(__file__).resolve().parent / "illustrazione.png").as_uri()
-    return (f"<div align='center' style='margin-top: 28px'><img src='{img}' width='240' height='240'/>"
-            f"<p style='font-size: 15px; color: {c['testo']}; margin-top: 14px'>Dove il fantastico è il quotidiano</p>"
+    return (f"<div align='center' style='margin-top: 12px'>"
+            f"<p style='font-size: 16px; color: {c['testo']}'>Dove il fantastico è il quotidiano</p>"
             f"<p style='color: {c['tenue']}'>{escape(testo)}</p></div>")
 
 
@@ -232,8 +277,8 @@ class NavLaterale(QWidget):
         lay.setContentsMargins(10, 14, 10, 14)
         lay.setSpacing(4)
         self.logo = QLabel()
-        self.logo.setFixedSize(46, 46)
-        self.logo.setPixmap(marchio(46))
+        self.logo.setFixedSize(56, 56)
+        self.logo.setPixmap(marchio(56))
         self.logo.setToolTip("Argo · Cassetta degli attrezzi AI\nArgo's New Dreams: dove il fantastico è il quotidiano")
         lay.addWidget(self.logo, alignment=Qt.AlignHCenter)
         scritta = QLabel("ARGO")
@@ -269,6 +314,6 @@ class NavLaterale(QWidget):
             b.setChecked(True)
 
     def ricolora(self):
-        self.logo.setPixmap(marchio(46))
+        self.logo.setPixmap(marchio(56))
         for chiave, b in self.bottoni:
             b.setIcon(icona_stato(chiave))

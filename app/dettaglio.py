@@ -129,7 +129,9 @@ class DettaglioTrascrizione(QWidget):
             self.meta.setText("Scegli un file nella coda per vedere chi parla e cosa dice.")
             self.corsie.imposta([], 1)
             self.testo.setHtml(tema.stato_vuoto("Trascina qui un audio o un video, oppure scegli un file nella coda."))
+            tema.imposta_filigrana(self.testo, True)
             return
+        tema.imposta_filigrana(self.testo, False)
         self.titolo.setText(Path(job["file"]).name)
         if not completata:
             stato = job.get("stato", "")
