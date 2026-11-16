@@ -1,9 +1,10 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261115.1415 · riferita all'app versione 20261115.1415*
+*Versione del manuale: 20261116.1701 · riferita all'app versione 20261116.1701*
 
-Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
+Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
+- **Registra**: registra riunioni e call Teams; in modalità Live trascrive mentre registri e non conserva l'audio.
 - **Trascrittore**: trascrive riunioni e riconosce chi parla.
 - **Verbale**: trasforma una trascrizione in un verbale.
 - **Documenti riservati**: risponde a domande su documenti riservati.
