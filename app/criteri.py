@@ -12,13 +12,16 @@ Chiavi riconosciute (tutte facoltative):
     "canale_aggiornamenti":  "pro" | "lab"   blocca il canale e lo rende non modificabile
     "aggiornamenti_dall_app": false          Argo non controlla e non installa aggiornamenti da solo
                                              (li distribuisce l'IT)
+    "registrazione": "completa" | "solo_live" | "nessuna"
+                                             pagina Registra: entrambe le modalità (predefinito), solo Live
+                                             (l'audio non viene mai conservato) oppure nessuna registrazione
 """
 import json
 import os
 import sys
 from pathlib import Path
 
-CHIAVI = {"canale_aggiornamenti", "aggiornamenti_dall_app"}
+CHIAVI = {"canale_aggiornamenti", "aggiornamenti_dall_app", "registrazione"}
 
 
 def percorso():
@@ -42,6 +45,8 @@ def carica():
     criteri = {k: v for k, v in dati.items() if k in CHIAVI}
     if criteri.get("canale_aggiornamenti") not in (None, "lab", "pro"):
         criteri.pop("canale_aggiornamenti")
+    if criteri.get("registrazione") not in (None, "completa", "solo_live", "nessuna"):
+        criteri.pop("registrazione")
     if "aggiornamenti_dall_app" in criteri and not isinstance(criteri["aggiornamenti_dall_app"], bool):
         criteri.pop("aggiornamenti_dall_app")
     return criteri

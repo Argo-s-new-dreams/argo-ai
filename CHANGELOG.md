@@ -2,6 +2,33 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261116.1701: stile Argo's New Dreams e Posta leggibile
+- **Nuovo aspetto dal Brand Book** di Argo's New Dreams («Dove il fantastico è il quotidiano»):
+  - due temi, **Notte** (antracite) e **Carta** (contenuto su carta calda, menu antracite come le sfere del logo), con accento terracotta;
+  - pannelli bianco caldo che si staccano dal fondo, pulsanti secondari contornati, pulsanti disattivati chiaramente sbiaditi;
+  - il **logo intero**, quadrato, in cima al menu; **icona dell'app** dal disco con le due sfere di `Icona_AND.psd` (Brand Book);
+  - nei pannelli vuoti il logo compare come **filigrana molto tenue**, sfumata ai bordi, con il motto e l'indicazione di cosa fare;
+  - carattere **Roboto**, incluso nell'app: stesso aspetto su Mac e Windows;
+  - titoli più decisi e pulsanti principali arrotondati come le sfere del logo.
+- **Posta AI:** la mail si vede **formattata** (grassetti, paragrafi, tabelle, link cliccabili) invece del testo grezzo con gli indirizzi dei link. Script e moduli vengono tolti; le **immagini remote non vengono scaricate**, quindi niente pixel di tracciamento. Al modello locale va il testo pulito, senza indirizzi dei link.
+- La nuova icona dell'app compare nel Dock o nella barra delle applicazioni dopo aver rilanciato l'installer; la finestra la usa subito.
+
+## 20261116.1611: Registra, con Live senza audio conservato
+- **Nuova pagina Registra** per riunioni in presenza e **call Teams**: Argo prende il microfono e l'**audio del computer**, cioè le voci degli altri partecipanti.
+  - Windows: WASAPI loopback, senza installare nulla;
+  - macOS 13+: ScreenCaptureKit, solo audio, con il permesso *Registrazione schermo e audio di sistema*;
+  - ripiego automatico su BlackHole, Missaggio stereo o VB-CABLE, se presenti.
+- **Sorgenti gestibili:** scelta del microfono e dell'audio del computer (automatico, nessuno, metodo nativo o dispositivo preciso), **volume di ciascuna sorgente** regolabile anche durante la registrazione, livelli in tempo reale. Le scelte vengono ricordate.
+- **Modalità Live:** trascrive mentre registri, a blocchi di 20-45 secondi tagliati sui silenzi, e **cancella ogni blocco audio appena il suo testo è salvato**. Alla fine resta solo la trascrizione con i nomi, pronta per il Verbale. I parlanti restano coerenti da un blocco all'altro: anagrafe voci prima, poi «Sconosciuto N» riconosciuti nella sessione.
+- Musica o rumori senza parole (per esempio un video in sottofondo) non creano «Sconosciuti» senza frasi.
+- **Modalità Archivia:** registrazione completa in `Documenti/Argo/Registrazioni` e **Metti in coda nel Trascrittore**.
+- **Consenso:** prima di ogni registrazione Argo chiede di confermare che i partecipanti sono informati e prepara l'avviso da incollare in chat.
+- **Recupero:** se Argo si chiude durante una Live, al prossimo ingresso in Registra propone di trascrivere il resto o di cancellare l'audio rimasto.
+- **Criterio IT** `registrazione`: `completa`, `solo_live` o `nessuna`.
+- Nuove librerie: `PyAudioWPatch` (solo Windows) e `pyobjc-framework-ScreenCaptureKit` (solo macOS). L'aggiornamento dall'app le installa se trova `uv`.
+- Prove automatiche in `strumenti/prova_live.py` (42 prove, anche su Posta e criteri), eseguite anche dalla GitHub Action del rilascio Pro.
+- Provata dal vivo su Mac (Apple Silicon): cattura dell'audio di sistema con ScreenCaptureKit e trascrizione Live a blocchi.
+
 ## 20261116.0951: canali Lab e Pro
 - **Due canali di aggiornamento** in *Impostazioni → Aggiornamenti*:
   - **Lab** (predefinito): segue ogni novità appena pubblicata, come finora;
