@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 import cattura_audio as ca
 import criteri
 import live_core as live
+import tema
 import voci_core as core
 
 QUI = Path(__file__).resolve().parent
@@ -218,6 +219,7 @@ class SchedaRegistra(QWidget):
                                       "Consiglio: nelle call usa le cuffie, così il microfono non riprende anche "
                                       "le voci che escono dagli altoparlanti.")
         lay.addWidget(self.testo, 1)
+        tema.imposta_filigrana(self.testo, True)
         self.stato = QLabel("")
         self.stato.setWordWrap(True)
         lay.addWidget(self.stato)
@@ -323,6 +325,7 @@ class SchedaRegistra(QWidget):
         self._salva_sorgenti()
         self.modo = modo
         self.testo.clear()
+        tema.imposta_filigrana(self.testo, True)
         self.risultato = None
         for b in (self.b_verbale, self.b_coda):
             b.hide()
@@ -557,6 +560,8 @@ class SchedaRegistra(QWidget):
 
     # ------------------------------------------------------------ interfaccia
     def _scrivi_riga(self, nome, seg):
+        if not self.testo.toPlainText():
+            tema.imposta_filigrana(self.testo, False)
         self.testo.appendPlainText(f"[{live.mmss(seg['start'])}] {nome}: {seg['text']}")
 
     def _aggiorna(self):
