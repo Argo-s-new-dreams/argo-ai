@@ -10,12 +10,14 @@ from PySide6.QtWidgets import QButtonGroup, QLabel, QSizePolicy, QToolButton, QV
 
 # Palette dal Brand Book di Argo's New Dreams («Dove il fantastico è il quotidiano»): carta calda, antracite delle
 # sfere, terracotta e ocra delle orbite. «scuro» = Notte, «chiaro» = Carta (le chiavi restano per le impostazioni).
+# Valori e contrasti verificati nel design system «Stile Argo» (WCAG 2.2 AA): testo 4,5:1, bordi dei campi 3:1.
 ACCENTO = "#E58074"
 TEMI = {
     "scuro": {
         "bg": "#1C2124", "pannello": "#23292C", "pannello2": "#2B3236", "nav": "#14181A", "bordo": "#323A3E",
         "bordo2": "#434C51", "testo": "#F1E8DC", "testo2": "#E2D6C6", "tenue": "#A99C8E", "debole": "#6F675F",
         "accento": "#E58074", "su_accento": "#1C2124", "accento_bg": "#3A2C28", "ok": "#9CC9A6", "warn": "#EEC29B",
+        "accento_forte": "#EB8C7F", "bordo_controllo": "#7A848A",
         "err": "#F19A8E", "sel": "#3A2C28", "ocra": "#EEC29B",
         "nav_testo": "#A99C8E", "nav_testo_su": "#F1E8DC", "nav_hover": "#22282B", "nav_sel": "#3A2C28",
         "nav_accento": "#E58074", "nav_bordo": "#14181A",
@@ -25,11 +27,11 @@ TEMI = {
     "chiaro": {
         "bg": "#EDE4D6", "pannello": "#FFFDF9", "pannello2": "#F6EFE5", "nav": "#1F2427", "bordo": "#D9CAB6",
         "bordo2": "#C2AE96", "testo": "#1A1E20", "testo2": "#2A3033", "tenue": "#5E554C", "debole": "#A3978A",
-        "accento": "#AE4E39", "su_accento": "#FFFFFF", "accento_bg": "#F5DDD4", "ok": "#3F7D5A", "warn": "#9A5F17",
-        "err": "#B3392B", "sel": "#F5DDD4", "ocra": "#D9A06E",
+        "accento": "#AE4E39", "su_accento": "#FFFFFF", "accento_bg": "#F5DDD4", "ok": "#356B4C", "warn": "#8A5413",
+        "err": "#A63426", "accento_forte": "#9C4331", "bordo_controllo": "#8C7963", "sel": "#F5DDD4", "ocra": "#D9A06E",
         "nav_testo": "#B5A898", "nav_testo_su": "#F6EFE5", "nav_hover": "#2B3236", "nav_sel": "#3A2C28",
         "nav_accento": "#EB8C7F", "nav_bordo": "#1F2427",
-        "parlanti": ["#AE4E39", "#9A5F17", "#3F6F86", "#4E7A4A", "#8A4E80", "#8C6A3E", "#C0624F", "#2F7A70"],
+        "parlanti": ["#AE4E39", "#8A5413", "#3F6F86", "#4E7A4A", "#8A4E80", "#8C6A3E", "#A5503C", "#2F7A70"],
     },
 }
 CARTA_MAIL = {"bg": "#FFFDF8", "testo": "#1F2427", "bordo": "#E2D5C4", "link": "#B0503B"}
@@ -74,6 +76,7 @@ QGroupBox::title {{ subcontrol-origin: margin; left: 12px; top: 2px; color: {c['
 QPushButton, QToolButton {{ background: {c['pannello']}; color: {c['testo']}; border: 1px solid {c['bordo2']};
     border-radius: 8px; padding: 7px 14px; min-height: 20px; }}
 QPushButton:hover, QToolButton:hover {{ border-color: {c['accento']}; }}
+QPushButton:focus {{ border: 2px solid {c['accento']}; }}
 QPushButton:pressed {{ background: {c['accento_bg']}; }}
 QPushButton:disabled {{ color: {c['debole']}; border-color: {c['bordo']}; background: transparent; }}
 QPushButton[primario="true"] {{ background: {c['accento']}; color: {c['su_accento']}; border: none; font-weight: 500;
@@ -81,10 +84,11 @@ QPushButton[primario="true"] {{ background: {c['accento']}; color: {c['su_accent
 QPushButton[primario="true"]:disabled {{ background: {c['bordo']}; color: {c['debole']}; }}
 QPushButton[primario="true"]:hover {{ background: {c['accento']}; border: 1px solid {c['testo']}; }}
 QPushButton[pillola="true"] {{ border-radius: 14px; padding: 5px 14px; color: {c['tenue']}; }}
-QPushButton[pillola="true"]:checked {{ background: {c['accento_bg']}; color: {c['accento']}; border-color: {c['accento']}; }}
+QPushButton[pillola="true"]:checked {{ background: {c['accento_bg']}; color: {c['accento_forte']}; border-color: {c['accento']}; }}
 QLineEdit, QPlainTextEdit, QTextEdit, QTextBrowser, QComboBox, QSpinBox, QDoubleSpinBox {{
-    background: {c['pannello2']}; color: {c['testo']}; border: 1px solid {c['bordo2']}; border-radius: 8px;
-    padding: 6px 8px; selection-background-color: {c['accento']}; selection-color: {c['su_accento']}; }}
+    background: {c['pannello2']}; color: {c['testo']}; border: 1px solid {c['bordo_controllo']}; border-radius: 8px;
+    padding: 6px 8px; selection-background-color: {c['accento']}; selection-color: {c['su_accento']};
+    placeholder-text-color: {c['tenue']}; }}
 QPlainTextEdit, QTextEdit, QTextBrowser {{ background: {c['pannello']}; border-color: {c['bordo']}; }}
 QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QComboBox:focus, QSpinBox:focus {{ border-color: {c['accento']}; }}
 QSpinBox::up-button, QSpinBox::down-button, QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {{
@@ -99,7 +103,7 @@ QComboBox::drop-down {{ border: none; width: 22px; }}
 QComboBox::down-arrow {{ width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent;
     border-top: 5px solid {c['tenue']}; }}
 QComboBox QAbstractItemView {{ background: {c['pannello2']}; color: {c['testo']}; selection-background-color: {c['accento_bg']};
-    selection-color: {c['accento']}; border: 1px solid {c['bordo2']}; }}
+    selection-color: {c['accento_forte']}; border: 1px solid {c['bordo_controllo']}; }}
 QTableWidget, QTableView, QListWidget {{ background: {c['pannello']}; alternate-background-color: {c['pannello2']};
     border: 1px solid {c['bordo']}; border-radius: 10px; gridline-color: {c['bordo']};
     selection-background-color: {c['sel']}; selection-color: {c['testo']}; }}
@@ -120,14 +124,14 @@ QScrollBar::add-line, QScrollBar::sub-line {{ width: 0; height: 0; }}
 QStatusBar {{ background: {c['pannello2']}; color: {c['tenue']}; border-top: 1px solid {c['bordo']}; }}
 QStatusBar QLabel {{ color: {c['tenue']}; }}
 QCheckBox {{ spacing: 8px; }}
-QCheckBox::indicator {{ width: 16px; height: 16px; border: 1.5px solid {c['bordo2']}; border-radius: 4px; background: {c['pannello2']}; }}
+QCheckBox::indicator {{ width: 16px; height: 16px; border: 1.5px solid {c['bordo_controllo']}; border-radius: 4px; background: {c['pannello2']}; }}
 QCheckBox::indicator:hover {{ border-color: {c['accento']}; }}
 QCheckBox::indicator:checked {{ background: {c['accento']}; border-color: {c['accento']}; }}
 QCheckBox::indicator:disabled {{ border-color: {c['bordo']}; background: transparent; }}
 QToolTip {{ background: {c['pannello2']}; color: {c['testo']}; border: 1px solid {c['bordo2']}; padding: 6px; }}
 QMenu {{ background: {c['pannello2']}; color: {c['testo']}; border: 1px solid {c['bordo2']}; padding: 4px; }}
 QMenu::item {{ padding: 6px 18px; border-radius: 6px; }}
-QMenu::item:selected {{ background: {c['accento_bg']}; color: {c['accento']}; }}
+QMenu::item:selected {{ background: {c['accento_bg']}; color: {c['accento_forte']}; }}
 QFrame[ruolo="scheda"] {{ background: {c['pannello']}; border: 1px solid {c['bordo']}; border-radius: 12px; }}
 """
 
@@ -151,7 +155,7 @@ def applica(app, nome="scuro"):
     for ruolo, chiave in ((QPalette.Window, "bg"), (QPalette.Base, "pannello"), (QPalette.AlternateBase, "pannello2"),
                           (QPalette.Button, "pannello2"), (QPalette.Text, "testo"), (QPalette.WindowText, "testo"),
                           (QPalette.ButtonText, "testo"), (QPalette.ToolTipBase, "pannello2"),
-                          (QPalette.ToolTipText, "testo"), (QPalette.PlaceholderText, "debole"),
+                          (QPalette.ToolTipText, "testo"), (QPalette.PlaceholderText, "tenue"),
                           (QPalette.Highlight, "accento"), (QPalette.HighlightedText, "su_accento"),
                           (QPalette.Link, "accento")):
         pal.setColor(ruolo, QColor(c[chiave]))

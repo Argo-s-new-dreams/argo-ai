@@ -30,7 +30,7 @@ import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261116.1701"
+VERSIONE = "20261116.1725"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
