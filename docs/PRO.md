@@ -25,13 +25,13 @@ Non sono due prodotti. È **un solo repository con due canali**.
 - [x] Scelta del canale in *Impostazioni → Aggiornamenti* (predefinito Lab: chi usa già Argo non nota differenze)
 - [x] Canale Pro: legge l'ultima release, verifica manifesto, firma e SHA-256 del pacchetto; un pacchetto che non supera i controlli non viene installato
 - [x] Protezione dai percorsi malevoli nello ZIP (anche per Lab)
-- [x] `requisiti.lock` universale (Mac, Windows, Linux · Python 3.12) con hash, installato con `--require-hashes`
+- [x] `requisiti.lock` universale (Mac, Windows, Linux · Python 3.12) con hash, installato con `--require-hashes`, vincolato all'ambiente collaudato sul Mac (`strumenti/ambiente-riferimento.txt`)
 - [x] GitHub Action *Rilascio Pro* sul tag `v*`, con controllo che tag e `VERSIONE` coincidano
 - [x] Criteri aziendali (`criteri.json`): l'IT può bloccare il canale su Pro o disattivare gli aggiornamenti dall'app
 - [x] Prove automatiche della catena di verifica (`strumenti/prova_aggiornamenti.py`)
 
 **Da fare a mano, una volta sola (Luca):**
-1. Rigenerare il lock dall'ambiente che funziona davvero sul Mac, oppure provarlo: `uv pip install --python ~/whisperx-env/bin/python --require-hashes -r app/requisiti.lock`
+1. ~~Allineare il lock all'ambiente collaudato~~ fatto: `requisiti.lock` è vincolato a `strumenti/ambiente-riferimento.txt` (freeze del Mac, 16/11/2026)
 2. Generare le chiavi: `uv run --with cryptography strumenti/genera_chiavi.py`, caricare il segreto con `gh secret set ARGO_FIRMA_PRIVATA`, fare commit di `app/chiave_aggiornamenti.pub`
 3. Primo rilascio: `git tag v<VERSIONE> && git push origin v<VERSIONE>`
 
