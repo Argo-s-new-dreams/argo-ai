@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
     QDoubleSpinBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView, QInputDialog,
     QLabel, QLineEdit, QMainWindow, QMenu, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QScrollArea,
-    QSpinBox, QSplitter, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
+    QSpinBox, QSplitter, QTableWidget, QTableWidgetItem, QTabWidget, QToolButton, QVBoxLayout, QWidget,
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -257,38 +257,53 @@ class Finestra(QMainWindow):
 
         self.tabs = QTabWidget()
         self.tab_verbale = attrezzi.SchedaVerbale()
-        import incarichi
-        self.tab_incarichi = incarichi.SchedaIncarichi(self)
-        self.tabs.addTab(self.tab_incarichi, "Incarichi")
         import agenda_posta
+        import incarichi
+        import registrazione
+        self.tab_incarichi = incarichi.SchedaIncarichi(self)
         self.tab_agenda = agenda_posta.SchedaAgenda(self)
         self.tab_posta = agenda_posta.SchedaPosta(self)
-        self.tabs.addTab(self.tab_agenda, "Agenda")
-        self.tabs.addTab(self.tab_posta, "Posta AI")
-        import registrazione
         self.tab_registra = registrazione.SchedaRegistra(self)
-        self.tabs.addTab(self._pagina(self.tab_registra, "Registra", "Riunioni e call Teams · Live o in archivio"),
-                         "Registra")
         self.pag_coda = self._tab_coda()
-        self.tabs.addTab(self.pag_coda, "Trascrittore")
-        self.tabs.addTab(self._pagina(self.tab_verbale, "Verbale", "Dalla trascrizione al verbale, in locale"), "Verbale")
-        self.tabs.addTab(self._pagina(attrezzi.SchedaDocumenti(), "Documenti riservati",
-                                      "Domande su contratti e capitolati, con le fonti"), "Documenti riservati")
-        self.tabs.addTab(self._pagina(attrezzi.SchedaDettatura(), "Dettatura", "Parli, Argo scrive"), "Dettatura")
-        self.tabs.addTab(self._pagina(attrezzi.SchedaTraduzione(), "Traduzione", "IT · EN · DE con glossario"), "Traduzione")
-        self.pag_voci = self._pagina(self._tab_voci(), "Anagrafe voci", "Impronte vocali, solo con il consenso delle persone")
-        self.tabs.addTab(self.pag_voci, "Anagrafe voci")
+        self.tab_documenti = attrezzi.SchedaDocumenti()
+        self.tab_dettatura = attrezzi.SchedaDettatura()
+        self.tab_traduzione = attrezzi.SchedaTraduzione()
         self.tab_imp = QScrollArea()
         self.tab_imp.setWidgetResizable(True)
         self.tab_imp.setWidget(self._pagina(self._tab_impostazioni(), "Impostazioni", f"Argo versione {VERSIONE}"))
-        self.tabs.addTab(self.tab_imp, "Impostazioni")
+        self.pag_voci = self._pagina(self._tab_voci(), "Voci", "Anagrafe delle impronte vocali, solo con il consenso delle persone")
+        # Menu in tre gruppi, nell'ordine del lavoro (Stile Argo · Organizzazione): il flusso delle riunioni,
+        # gli attrezzi indipendenti, la configurazione. Le pagine nel QTabWidget seguono lo stesso ordine.
+        pagine = [
+            ("RIUNIONI", None, None, None),
+            ("agenda", "Agenda", "Agenda", self.tab_agenda),
+            ("registra", "Registra", "Registra", self._pagina(
+                self.tab_registra, "Registra",
+                "Riunioni e call Teams: Live (resta solo il testo) o in archivio. Per brevi note tue usa Dettatura.")),
+            ("trascrittore", "Trascrivi", "Trascrivi", self.pag_coda),
+            ("verbale", "Verbale", "Verbale", self._pagina(
+                self.tab_verbale, "Verbale",
+                "Dalla trascrizione con i nomi al verbale, con il modello locale. Per verbale, mail e task in un colpo: Incarichi.")),
+            ("incarichi", "Incarichi", "Incarichi", self.tab_incarichi),
+            ("ATTREZZI", None, None, None),
+            ("posta", "Posta AI", "Posta", self.tab_posta),
+            ("documenti", "Documenti riservati", "Documenti", self._pagina(
+                self.tab_documenti, "Documenti riservati",
+                "Domande su contratti, NDA e capitolati, con le fonti: i documenti restano su questo computer.")),
+            ("dettatura", "Dettatura", "Dettatura", self._pagina(
+                self.tab_dettatura, "Dettatura",
+                "Parli, Argo scrive: per note e mail tue. Per le riunioni usa Registra.")),
+            ("traduzione", "Traduzione", "Traduci", self._pagina(
+                self.tab_traduzione, "Traduzione",
+                "Testi e trascrizioni in IT · EN · DE, con i termini imposti dal glossario aziendale.")),
+            ("voci", "Anagrafe voci", "Voci", self.pag_voci),
+            ("impostazioni", "Impostazioni", "Impostaz.", self.tab_imp),
+        ]
+        for chiave, etichetta, _breve, widget in pagine:
+            if widget is not None:
+                self.tabs.addTab(widget, etichetta)
         self.tabs.tabBar().hide()
-        self.nav = tema.NavLaterale([
-            ("incarichi", "Incarichi", "Incarichi"), ("agenda", "Agenda", "Agenda"), ("posta", "Posta AI", "Posta"),
-            ("registra", "Registra", "Registra"), ("trascrittore", "Trascrittore", "Trascrivi"),
-            ("verbale", "Verbale", "Verbale"), ("documenti", "Documenti riservati", "Documenti"),
-            ("dettatura", "Dettatura", "Dettatura"), ("traduzione", "Traduzione", "Traduci"),
-            ("voci", "Anagrafe voci", "Voci"), ("impostazioni", "Impostazioni", "Impostaz.")])
+        self.nav = tema.NavLaterale([(c, e, br) for c, e, br, _w in pagine])
         self.nav.scelto.connect(self.tabs.setCurrentIndex)
         self.tabs.currentChanged.connect(self.nav.seleziona)
         centro = QWidget()
@@ -346,7 +361,7 @@ class Finestra(QMainWindow):
         lay = QVBoxLayout(sinistra)
         lay.setContentsMargins(20, 16, 12, 12)
         testa = QHBoxLayout()
-        tit = QLabel("Trascrittore")
+        tit = QLabel("Trascrivi")
         tit.setProperty("ruolo", "titolo")
         sotto = QLabel("Trascina qui audio o video · nulla esce da questo computer")
         sotto.setProperty("ruolo", "tenue")
@@ -395,8 +410,12 @@ class Finestra(QMainWindow):
             bar.addWidget(b)
         bar.addStretch()
         bar.addWidget(self.b_avvia)
-        testa.addWidget(self.b_agg)
-        testa.addWidget(self.b_avvia)
+        # Stile Argo · Organizzazione: barra dei comandi sotto il sottotitolo, azione principale per prima
+        comandi = QHBoxLayout()
+        comandi.addWidget(self.b_avvia)
+        comandi.addWidget(self.b_agg)
+        comandi.addStretch()
+        lay.insertLayout(1, comandi)  # subito sotto titolo e sottotitolo
         bar.removeWidget(self.b_agg)
         bar.removeWidget(self.b_avvia)
         for b in (self.b_ris, self.b_rev, self.b_marca_job, self.b_word, self.b_verb):
@@ -856,40 +875,61 @@ class Finestra(QMainWindow):
     def _tab_voci(self):
         w = QWidget()
         lay = QVBoxLayout(w)
-        info = QLabel(
-            "Ogni persona ha un'impronta vocale ricavata da 20-60 secondi in cui parla solo lei. Tre modi per crearla:\n"
-            "🎙 Registra voce: la persona parla al microfono adesso.\n"
-            "🎧 Marca voci in un audio: ascolti una registrazione e segni dove parla ciascuno.\n"
-            "➕ Nuova voce da audio: scegli un file in cui parla solo quella persona.\n"
-            "Più campioni della stessa persona migliorano il riconoscimento. Registra le voci solo con il consenso delle persone.")
-        info.setWordWrap(True)
-        lay.addWidget(info)
+        # Stile Argo · Organizzazione: un'azione principale con i suoi tre modi in un menu; le azioni sulla
+        # singola voce compaiono solo quando ne scegli una; Elimina sta in disparte.
+        bar = QHBoxLayout()
+        self.b_nuova_voce = QToolButton()
+        self.b_nuova_voce.setText("＋ Nuova voce ▾")
+        self.b_nuova_voce.setProperty("primario", True)
+        self.b_nuova_voce.setPopupMode(QToolButton.InstantPopup)
+        m = QMenu(self.b_nuova_voce)
+        self.b_reg_voce = m.addAction("🎙  Registra ora al microfono  ·  la persona parla 20-60 secondi")
+        self.b_nuova = m.addAction("📄  Da un file in cui parla solo lei")
+        self.b_marca = m.addAction("🎧  Segnando dove parla in una registrazione")
+        self.b_nuova_voce.setMenu(m)
+        bar.addWidget(self.b_nuova_voce)
+        bar.addStretch()
+        self.b_camp = QPushButton("Aggiungi campione…")
+        self.b_camp.setToolTip("Un altro audio della stessa persona: più campioni, riconoscimento migliore")
+        self.b_ren = QPushButton("Rinomina…")
+        self.b_del = QPushButton("Elimina")
+        for b in (self.b_camp, self.b_ren):
+            bar.addWidget(b)
+        bar.addSpacing(16)
+        bar.addWidget(self.b_del)
+        lay.addLayout(bar)
         self.tab_voci = QTableWidget(0, 2)
         self.tab_voci.setHorizontalHeaderLabels(["Nome", "Campioni"])
         self.tab_voci.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.tab_voci.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tab_voci.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        lay.addWidget(self.tab_voci)
-        bar = QHBoxLayout()
-        self.b_reg_voce = QPushButton("🎙 Registra voce…")
-        self.b_marca = QPushButton("🎧 Marca voci in un audio…")
-        self.b_nuova = QPushButton("➕ Nuova voce da audio…")
-        self.b_camp = QPushButton("Aggiungi campione…")
-        b_ren = QPushButton("Rinomina…")
-        b_del = QPushButton("Elimina")
-        for b in (self.b_reg_voce, self.b_marca, self.b_nuova, self.b_camp, b_ren, b_del):
-            bar.addWidget(b)
-        bar.addStretch()
-        lay.addLayout(bar)
+        self.tab_voci.verticalHeader().setVisible(False)
+        self.tab_voci.setShowGrid(False)
+        self.tab_voci.itemSelectionChanged.connect(self._azioni_voce)
+        lay.addWidget(self.tab_voci, 1)
+        self.vuoto_voci = QLabel("Nessuna voce ancora.\nPremi «＋ Nuova voce» e scegli come crearla: "
+                                 "Argo riconoscerà la persona nelle trascrizioni.")
+        self.vuoto_voci.setProperty("ruolo", "tenue")
+        self.vuoto_voci.setAlignment(Qt.AlignCenter)
+        lay.addWidget(self.vuoto_voci)
         self.stato_voci = QLabel("")
         lay.addWidget(self.stato_voci)
-        self.b_reg_voce.clicked.connect(self.registra_voce)
-        self.b_marca.clicked.connect(lambda: self.marca_voci(None))
-        self.b_nuova.clicked.connect(lambda: self.iscrivi_voce(None))
+        self.b_reg_voce.triggered.connect(self.registra_voce)
+        self.b_marca.triggered.connect(lambda: self.marca_voci(None))
+        self.b_nuova.triggered.connect(lambda: self.iscrivi_voce(None))
         self.b_camp.clicked.connect(lambda: self.iscrivi_voce(self._voce_selezionata()))
-        b_ren.clicked.connect(self.rinomina_voce)
-        b_del.clicked.connect(self.elimina_voce)
+        self.b_ren.clicked.connect(self.rinomina_voce)
+        self.b_del.clicked.connect(self.elimina_voce)
+        self._azioni_voce()
         return w
+
+    def _azioni_voce(self):
+        scelta = bool(self.tab_voci.selectedItems())
+        for b in (self.b_camp, self.b_ren, self.b_del):
+            b.setVisible(scelta)
+        vuota = self.tab_voci.rowCount() == 0
+        self.tab_voci.setVisible(not vuota)
+        self.vuoto_voci.setVisible(vuota)
 
     def _aggiorna_voci(self):
         voci = core.elenco_voci()
@@ -897,6 +937,7 @@ class Finestra(QMainWindow):
         for r, (n, c) in enumerate(voci):
             self.tab_voci.setItem(r, 0, QTableWidgetItem(n))
             self.tab_voci.setItem(r, 1, QTableWidgetItem(str(c)))
+        self._azioni_voce()
 
     def _voce_selezionata(self):
         r = self.tab_voci.currentRow()

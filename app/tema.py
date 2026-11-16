@@ -61,6 +61,7 @@ QLabel {{ background: transparent; }}
 QLabel[ruolo="titolo"] {{ font-size: 23px; font-weight: 500; }}
 QLabel[ruolo="tenue"] {{ color: {c['tenue']}; }}
 QLabel[ruolo="sezione"] {{ color: {c['tenue']}; font-size: 11px; font-weight: 500; letter-spacing: 1.5px; }}
+QLabel#navgruppo {{ color: {c['nav_testo']}; font-size: 10px; font-weight: 500; letter-spacing: 1px; padding-top: 4px; }}
 QLabel#marchio {{ color: {c['nav_testo']}; font-size: 10px; font-weight: 400; letter-spacing: 3px; }}
 QTextBrowser#mail {{ background: {CARTA_MAIL['bg']}; color: {CARTA_MAIL['testo']}; border: 1px solid {c['bordo']};
     border-radius: 10px; padding: 10px; selection-background-color: {CARTA_MAIL['link']}; selection-color: #FFFFFF; }}
@@ -76,13 +77,14 @@ QGroupBox::title {{ subcontrol-origin: margin; left: 12px; top: 2px; color: {c['
 QPushButton, QToolButton {{ background: {c['pannello']}; color: {c['testo']}; border: 1px solid {c['bordo2']};
     border-radius: 8px; padding: 7px 14px; min-height: 20px; }}
 QPushButton:hover, QToolButton:hover {{ border-color: {c['accento']}; }}
-QPushButton:focus {{ border: 2px solid {c['accento']}; }}
+QPushButton:focus, QToolButton[primario="true"]:focus, QToolButton[salva="true"]:focus {{ border: 2px solid {c['accento']}; }}
 QPushButton:pressed {{ background: {c['accento_bg']}; }}
 QPushButton:disabled {{ color: {c['debole']}; border-color: {c['bordo']}; background: transparent; }}
-QPushButton[primario="true"] {{ background: {c['accento']}; color: {c['su_accento']}; border: none; font-weight: 500;
+QToolButton::menu-indicator {{ image: none; width: 0; }}
+QPushButton[primario="true"], QToolButton[primario="true"] {{ background: {c['accento']}; color: {c['su_accento']}; border: none; font-weight: 500;
     border-radius: 16px; padding: 7px 18px; }}
 QPushButton[primario="true"]:disabled {{ background: {c['bordo']}; color: {c['debole']}; }}
-QPushButton[primario="true"]:hover {{ background: {c['accento']}; border: 1px solid {c['testo']}; }}
+QPushButton[primario="true"]:hover, QToolButton[primario="true"]:hover {{ background: {c['accento']}; border: 1px solid {c['testo']}; }}
 QPushButton[pillola="true"] {{ border-radius: 14px; padding: 5px 14px; color: {c['tenue']}; }}
 QPushButton[pillola="true"]:checked {{ background: {c['accento_bg']}; color: {c['accento_forte']}; border-color: {c['accento']}; }}
 QLineEdit, QPlainTextEdit, QTextEdit, QTextBrowser, QComboBox, QSpinBox, QDoubleSpinBox {{
@@ -279,7 +281,7 @@ class NavLaterale(QWidget):
         self.setFixedWidth(84)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 14, 10, 14)
-        lay.setSpacing(4)
+        lay.setSpacing(2)
         self.logo = QLabel()
         self.logo.setFixedSize(56, 56)
         self.logo.setPixmap(marchio(56))
@@ -288,13 +290,21 @@ class NavLaterale(QWidget):
         scritta = QLabel("ARGO")
         scritta.setObjectName("marchio")
         lay.addWidget(scritta, alignment=Qt.AlignHCenter)
-        lay.addSpacing(10)
+        lay.addSpacing(4)
         self.gruppo = QButtonGroup(self)
         self.gruppo.setExclusive(True)
         self.bottoni = []
-        for i, (chiave, etichetta, breve) in enumerate(voci):
-            if chiave == "impostazioni":
-                lay.addStretch(1)
+        i = 0
+        for chiave, etichetta, breve in voci:
+            if etichetta is None:  # intestazione di gruppo (es. «RIUNIONI»): raggruppa, non si clicca
+                lay.addSpacing(4)
+                g = QLabel(chiave)
+                g.setObjectName("navgruppo")
+                lay.addWidget(g, alignment=Qt.AlignHCenter)
+                continue
+            if chiave in ("voci", "impostazioni") and not getattr(self, "_fondo", False):
+                lay.addStretch(1)  # configurazione sempre in fondo
+                self._fondo = True
             b = QToolButton()
             b.setProperty("nav", True)
             b.setCheckable(True)
@@ -305,11 +315,12 @@ class NavLaterale(QWidget):
             b.setToolTip(etichetta)
             b.setAccessibleName(etichetta)
             b.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-            b.setMinimumHeight(56)
+            b.setMinimumHeight(50)
             b.setCursor(Qt.PointingHandCursor)
             self.gruppo.addButton(b, i)
             self.bottoni.append((chiave, b))
             lay.addWidget(b)
+            i += 1
         self.gruppo.idClicked.connect(self.scelto.emit)
 
     def seleziona(self, i):

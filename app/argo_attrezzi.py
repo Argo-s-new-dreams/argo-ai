@@ -15,6 +15,7 @@ from PySide6.QtCore import QObject, Qt, QThread, Signal
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices, QGuiApplication, QTextCursor
 from PySide6.QtWidgets import (
+    QMenu, QToolButton,
     QAbstractItemView, QComboBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView,
     QLabel, QLineEdit, QListWidget, QMessageBox, QPlainTextEdit, QPushButton, QSplitter,
     QTableWidget, QTableWidgetItem, QTextBrowser, QVBoxLayout, QWidget,
@@ -22,6 +23,7 @@ from PySide6.QtWidgets import (
 
 import esporta_word as word
 import llm_locale as llm
+import tema
 import voci_core as core
 
 ESEMPI = Path(__file__).resolve().parent / "esempi"
@@ -226,11 +228,37 @@ class SchedaBase(QWidget):
             avvio()
 
 
-def area(sola_lettura=False, segnaposto=""):
+def area(sola_lettura=False, segnaposto="", filigrana=False):
+    """Area di testo dello Stile Argo. Con filigrana=True, finché è vuota mostra il logo in filigrana e il
+    segnaposto (che dice cosa fare); la filigrana sparisce da sola al primo testo."""
     w = QPlainTextEdit()
     w.setReadOnly(sola_lettura)
     w.setPlaceholderText(segnaposto)
+    if filigrana:
+        stato = {"vuota": None}
+
+        def aggiorna():
+            vuota = not w.toPlainText()
+            if vuota != stato["vuota"]:
+                stato["vuota"] = vuota
+                tema.imposta_filigrana(w, vuota)
+
+        w.textChanged.connect(aggiorna)
+        aggiorna()
     return w
+
+
+def menu_salva(voci):
+    """Un solo pulsante «Salva ▾» con i formati (Stile Argo: al massimo 5 pulsanti visibili per barra).
+    voci: [(etichetta, funzione)]."""
+    b = QToolButton()
+    b.setText("Salva ▾")
+    b.setPopupMode(QToolButton.InstantPopup)
+    m = QMenu(b)
+    for etichetta, fn in voci:
+        m.addAction(etichetta, fn)
+    b.setMenu(m)
+    return b
 
 
 def copia(testo):
@@ -283,9 +311,6 @@ class SchedaVerbale(SchedaBase):
         super().__init__(parent)
         self.sorgente = None
         lay = QVBoxLayout(self)
-        intro = QLabel("Dalla trascrizione con i nomi al verbale, con un modello linguistico che gira su questo computer.")
-        intro.setWordWrap(True)
-        lay.addWidget(intro)
         bar = QHBoxLayout()
         b_apri = QPushButton("Apri trascrizione…")
         b_es = QPushButton("Usa l'esempio")
@@ -294,16 +319,19 @@ class SchedaVerbale(SchedaBase):
         self.b_gen = QPushButton("▶ Genera")
         self.b_gen.setProperty("primario", True)
         b_cop = QPushButton("Copia")
-        b_salva = QPushButton("Salva .md")
-        b_word = QPushButton("Salva Word")
-        for w in (b_apri, b_es):
+        b_salva = menu_salva([("Documento Word (.docx)", self.salva_word), ("Testo Markdown (.md)", self.salva)])
+        # Stile Argo · Organizzazione: azione principale prima a sinistra, poi i suoi parametri e gli ingressi;
+        # a destra ciò che si fa col risultato.
+        for w in (self.b_gen, QLabel("Formato:"), self.c_tipo, b_apri, b_es):
             bar.addWidget(w)
         bar.addStretch()
-        for w in (QLabel("Formato:"), self.c_tipo, self.b_gen, b_cop, b_salva, b_word):
+        for w in (b_cop, b_salva):
             bar.addWidget(w)
         lay.addLayout(bar)
         self.ingresso = area(segnaposto="Incolla qui una trascrizione, oppure aprila da file (*_nomi.txt).")
-        self.uscita = area(True, "Il verbale comparirà qui, parola per parola.")
+        self.uscita = area(True, "Il verbale comparirà qui, parola per parola.\n\nPer cominciare: apri una "
+                                 "trascrizione (o prova con l'esempio), scegli il formato e premi «Genera».",
+                           filigrana=True)
         sp = QSplitter(Qt.Horizontal)
         sp.addWidget(self.ingresso)
         sp.addWidget(self.uscita)
@@ -313,8 +341,6 @@ class SchedaVerbale(SchedaBase):
         b_es.clicked.connect(lambda: self.carica(ESEMPI / "riunione_esempio_nomi.txt"))
         self.b_gen.clicked.connect(lambda: self.ferma_o(self.genera))
         b_cop.clicked.connect(lambda: copia(self.uscita.toPlainText()))
-        b_salva.clicked.connect(self.salva)
-        b_word.clicked.connect(self.salva_word)
 
     def apri(self):
         f, _ = QFileDialog.getOpenFileName(self, "Trascrizione", str(Path.home()), "Testo (*.txt *.md)")
@@ -407,10 +433,6 @@ class SchedaDocumenti(SchedaBase):
         super().__init__(parent)
         self.meta, self.vett = self.carica_indice()
         lay = QVBoxLayout(self)
-        intro = QLabel("Fai domande su contratti, NDA e capitolati senza caricarli nel cloud. "
-                       "I documenti vengono letti e indicizzati su questo computer; ogni risposta cita le fonti.")
-        intro.setWordWrap(True)
-        lay.addWidget(intro)
         sp = QSplitter(Qt.Horizontal)
         sx = QWidget()
         lsx = QVBoxLayout(sx)
@@ -436,7 +458,8 @@ class SchedaDocumenti(SchedaBase):
         rq.addWidget(self.domanda)
         rq.addWidget(self.b_chiedi)
         ldx.addLayout(rq)
-        self.risposta = area(True, "La risposta comparirà qui.")
+        self.risposta = area(True, "La risposta comparirà qui, con le fonti.\n\nPer cominciare: aggiungi i "
+                                   "documenti a sinistra (o l'esempio), poi scrivi la domanda.", filigrana=True)
         ldx.addWidget(self.risposta, 3)
         rf = QHBoxLayout()
         rf.addWidget(QLabel("Fonti usate per la risposta"))
@@ -601,10 +624,6 @@ class SchedaDettatura(SchedaBase):
         self.flusso = None
         self.campioni = []
         lay = QVBoxLayout(self)
-        intro = QLabel("Premi Registra, parla, premi Stop: la voce viene trascritta e riscritta nel formato scelto, "
-                       "tutto su questo computer.")
-        intro.setWordWrap(True)
-        lay.addWidget(intro)
         bar = QHBoxLayout()
         self.b_reg = QPushButton("● Registra")
         self.b_reg.setProperty("primario", True)
@@ -612,18 +631,19 @@ class SchedaDettatura(SchedaBase):
         self.c_stile = QComboBox()
         self.c_stile.addItems(list(STILI_DETTATURA))
         b_rif = QPushButton("Riscrivi")
-        b_cop = QPushButton("Copia risultato")
+        b_cop = QPushButton("Copia")
         b_word = QPushButton("Salva Word")
         b_word.clicked.connect(lambda: salva_word(self, self.uscita.toPlainText(), Path.home() / "dettatura.docx",
                                                   None, oggi(), stato=self.stato))
-        for w in (self.b_reg, b_file):
+        for w in (self.b_reg, QLabel("Formato:"), self.c_stile, b_file):
             bar.addWidget(w)
         bar.addStretch()
-        for w in (QLabel("Formato:"), self.c_stile, b_rif, b_cop, b_word):
+        for w in (b_rif, b_cop, b_word):
             bar.addWidget(w)
         lay.addLayout(bar)
         self.grezzo = area(segnaposto="Qui compare la trascrizione grezza (modificabile).")
-        self.uscita = area(True, "Qui compare il testo riscritto.")
+        self.uscita = area(True, "Qui compare il testo riscritto nel formato scelto.\n\nPer cominciare: premi "
+                                 "«Registra» e parla, oppure scegli un file audio.", filigrana=True)
         sp = QSplitter(Qt.Vertical)
         sp.addWidget(self.grezzo)
         sp.addWidget(self.uscita)
@@ -713,10 +733,6 @@ class SchedaTraduzione(SchedaBase):
     def __init__(self, parent=None):
         super().__init__(parent)
         lay = QVBoxLayout(self)
-        intro = QLabel("Traduce testi o trascrizioni rispettando il glossario aziendale IT/EN/DE: "
-                       "i termini del glossario vengono imposti al modello.")
-        intro.setWordWrap(True)
-        lay.addWidget(intro)
         bar = QHBoxLayout()
         b_txt = QPushButton("Apri testo…")
         b_aud = QPushButton("Trascrivi audio…")
@@ -730,15 +746,16 @@ class SchedaTraduzione(SchedaBase):
         b_word.clicked.connect(lambda: salva_word(
             self, self.uscita.toPlainText(), Path.home() / f"traduzione_{self.c_lingua.currentData()}.docx",
             None, f"Traduzione in {self.c_lingua.currentText().lower()} · {oggi()}", stato=self.stato))
-        for w in (b_txt, b_aud):
+        for w in (self.b_trad, QLabel("in:"), self.c_lingua, b_txt, b_aud):
             bar.addWidget(w)
         bar.addStretch()
-        for w in (QLabel("Traduci in:"), self.c_lingua, self.b_trad, b_cop, b_word):
+        for w in (b_cop, b_word):
             bar.addWidget(w)
         lay.addLayout(bar)
         sp = QSplitter(Qt.Horizontal)
-        self.ingresso = area(segnaposto="Testo da tradurre.")
-        self.uscita = area(True, "Traduzione.")
+        self.ingresso = area(segnaposto="Incolla qui il testo da tradurre, oppure aprilo da file.")
+        self.uscita = area(True, "La traduzione comparirà qui.\n\nI termini del glossario qui sotto vengono "
+                                 "imposti al modello.", filigrana=True)
         sp.addWidget(self.ingresso)
         sp.addWidget(self.uscita)
         gl = QGroupBox("Glossario (IT / EN / DE) - modificabile")

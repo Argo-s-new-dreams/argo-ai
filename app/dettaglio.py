@@ -101,7 +101,7 @@ class DettaglioTrascrizione(QWidget):
         self.bottoni = []
         for testo, sig, prim in (("Nomi dei parlanti", self.nomi, False), ("Marca voci", self.marca, False),
                                  ("Apri testo", self.apri, False), ("Word", self.word, False),
-                                 ("Verbale →", self.verbale, True)):
+                                 ("Verbale →", self.verbale, False)):  # un solo primario per pagina: «Avvia coda»
             b = QPushButton(testo)
             if prim:
                 b.setProperty("primario", True)
@@ -120,9 +120,11 @@ class DettaglioTrascrizione(QWidget):
     def mostra(self, job):
         c = tema.colori()
         completata = bool(job and job.get("stato") == "Completata" and job.get("json") and Path(job["json"]).exists())
+        # Stile Argo · Organizzazione: le azioni che non si possono usare adesso non si mostrano spente,
+        # si nascondono. Marca voci funziona anche prima della trascrizione; le altre servono il risultato.
         for b in self.bottoni:
-            b.setEnabled(completata)
-        self.bottoni[1].setEnabled(bool(job))  # Marca voci funziona anche prima della trascrizione
+            b.setVisible(completata)
+        self.bottoni[1].setVisible(bool(job))
         self.corsie.setVisible(bool(job))
         if not job:
             self.titolo.setText("Nessun file selezionato")
