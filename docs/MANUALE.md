@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261116.1725 · riferita all'app versione 20261116.1725*
+*Versione del manuale: 20261116.1818 · riferita all'app versione 20261116.1818*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -159,7 +159,12 @@ Senza Ollama il Trascrittore e l'Anagrafe voci funzionano lo stesso. La Dettatur
 
 ## 4bis. L'interfaccia
 
-- **Menu laterale a icone:** Incarichi, Agenda, Posta, Registra, Trascrivi, Verbale, Documenti, Dettatura, Traduci, Voci e, in fondo, Impostazioni. Passando il mouse su un'icona compare il nome completo.
+- **Menu laterale a icone, in due gruppi nell'ordine del lavoro:**
+  - **Riunioni:** Agenda → Registra → Trascrivi → Verbale → Incarichi (dalla call al verbale e ai task);
+  - **Attrezzi:** Posta, Documenti, Dettatura, Traduci;
+  - in fondo **Voci** e **Impostazioni**. Passando il mouse su un'icona compare il nome completo.
+- **Ogni pagina si usa allo stesso modo:** sotto il titolo c'è una riga che dice a cosa serve (e quando usare un'altra pagina); poi la barra dei comandi, con l'**azione principale** (pulsante terracotta) **per prima a sinistra**, seguita dalle scelte e dai file da aprire; a destra ciò che fai col risultato (**Copia**, **Salva ▾**). I pulsanti che non puoi ancora usare non compaiono finché non servono.
+- **Pannelli vuoti:** mostrano il logo in filigrana e una frase con il passo da fare.
 - **Tema:** **Notte** (scuro, predefinito), **Carta** (chiaro), oppure come il sistema. Colori, marchio e carattere (Roboto) vengono dal Brand Book di Argo's New Dreams e seguono il design system «Stile Argo», con contrasti verificati (WCAG 2.2 AA). Si sceglie in *Impostazioni → Aspetto* e cambia subito, senza riavviare.
 - **Bollino in basso a destra:** *100% locale* finché il modello linguistico gira su questo computer. Se punti Ollama a un'altra macchina, il bollino lo segnala.
 
@@ -224,12 +229,12 @@ L'IT può limitare la pagina con `criteri.json` (vedi [PRO.md](PRO.md)): `"regis
 
 ---
 
-## 5. Trascrittore
+## 5. Trascrivi
 
-La scheda principale. A sinistra c'è la **coda** di file audio o video da trascrivere; a destra il **dettaglio** del file selezionato:
+La pagina del Trascrittore (nel menu: *Trascrivi*). In alto **▶ Avvia coda** e **+ Aggiungi file…**. A sinistra c'è la **coda** di file audio o video da trascrivere; a destra il **dettaglio** del file selezionato:
 - le **corsie dei parlanti**, una per persona, colorate, che mostrano quando parla ciascuno lungo la registrazione;
 - la **trascrizione** con i nomi colorati allo stesso modo;
-- i pulsanti *Nomi dei parlanti*, *Marca voci*, *Apri testo*, *Word* e *Verbale →*.
+- i pulsanti *Nomi dei parlanti*, *Marca voci*, *Apri testo*, *Word* e *Verbale →*, che compaiono quando scegli un file (*Marca voci* anche prima della trascrizione, gli altri a trascrizione completata).
 
 Le stesse azioni sono anche nel menu col **tasto destro** sulle righe della coda.
 
@@ -380,7 +385,7 @@ L'Agenda mostra le tue riunioni da Microsoft 365, raggruppate per giorno: oggi e
 | Pulsante | Cosa fa |
 | --- | --- |
 | **Prepara** | Briefing **locale** in Markdown: obiettivo probabile, partecipanti, cosa è emerso nelle riunioni precedenti, azioni aperte, tre domande utili. Argo cerca fino a 3 verbali recenti (`*_verbale*.md`) che citano i partecipanti, nelle cartelle dei file in coda e in quella delle registrazioni, e li elenca come *Fonti* in fondo. |
-| **● Registra** | Registra dal microfono in un WAV (16 kHz, mono) nella cartella delle registrazioni (predefinita `Documenti/Argo/Registrazioni`), con nome `data ora oggetto.wav`. Avvisa se non sente audio. Premi di nuovo per fermare. |
+| **● Registra** | Apre la pagina **Registra** con il titolo della riunione già scritto: lì scegli Live o Archivia e le sorgenti (microfono e audio della call). Se archivi, **Incarico →** usa poi quella registrazione. |
 | **Partecipa** | Apre il link Teams della riunione. |
 | **Apri in Outlook** | Apre l'evento in Outlook sul web. |
 | **Incarico →** | Passa agli Incarichi con i destinatari del recap già compilati dai partecipanti e, se hai appena registrato, con la registrazione già scelta. |
@@ -408,15 +413,15 @@ Non è un client di posta completo: è un **assistente** accanto a Outlook. Most
 
 **Privacy:** il testo delle mail arriva dal tuo tenant Microsoft 365 al tuo computer e viene elaborato dal **modello locale** (Ollama). Non passa da nessun servizio AI esterno e Argo non conserva le mail su disco. La lettura è **disattivata** finché non la attivi.
 
-## 6. Anagrafe voci
+## 6. Voci (anagrafe voci)
 
 L'anagrafe contiene un'**impronta vocale** (un vettore numerico) per ogni persona. Più campioni ha una persona, più il riconoscimento è stabile: Argo ne fa la media.
 
 ### Aggiungere una voce
 
-Ci sono tre modi per creare un'impronta.
+Premi **＋ Nuova voce ▾** e scegli uno dei tre modi. **Aggiungi campione…**, **Rinomina…** ed **Elimina** compaiono quando selezioni una voce nell'elenco.
 
-**🎙 Registra voce… (dal microfono)**
+**🎙 Registra ora al microfono**
 
 1. Scrivi o scegli il nome. Se la voce esiste già, la registrazione diventa un nuovo campione.
 2. Premi **● Registra** e fai parlare **solo** quella persona, nel silenzio. Può leggere il testo proposto nella finestra.
@@ -425,7 +430,7 @@ Ci sono tre modi per creare un'impronta.
 
 Sul Mac, alla prima registrazione il sistema chiede il permesso di usare il microfono.
 
-**🎧 Marca voci in un audio… (da una registrazione)**
+**🎧 Segnando dove parla in una registrazione** (Marca voci)
 
 Serve quando hai una riunione o un'intervista in cui parlano più persone e vuoi ricavare le impronte di tutte in una volta. Si apre anche dal Trascrittore, con **🎧 Marca voci…** sulla riga selezionata.
 
@@ -445,9 +450,9 @@ Serve quando hai una riunione o un'intervista in cui parlano più persone e vuoi
 
 Prima di creare l'impronta conviene ascoltarne qualche tratto: la separazione automatica a volte mescola due voci.
 
-**➕ Nuova voce da audio… (da un file)**
+**📄 Da un file in cui parla solo lei**
 
-- **➕ Nuova voce da audio…**: scegli un file in cui parla **solo** quella persona (bastano 20-60 secondi puliti) e dai un nome. Usa solo lettere, numeri, spazi, `-` e `_`.
+- Scegli un file in cui parla **solo** quella persona (bastano 20-60 secondi puliti) e dai un nome. Usa solo lettere, numeri, spazi, `-` e `_`.
 - **Aggiungi campione…**: aggiunge un altro audio a una voce esistente, utile se la riconosce male.
 - In alternativa, il modo più comodo: trascrivi una riunione, apri **✏️ Nomi dei parlanti…** e spunta **Memorizza**.
 
@@ -487,7 +492,7 @@ Trasforma una trascrizione con i nomi in un testo pronto da usare. Richiede un m
 | Solo elenco delle azioni | Solo la tabella delle azioni |
 
 3. Premi **▶ Genera**: il testo compare parola per parola. Premi di nuovo il pulsante per fermare la generazione.
-4. **Copia**, **Salva .md** oppure **Salva Word**. I nomi proposti stanno accanto alla trascrizione: `nomefile_verbale`, `nomefile_sintesi` o `nomefile_azioni`, a seconda del formato.
+4. **Copia**, oppure **Salva ▾** → *Documento Word* o *Testo Markdown*. I nomi proposti stanno accanto alla trascrizione: `nomefile_verbale`, `nomefile_sintesi` o `nomefile_azioni`, a seconda del formato.
 
 **Come lavora:**
 
@@ -546,7 +551,7 @@ Parli e ottieni un testo già scritto bene.
    - Solo trascrizione (non serve Ollama).
 2. Premi **● Registra**, parla, poi **■ Stop**. In alternativa usa **Da file audio…**, che accetta anche video (mp4, mov…).
 3. A sinistra compare la trascrizione grezza, a destra il testo riscritto. Puoi correggere la trascrizione e premere **Riscrivi**, oppure cambiare formato e riscrivere.
-4. **Copia risultato** e incolla dove ti serve, oppure **Salva Word**.
+4. **Copia** e incolla dove ti serve, oppure **Salva Word**.
 
 **Dettagli tecnici:**
 

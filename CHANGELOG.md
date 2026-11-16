@@ -2,6 +2,18 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261116.1818: più facile da usare, ogni pagina allo stesso modo
+- **Menu in due gruppi**, nell'ordine del lavoro: **Riunioni** (Agenda → Registra → Trascrivi → Verbale → Incarichi) e **Attrezzi** (Posta, Documenti, Dettatura, Traduci); Voci e Impostazioni in fondo. Il nome nel menu è lo stesso del titolo della pagina.
+- **Barra dei comandi uguale ovunque:** l'azione principale (pulsante terracotta) è sempre la prima a sinistra, poi le scelte e i file da aprire; a destra Copia e Salva. Un solo pulsante principale per pagina.
+- **Agenda → Registra:** il pulsante «● Registra» dell'Agenda ora apre la pagina Registra con il titolo della riunione. Prima usava un registratore a parte, **solo microfono**: nelle call Teams mancavano le voci degli altri partecipanti.
+- **Registra:** prima scegli il modo e le sorgenti («Microfono (tu)», «Audio del computer (gli altri)»), poi **Avvia**, con il titolo accanto.
+- **Verbale:** «Salva ▾» con Word o Markdown al posto di due pulsanti.
+- **Voci:** un solo pulsante **＋ Nuova voce ▾** con i tre modi; Aggiungi campione, Rinomina ed Elimina compaiono quando scegli una voce.
+- **Trascrivi:** le azioni sul file compaiono quando servono, invece di cinque pulsanti spenti.
+- **Pannelli vuoti** di Verbale, Dettatura, Traduzione e Documenti con il logo in filigrana e il passo da fare.
+- Tolte le righe introduttive che ripetevano il sottotitolo; la barra di stato dice solo cosa sta succedendo (la località la indica il bollino 🔒).
+- Nessuna funzione tolta: cambiano solo posizione e nomi di alcuni pulsanti (vedi manuale).
+
 ## 20261116.1725: contrasti secondo lo Stile Argo
 - Colori allineati al design system **Stile Argo**, con contrasti verificati secondo WCAG 2.2 AA in entrambi i temi:
   - **bordi dei campi** di testo, dei menu a tendina e delle caselle più marcati (almeno 3:1 sul fondo), così si vede subito dove scrivere;
