@@ -354,16 +354,79 @@ def posta(solo_non_lette=True, quante=40):
     return out
 
 
+# ---------------------------------------------------------------- HTML delle mail
+_BLOCCHI = {"p", "div", "br", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6", "table", "blockquote", "hr"}
+
+
+def html_a_testo(html_mail):
+    """Testo leggibile da una mail HTML, per il modello locale: niente stili, script né indirizzi dei link."""
+    from html.parser import HTMLParser
+
+    class P(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.out, self.salta = [], 0
+
+        def handle_starttag(self, tag, attrs):
+            if tag in ("style", "script", "head", "title"):
+                self.salta += 1
+            elif tag in _BLOCCHI:
+                self.out.append("\n")
+            elif tag in ("td", "th"):
+                self.out.append(" ")
+
+        def handle_endtag(self, tag):
+            if tag in ("style", "script", "head", "title"):
+                self.salta = max(0, self.salta - 1)
+            elif tag in _BLOCCHI:
+                self.out.append("\n")
+
+        def handle_data(self, d):
+            if not self.salta:
+                self.out.append(d)
+
+    p = P()
+    p.feed(html_mail or "")
+    righe = [" ".join(r.split()) for r in "".join(p.out).splitlines()]
+    testo, vuote = [], 0
+    for r in righe:
+        vuote = vuote + 1 if not r else 0
+        if vuote <= 1:
+            testo.append(r)
+    return "\n".join(testo).strip()
+
+
+def pulisci_html(html_mail):
+    """HTML della mail da mostrare in Argo: senza script, moduli e immagini remote (niente pixel di tracciamento:
+    Argo non scarica nulla dalla mail)."""
+    import re
+    h = html_mail or ""
+    h = re.sub(r"(?is)<(script|style|head|iframe|object|embed|form)\b.*?</\1\s*>", "", h)
+    h = re.sub(r"(?is)<(script|iframe|object|embed|form|input|button|meta|link|base)\b[^>]*>", "", h)
+    h = re.sub(r"(?is)<img\b[^>]*>", "", h)
+    h = re.sub(r"(?i)\son\w+\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", "", h)
+    h = re.sub(r"(?i)(href|src)\s*=\s*([\"'])\s*javascript:[^\"']*\2", r"\1=\2#\2", h)
+    return h
+
+
 def messaggio(mid):
     if not lettura_posta_attiva():
         raise ErroreM365("La lettura della posta è disattivata.")
     m = graph("GET", f"/me/messages/{urllib.parse.quote(mid)}?$select=subject,from,toRecipients,ccRecipients,"
-                     "receivedDateTime,body,conversationId,webLink,hasAttachments", testo=True)
+                     "receivedDateTime,body,conversationId,webLink,hasAttachments")
+    corpo = m.get("body") or {}
+    contenuto = corpo.get("content") or ""
+    if (corpo.get("contentType") or "").lower() == "html":
+        html_mail, testo = pulisci_html(contenuto), html_a_testo(contenuto)
+    else:
+        import html as _h
+        testo = contenuto.strip()
+        html_mail = "<div style='white-space: pre-wrap'>" + _h.escape(testo) + "</div>"
     return {"id": m.get("id", mid), "oggetto": m.get("subject") or "", "da": _mittente(m),
             "a": [((r.get("emailAddress") or {}).get("name") or (r.get("emailAddress") or {}).get("address", ""))
                   for r in (m.get("toRecipients") or []) + (m.get("ccRecipients") or [])],
             "quando": (m.get("receivedDateTime") or "")[:16].replace("T", " "),
-            "testo": ((m.get("body") or {}).get("content") or "").strip(),
+            "testo": testo, "html": html_mail,
             "conversazione": m.get("conversationId", ""), "link": m.get("webLink", ""),
             "allegati": bool(m.get("hasAttachments"))}
 

@@ -30,7 +30,7 @@ import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261116.1611"
+VERSIONE = "20261116.1636"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -1114,7 +1114,7 @@ class Finestra(QMainWindow):
         f5 = QHBoxLayout(g5)
         f5.addWidget(QLabel("Tema:"))
         self.c_tema = QComboBox()
-        for etichetta, val in (("Scuro", "scuro"), ("Chiaro", "chiaro"), ("Come il sistema", "sistema")):
+        for etichetta, val in (("Notte (scuro)", "scuro"), ("Carta (chiaro)", "chiaro"), ("Come il sistema", "sistema")):
             self.c_tema.addItem(etichetta, val)
         self.c_tema.setCurrentIndex(max(0, self.c_tema.findData(imp.get("tema", "scuro"))))
         self.c_tema.currentIndexChanged.connect(lambda _: self.cambia_tema(self.c_tema.currentData()))

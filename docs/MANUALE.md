@@ -153,7 +153,7 @@ Senza Ollama il Trascrittore e l'Anagrafe voci funzionano lo stesso. La Dettatur
 ## 4bis. L'interfaccia
 
 - **Menu laterale a icone:** Incarichi, Agenda, Posta, Registra, Trascrivi, Verbale, Documenti, Dettatura, Traduci, Voci e, in fondo, Impostazioni. Passando il mouse su un'icona compare il nome completo.
-- **Tema:** scuro (predefinito), chiaro, oppure come il sistema. Si sceglie in *Impostazioni → Aspetto* e cambia subito, senza riavviare.
+- **Tema:** **Notte** (scuro, predefinito), **Carta** (chiaro), oppure come il sistema. Colori, marchio e carattere (Roboto) vengono dal Brand Book di Argo's New Dreams. Si sceglie in *Impostazioni → Aspetto* e cambia subito, senza riavviare.
 - **Bollino in basso a destra:** *100% locale* finché il modello linguistico gira su questo computer. Se punti Ollama a un'altra macchina, il bollino lo segnala.
 
 ![Trascrittore](screenshot-coda.png)

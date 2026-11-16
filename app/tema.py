@@ -1,26 +1,31 @@
 """tema.py - aspetto di Argo: tema scuro / chiaro, icone e menu laterale (stile «Studio»)."""
 from PySide6.QtCore import QByteArray, QRectF, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QGuiApplication, QIcon, QPainter, QPalette, QPixmap
+from pathlib import Path
+
+from PySide6.QtGui import QColor, QFontDatabase, QGuiApplication, QIcon, QPainter, QPalette, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QButtonGroup, QLabel, QSizePolicy, QToolButton, QVBoxLayout, QWidget
 
-ACCENTO = "#2DD4BF"
+# Palette dal Brand Book di Argo's New Dreams («Dove il fantastico è il quotidiano»): carta calda, antracite delle
+# sfere, terracotta e ocra delle orbite. «scuro» = Notte, «chiaro» = Carta (le chiavi restano per le impostazioni).
+ACCENTO = "#E58074"
 TEMI = {
     "scuro": {
-        "bg": "#0F1115", "pannello": "#14171D", "pannello2": "#1A1E25", "nav": "#15181E", "bordo": "#23272F",
-        "bordo2": "#2E333D", "testo": "#E6E8EE", "testo2": "#D4D8E0", "tenue": "#98A1B2", "debole": "#6B7280",
-        "accento": "#2DD4BF", "su_accento": "#0F1115", "accento_bg": "#1F2A2E", "ok": "#6EE7B7", "warn": "#FBBF24",
-        "err": "#FCA5A5", "sel": "#1F2A2E",
-        "parlanti": ["#2DD4BF", "#F59E0B", "#A78BFA", "#F472B6", "#60A5FA", "#A3E635", "#FB923C", "#E879F9"],
+        "bg": "#1C2124", "pannello": "#22282B", "pannello2": "#2A3134", "nav": "#171B1D", "bordo": "#30383C",
+        "bordo2": "#3D464A", "testo": "#F1E8DC", "testo2": "#E2D6C6", "tenue": "#A89B8D", "debole": "#7C7268",
+        "accento": "#E58074", "su_accento": "#1C2124", "accento_bg": "#3A2C28", "ok": "#9CC9A6", "warn": "#EEC29B",
+        "err": "#F19A8E", "sel": "#3A2C28", "ocra": "#EEC29B", "orbita": "#3A4246",
+        "parlanti": ["#E58074", "#EEC29B", "#8FB3C4", "#A9C3A0", "#C7A2C0", "#D9B88F", "#F0A8A0", "#9FC6BE"],
     },
     "chiaro": {
-        "bg": "#F6F7F9", "pannello": "#FFFFFF", "pannello2": "#F2F4F7", "nav": "#FFFFFF", "bordo": "#E4E7EC",
-        "bordo2": "#D0D5DD", "testo": "#1F2430", "testo2": "#2B3240", "tenue": "#5B6475", "debole": "#6B7280",
-        "accento": "#0F766E", "su_accento": "#FFFFFF", "accento_bg": "#E6F4F2", "ok": "#067647", "warn": "#B54708",
-        "err": "#B42318", "sel": "#E6F4F2",
-        "parlanti": ["#0F766E", "#B45309", "#6D28D9", "#BE185D", "#1D4ED8", "#4D7C0F", "#C2410C", "#A21CAF"],
+        "bg": "#F6F0E6", "pannello": "#FFFDF8", "pannello2": "#F1E6D8", "nav": "#EFE5D6", "bordo": "#E2D5C4",
+        "bordo2": "#D3C2AE", "testo": "#1F2427", "testo2": "#2C3337", "tenue": "#6B6158", "debole": "#8A8178",
+        "accento": "#B0503B", "su_accento": "#FFFFFF", "accento_bg": "#F3DCD3", "ok": "#3F7D5A", "warn": "#A0661C",
+        "err": "#B3392B", "sel": "#F3DCD3", "ocra": "#D9A06E", "orbita": "#D9CBB8",
+        "parlanti": ["#B0503B", "#A0661C", "#3F6F86", "#4E7A4A", "#8A4E80", "#8C6A3E", "#C0624F", "#2F7A70"],
     },
 }
+CARTA_MAIL = {"bg": "#FFFDF8", "testo": "#1F2427", "bordo": "#E2D5C4", "link": "#B0503B"}
 _attuale = {"nome": "scuro"}
 
 
@@ -40,15 +45,17 @@ def colori():
 
 def qss(c):
     return f"""
-* {{ font-family: "Inter", "SF Pro Text", "Segoe UI", system-ui, sans-serif; font-size: 13px; }}
+* {{ font-family: "Roboto", "Segoe UI", system-ui, sans-serif; font-size: 13px; }}
 QMainWindow, QDialog, QWidget#pagina {{ background: {c['bg']}; }}
 QWidget {{ color: {c['testo']}; }}
 QLabel {{ background: transparent; }}
-QLabel[ruolo="titolo"] {{ font-size: 20px; font-weight: 600; }}
+QLabel[ruolo="titolo"] {{ font-size: 24px; font-weight: 300; letter-spacing: 0.5px; }}
 QLabel[ruolo="tenue"] {{ color: {c['tenue']}; }}
-QLabel[ruolo="sezione"] {{ color: {c['tenue']}; font-size: 11px; font-weight: 600; letter-spacing: 1px; }}
+QLabel[ruolo="sezione"] {{ color: {c['tenue']}; font-size: 11px; font-weight: 500; letter-spacing: 1.5px; }}
+QLabel#marchio {{ color: {c['tenue']}; font-size: 10px; font-weight: 300; letter-spacing: 3px; }}
+QTextBrowser#mail {{ background: {CARTA_MAIL['bg']}; color: {CARTA_MAIL['testo']}; border: 1px solid {c['bordo']};
+    border-radius: 10px; padding: 10px; selection-background-color: {CARTA_MAIL['link']}; selection-color: #FFFFFF; }}
 QWidget#nav {{ background: {c['nav']}; border-right: 1px solid {c['bordo']}; }}
-QLabel#logo {{ background: {c['accento']}; color: {c['su_accento']}; border-radius: 12px; font-weight: 800; font-size: 17px; }}
 QToolButton[nav="true"] {{ background: transparent; color: {c['tenue']}; border: none; border-radius: 12px;
     padding: 6px 2px; font-size: 10px; }}
 QToolButton[nav="true"]:hover {{ background: {c['pannello2']}; color: {c['testo']}; }}
@@ -62,7 +69,8 @@ QPushButton, QToolButton {{ background: {c['pannello2']}; color: {c['testo']}; b
 QPushButton:hover, QToolButton:hover {{ border-color: {c['accento']}; }}
 QPushButton:pressed {{ background: {c['accento_bg']}; }}
 QPushButton:disabled {{ color: {c['debole']}; border-color: {c['bordo']}; }}
-QPushButton[primario="true"] {{ background: {c['accento']}; color: {c['su_accento']}; border: none; font-weight: 600; }}
+QPushButton[primario="true"] {{ background: {c['accento']}; color: {c['su_accento']}; border: none; font-weight: 500;
+    border-radius: 16px; padding: 7px 18px; }}
 QPushButton[primario="true"]:hover {{ background: {c['accento']}; border: 1px solid {c['testo']}; }}
 QPushButton[pillola="true"] {{ border-radius: 14px; padding: 5px 14px; color: {c['tenue']}; }}
 QPushButton[pillola="true"]:checked {{ background: {c['accento_bg']}; color: {c['accento']}; border-color: {c['accento']}; }}
@@ -116,7 +124,17 @@ QFrame[ruolo="scheda"] {{ background: {c['pannello']}; border: 1px solid {c['bor
 """
 
 
+def carica_font():
+    """Roboto, il carattere del Brand Book (Apache 2.0), incluso nell'app: stesso aspetto su Mac e Windows."""
+    if _attuale.get("font"):
+        return
+    for f in sorted((Path(__file__).resolve().parent / "fonti").glob("*.ttf")):
+        QFontDatabase.addApplicationFont(str(f))
+    _attuale["font"] = True
+
+
 def applica(app, nome="scuro"):
+    carica_font()
     n = risolvi(nome)
     _attuale["nome"] = n
     c = TEMI[n]
@@ -173,6 +191,38 @@ def icona_stato(nome):
     return ic
 
 
+def svg_marchio(c, sfondo=False):
+    """Il marchio: una sfera antracite con un'orbita sottile, la piccola sfera terracotta e una luna ocra,
+    come nel logo «Dove il fantastico è il quotidiano». Sfere con luce morbida, come nel Brand Book."""
+    fondo = f'<rect x="2" y="2" width="96" height="96" rx="24" fill="{c["bg"]}"/>' if sfondo else ""
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>'
+            '<radialGradient id="s" cx="38%" cy="34%" r="70%"><stop offset="0" stop-color="#6A7378"/>'
+            '<stop offset="0.55" stop-color="#2E363A"/><stop offset="1" stop-color="#161B1D"/></radialGradient>'
+            f'<radialGradient id="t" cx="35%" cy="32%" r="70%"><stop offset="0" stop-color="#F4B3A8"/>'
+            f'<stop offset="1" stop-color="{c["accento"]}"/></radialGradient>'
+            '<radialGradient id="o" cx="35%" cy="32%" r="70%"><stop offset="0" stop-color="#FBE3CC"/>'
+            f'<stop offset="1" stop-color="{c["ocra"]}"/></radialGradient></defs>{fondo}'
+            f'<ellipse cx="50" cy="52" rx="42" ry="16" fill="none" stroke="{c["tenue"]}" stroke-width="1.4" '
+            'transform="rotate(-18 50 52)" opacity="0.75"/>'
+            '<circle cx="50" cy="50" r="22" fill="url(#s)"/>'
+            f'<polyline points="89.9,39.0 90.2,40.7 90.1,42.5 89.5,44.4 88.5,46.3 87.1,48.4 85.2,50.4 83.0,52.5 80.4,54.6 77.5,56.7 74.3,58.7 70.8,60.6 67.0,62.5 63.1,64.2 59.1,65.8 54.9,67.2 50.7,68.5 46.5,69.6 42.4,70.5 38.3,71.2 34.3,71.7 30.5,71.9 26.9,72.0 23.6,71.8 20.6,71.4 17.9,70.8 15.5,70.0 13.5,69.0 12.0,67.9 10.8,66.5 10.1,65.0" fill="none" stroke="{c["tenue"]}" '
+            'stroke-width="1.4" opacity="0.75"/>'
+            '<circle cx="86" cy="36" r="6.5" fill="url(#t)"/>'
+            '<circle cx="17" cy="66" r="4.2" fill="url(#o)"/></svg>')
+
+
+def marchio(lato, sfondo=False, c=None):
+    r = QSvgRenderer(QByteArray(svg_marchio(c or colori(), sfondo).encode()))
+    pm = QPixmap(lato * 2, lato * 2)
+    pm.fill(Qt.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.Antialiasing)
+    r.render(p, QRectF(0, 0, lato * 2, lato * 2))
+    p.end()
+    pm.setDevicePixelRatio(2)
+    return pm
+
+
 class NavLaterale(QWidget):
     """Menu laterale a icone che comanda un QTabWidget (la barra delle schede resta nascosta)."""
     scelto = Signal(int)
@@ -185,13 +235,15 @@ class NavLaterale(QWidget):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 14, 10, 14)
         lay.setSpacing(4)
-        logo = QLabel("A")
-        logo.setObjectName("logo")
-        logo.setFixedSize(42, 42)
-        logo.setAlignment(Qt.AlignCenter)
-        logo.setToolTip("Argo · Cassetta degli attrezzi AI")
-        lay.addWidget(logo, alignment=Qt.AlignHCenter)
-        lay.addSpacing(14)
+        self.logo = QLabel()
+        self.logo.setFixedSize(46, 46)
+        self.logo.setPixmap(marchio(46))
+        self.logo.setToolTip("Argo · Cassetta degli attrezzi AI\nArgo's New Dreams: dove il fantastico è il quotidiano")
+        lay.addWidget(self.logo, alignment=Qt.AlignHCenter)
+        scritta = QLabel("ARGO")
+        scritta.setObjectName("marchio")
+        lay.addWidget(scritta, alignment=Qt.AlignHCenter)
+        lay.addSpacing(10)
         self.gruppo = QButtonGroup(self)
         self.gruppo.setExclusive(True)
         self.bottoni = []
@@ -221,5 +273,6 @@ class NavLaterale(QWidget):
             b.setChecked(True)
 
     def ricolora(self):
+        self.logo.setPixmap(marchio(46))
         for chiave, b in self.bottoni:
             b.setIcon(icona_stato(chiave))
