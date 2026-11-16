@@ -1,14 +1,14 @@
-"""prepara_rilascio.py - prepara i file di una release Pro di Argo (usato dalla GitHub Action «Rilascio Pro»).
+"""prepara_rilascio.py - prepara i file di una release Pro (usato dalla GitHub Action «Rilascio Pro»).
 
     python strumenti/prepara_rilascio.py v20261116.1015 dist note.md
 
 Crea in dist/:
-    argo-app-<versione>.zip      la cartella app/ (senza cache), con percorsi «app/…»
+    <slug>-app-<versione>.zip    la cartella app/ (senza cache), con percorsi «app/…»
     argo-manifest.json           versione, nome e SHA-256 del pacchetto, commit, data
     argo-manifest.json.sig       firma Ed25519 del manifesto (se c'è il segreto ARGO_FIRMA_PRIVATA)
 e in note.md le note di rilascio prese dal CHANGELOG.
 
-Si ferma con un errore se il tag non corrisponde a VERSIONE in app/trascrittore.py, se manca
+Si ferma con un errore se il tag non corrisponde a VERSIONE dell'app, se manca
 app/requisiti.lock, o se l'app contiene la chiave pubblica ma il segreto per firmare non è disponibile
 (una release non firmata verrebbe rifiutata da tutte le installazioni Pro).
 """
@@ -22,6 +22,9 @@ import sys
 import zipfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import identita  # noqa: E402
+
 RADICE = Path(__file__).resolve().parent.parent
 APP = RADICE / "app"
 ESCLUSI = {"__pycache__", ".DS_Store"}
@@ -34,10 +37,7 @@ def errore(msg):
 
 
 def versione_app():
-    m = re.search(r'^VERSIONE\s*=\s*"(\d{8}\.\d{4})"', (APP / "trascrittore.py").read_text(encoding="utf-8"), re.M)
-    if not m:
-        errore("VERSIONE non trovata in app/trascrittore.py")
-    return m.group(1)
+    return identita.versione()
 
 
 def note_dal_changelog(versione):
@@ -88,11 +88,11 @@ def main():
         errore("l'app contiene chiave_aggiornamenti.pub ma il segreto ARGO_FIRMA_PRIVATA non è impostato")
 
     uscita.mkdir(parents=True, exist_ok=True)
-    nome_zip = f"argo-app-{versione}.zip"
+    nome_zip = f"{identita.slug()}-app-{versione}.zip"
     n = crea_zip(uscita / nome_zip)
     dati_zip = (uscita / nome_zip).read_bytes()
     manifesto = {
-        "prodotto": "Argo · Cassetta degli attrezzi AI",
+        "prodotto": identita.nome(),
         "canale": "pro",
         "versione": versione,
         "pacchetto": nome_zip,
