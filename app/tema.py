@@ -191,34 +191,13 @@ def icona_stato(nome):
     return ic
 
 
-def svg_marchio(c, sfondo=False):
-    """Il marchio: una sfera antracite con un'orbita sottile, la piccola sfera terracotta e una luna ocra,
-    come nel logo «Dove il fantastico è il quotidiano». Sfere con luce morbida, come nel Brand Book."""
-    fondo = f'<rect x="2" y="2" width="96" height="96" rx="24" fill="{c["bg"]}"/>' if sfondo else ""
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>'
-            '<radialGradient id="s" cx="38%" cy="34%" r="70%"><stop offset="0" stop-color="#6A7378"/>'
-            '<stop offset="0.55" stop-color="#2E363A"/><stop offset="1" stop-color="#161B1D"/></radialGradient>'
-            f'<radialGradient id="t" cx="35%" cy="32%" r="70%"><stop offset="0" stop-color="#F4B3A8"/>'
-            f'<stop offset="1" stop-color="{c["accento"]}"/></radialGradient>'
-            '<radialGradient id="o" cx="35%" cy="32%" r="70%"><stop offset="0" stop-color="#FBE3CC"/>'
-            f'<stop offset="1" stop-color="{c["ocra"]}"/></radialGradient></defs>{fondo}'
-            f'<ellipse cx="50" cy="52" rx="42" ry="16" fill="none" stroke="{c["tenue"]}" stroke-width="1.4" '
-            'transform="rotate(-18 50 52)" opacity="0.75"/>'
-            '<circle cx="50" cy="50" r="22" fill="url(#s)"/>'
-            f'<polyline points="89.9,39.0 90.2,40.7 90.1,42.5 89.5,44.4 88.5,46.3 87.1,48.4 85.2,50.4 83.0,52.5 80.4,54.6 77.5,56.7 74.3,58.7 70.8,60.6 67.0,62.5 63.1,64.2 59.1,65.8 54.9,67.2 50.7,68.5 46.5,69.6 42.4,70.5 38.3,71.2 34.3,71.7 30.5,71.9 26.9,72.0 23.6,71.8 20.6,71.4 17.9,70.8 15.5,70.0 13.5,69.0 12.0,67.9 10.8,66.5 10.1,65.0" fill="none" stroke="{c["tenue"]}" '
-            'stroke-width="1.4" opacity="0.75"/>'
-            '<circle cx="86" cy="36" r="6.5" fill="url(#t)"/>'
-            '<circle cx="17" cy="66" r="4.2" fill="url(#o)"/></svg>')
-
-
-def marchio(lato, sfondo=False, c=None):
-    r = QSvgRenderer(QByteArray(svg_marchio(c or colori(), sfondo).encode()))
-    pm = QPixmap(lato * 2, lato * 2)
-    pm.fill(Qt.transparent)
-    p = QPainter(pm)
-    p.setRenderHint(QPainter.Antialiasing)
-    r.render(p, QRectF(0, 0, lato * 2, lato * 2))
-    p.end()
+def marchio(lato):
+    """Il marchio di Argo's New Dreams nel menu: il disco con le sfere del logo «Dove il fantastico è il quotidiano»
+    (app/marchio.png, ritagliato dal logo originale del Brand Book)."""
+    pm = QPixmap(str(Path(__file__).resolve().parent / "marchio.png"))
+    if pm.isNull():
+        return QPixmap()
+    pm = pm.scaled(lato * 2, lato * 2, Qt.KeepAspectRatio, Qt.SmoothTransformation)
     pm.setDevicePixelRatio(2)
     return pm
 
