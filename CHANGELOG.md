@@ -2,6 +2,15 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261116.1725: contrasti secondo lo Stile Argo
+- Colori allineati al design system **Stile Argo**, con contrasti verificati secondo WCAG 2.2 AA in entrambi i temi:
+  - **bordi dei campi** di testo, dei menu a tendina e delle caselle più marcati (almeno 3:1 sul fondo), così si vede subito dove scrivere;
+  - **testo segnaposto** (es. «Titolo della riunione») più leggibile: ora usa il colore delle note invece di quello dei disattivati;
+  - nel tema Carta, verde «ok», arancio «attenzione» e rosso «errore» un filo più scuri (almeno 4,5:1 anche sui fondi chiari); terracotta più scuro per il testo delle selezioni e delle voci di menu evidenziate;
+  - il **focus da tastiera** sui pulsanti è ora un bordo terracotta di 2 px;
+  - settimo colore dei parlanti più scuro nel tema Carta.
+- Nessun cambiamento di funzioni.
+
 ## 20261116.1701: stile Argo's New Dreams e Posta leggibile
 - **Nuovo aspetto dal Brand Book** di Argo's New Dreams («Dove il fantastico è il quotidiano»):
   - due temi, **Notte** (antracite) e **Carta** (contenuto su carta calda, menu antracite come le sfere del logo), con accento terracotta;
