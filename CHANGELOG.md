@@ -2,12 +2,14 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
-## 20261116.1651: stile Argo's New Dreams e Posta leggibile
+## 20261116.1657: stile Argo's New Dreams e Posta leggibile
 - **Nuovo aspetto dal Brand Book** di Argo's New Dreams («Dove il fantastico è il quotidiano»):
-  - due temi, **Notte** (antracite) e **Carta** (carta calda), con accento terracotta e ocra delle orbite;
-  - il **logo del blog** «Dove il fantastico è il quotidiano» nel menu (il disco con le sfere) e come icona dell'app;
+  - due temi, **Notte** (antracite) e **Carta** (contenuto su carta calda, menu antracite come le sfere del logo), con accento terracotta;
+  - pannelli bianco caldo che si staccano dal fondo, pulsanti secondari contornati, pulsanti disattivati chiaramente sbiaditi;
+  - **marchio** nel menu e **icona dell'app** dal disco con le due sfere di `Icona_AND.psd` (Brand Book);
+  - l'**illustrazione** «Dove il fantastico è il quotidiano» nei pannelli vuoti, con l'indicazione di cosa fare;
   - carattere **Roboto**, incluso nell'app: stesso aspetto su Mac e Windows;
-  - titoli leggeri e pulsanti principali arrotondati come le sfere del logo.
+  - titoli più decisi e pulsanti principali arrotondati come le sfere del logo.
 - **Posta AI:** la mail si vede **formattata** (grassetti, paragrafi, tabelle, link cliccabili) invece del testo grezzo con gli indirizzi dei link. Script e moduli vengono tolti; le **immagini remote non vengono scaricate**, quindi niente pixel di tracciamento. Al modello locale va il testo pulito, senza indirizzi dei link.
 - La nuova icona dell'app compare nel Dock o nella barra delle applicazioni dopo aver rilanciato l'installer; la finestra la usa subito.
 

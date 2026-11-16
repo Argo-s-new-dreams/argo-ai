@@ -11,18 +11,23 @@ from PySide6.QtWidgets import QButtonGroup, QLabel, QSizePolicy, QToolButton, QV
 ACCENTO = "#E58074"
 TEMI = {
     "scuro": {
-        "bg": "#1C2124", "pannello": "#22282B", "pannello2": "#2A3134", "nav": "#171B1D", "bordo": "#30383C",
-        "bordo2": "#3D464A", "testo": "#F1E8DC", "testo2": "#E2D6C6", "tenue": "#A89B8D", "debole": "#7C7268",
+        "bg": "#1C2124", "pannello": "#23292C", "pannello2": "#2B3236", "nav": "#14181A", "bordo": "#323A3E",
+        "bordo2": "#434C51", "testo": "#F1E8DC", "testo2": "#E2D6C6", "tenue": "#A99C8E", "debole": "#6F675F",
         "accento": "#E58074", "su_accento": "#1C2124", "accento_bg": "#3A2C28", "ok": "#9CC9A6", "warn": "#EEC29B",
-        "err": "#F19A8E", "sel": "#3A2C28", "ocra": "#EEC29B", "orbita": "#3A4246",
+        "err": "#F19A8E", "sel": "#3A2C28", "ocra": "#EEC29B",
+        "nav_testo": "#A99C8E", "nav_testo_su": "#F1E8DC", "nav_hover": "#22282B", "nav_sel": "#3A2C28",
+        "nav_accento": "#E58074", "nav_bordo": "#14181A",
         "parlanti": ["#E58074", "#EEC29B", "#8FB3C4", "#A9C3A0", "#C7A2C0", "#D9B88F", "#F0A8A0", "#9FC6BE"],
     },
+    # Carta: menu antracite come le sfere del logo, contenuto su carta; pannelli bianco caldo che si staccano
     "chiaro": {
-        "bg": "#F6F0E6", "pannello": "#FFFDF8", "pannello2": "#F1E6D8", "nav": "#EFE5D6", "bordo": "#E2D5C4",
-        "bordo2": "#D3C2AE", "testo": "#1F2427", "testo2": "#2C3337", "tenue": "#6B6158", "debole": "#8A8178",
-        "accento": "#B0503B", "su_accento": "#FFFFFF", "accento_bg": "#F3DCD3", "ok": "#3F7D5A", "warn": "#A0661C",
-        "err": "#B3392B", "sel": "#F3DCD3", "ocra": "#D9A06E", "orbita": "#D9CBB8",
-        "parlanti": ["#B0503B", "#A0661C", "#3F6F86", "#4E7A4A", "#8A4E80", "#8C6A3E", "#C0624F", "#2F7A70"],
+        "bg": "#EDE4D6", "pannello": "#FFFDF9", "pannello2": "#F6EFE5", "nav": "#1F2427", "bordo": "#D9CAB6",
+        "bordo2": "#C2AE96", "testo": "#1A1E20", "testo2": "#2A3033", "tenue": "#5E554C", "debole": "#A3978A",
+        "accento": "#AE4E39", "su_accento": "#FFFFFF", "accento_bg": "#F5DDD4", "ok": "#3F7D5A", "warn": "#9A5F17",
+        "err": "#B3392B", "sel": "#F5DDD4", "ocra": "#D9A06E",
+        "nav_testo": "#B5A898", "nav_testo_su": "#F6EFE5", "nav_hover": "#2B3236", "nav_sel": "#3A2C28",
+        "nav_accento": "#EB8C7F", "nav_bordo": "#1F2427",
+        "parlanti": ["#AE4E39", "#9A5F17", "#3F6F86", "#4E7A4A", "#8A4E80", "#8C6A3E", "#C0624F", "#2F7A70"],
     },
 }
 CARTA_MAIL = {"bg": "#FFFDF8", "testo": "#1F2427", "bordo": "#E2D5C4", "link": "#B0503B"}
@@ -49,28 +54,29 @@ def qss(c):
 QMainWindow, QDialog, QWidget#pagina {{ background: {c['bg']}; }}
 QWidget {{ color: {c['testo']}; }}
 QLabel {{ background: transparent; }}
-QLabel[ruolo="titolo"] {{ font-size: 24px; font-weight: 300; letter-spacing: 0.5px; }}
+QLabel[ruolo="titolo"] {{ font-size: 23px; font-weight: 500; }}
 QLabel[ruolo="tenue"] {{ color: {c['tenue']}; }}
 QLabel[ruolo="sezione"] {{ color: {c['tenue']}; font-size: 11px; font-weight: 500; letter-spacing: 1.5px; }}
-QLabel#marchio {{ color: {c['tenue']}; font-size: 10px; font-weight: 300; letter-spacing: 3px; }}
+QLabel#marchio {{ color: {c['nav_testo']}; font-size: 10px; font-weight: 400; letter-spacing: 3px; }}
 QTextBrowser#mail {{ background: {CARTA_MAIL['bg']}; color: {CARTA_MAIL['testo']}; border: 1px solid {c['bordo']};
     border-radius: 10px; padding: 10px; selection-background-color: {CARTA_MAIL['link']}; selection-color: #FFFFFF; }}
-QWidget#nav {{ background: {c['nav']}; border-right: 1px solid {c['bordo']}; }}
-QToolButton[nav="true"] {{ background: transparent; color: {c['tenue']}; border: none; border-radius: 12px;
+QWidget#nav {{ background: {c['nav']}; border-right: 1px solid {c['nav_bordo']}; }}
+QToolButton[nav="true"] {{ background: transparent; color: {c['nav_testo']}; border: none; border-radius: 12px;
     padding: 6px 2px; font-size: 10px; }}
-QToolButton[nav="true"]:hover {{ background: {c['pannello2']}; color: {c['testo']}; }}
-QToolButton[nav="true"]:checked {{ background: {c['accento_bg']}; color: {c['accento']}; }}
+QToolButton[nav="true"]:hover {{ background: {c['nav_hover']}; color: {c['nav_testo_su']}; }}
+QToolButton[nav="true"]:checked {{ background: {c['nav_sel']}; color: {c['nav_accento']}; }}
 QTabWidget::pane {{ border: none; background: {c['bg']}; }}
 QGroupBox {{ background: {c['pannello']}; border: 1px solid {c['bordo']}; border-radius: 12px; margin-top: 22px;
     padding: 14px 12px 12px 12px; font-weight: 600; }}
 QGroupBox::title {{ subcontrol-origin: margin; left: 12px; top: 2px; color: {c['testo']}; }}
-QPushButton, QToolButton {{ background: {c['pannello2']}; color: {c['testo']}; border: 1px solid {c['bordo2']};
+QPushButton, QToolButton {{ background: {c['pannello']}; color: {c['testo']}; border: 1px solid {c['bordo2']};
     border-radius: 8px; padding: 7px 14px; min-height: 20px; }}
 QPushButton:hover, QToolButton:hover {{ border-color: {c['accento']}; }}
 QPushButton:pressed {{ background: {c['accento_bg']}; }}
-QPushButton:disabled {{ color: {c['debole']}; border-color: {c['bordo']}; }}
+QPushButton:disabled {{ color: {c['debole']}; border-color: {c['bordo']}; background: transparent; }}
 QPushButton[primario="true"] {{ background: {c['accento']}; color: {c['su_accento']}; border: none; font-weight: 500;
     border-radius: 16px; padding: 7px 18px; }}
+QPushButton[primario="true"]:disabled {{ background: {c['bordo']}; color: {c['debole']}; }}
 QPushButton[primario="true"]:hover {{ background: {c['accento']}; border: 1px solid {c['testo']}; }}
 QPushButton[pillola="true"] {{ border-radius: 14px; padding: 5px 14px; color: {c['tenue']}; }}
 QPushButton[pillola="true"]:checked {{ background: {c['accento_bg']}; color: {c['accento']}; border-color: {c['accento']}; }}
@@ -109,7 +115,7 @@ QScrollBar::handle:vertical {{ background: {c['bordo2']}; border-radius: 4px; mi
 QScrollBar:horizontal {{ background: transparent; height: 10px; margin: 2px; }}
 QScrollBar::handle:horizontal {{ background: {c['bordo2']}; border-radius: 4px; min-width: 30px; }}
 QScrollBar::add-line, QScrollBar::sub-line {{ width: 0; height: 0; }}
-QStatusBar {{ background: {c['nav']}; color: {c['tenue']}; border-top: 1px solid {c['bordo']}; }}
+QStatusBar {{ background: {c['pannello2']}; color: {c['tenue']}; border-top: 1px solid {c['bordo']}; }}
 QStatusBar QLabel {{ color: {c['tenue']}; }}
 QCheckBox {{ spacing: 8px; }}
 QCheckBox::indicator {{ width: 16px; height: 16px; border: 1.5px solid {c['bordo2']}; border-radius: 4px; background: {c['pannello2']}; }}
@@ -185,21 +191,32 @@ def icona_stato(nome):
     """Icona con colore normale e colore 'selezionato' (accento)."""
     c = colori()
     ic = QIcon()
-    ic.addPixmap(icona(nome, c["tenue"]), QIcon.Normal, QIcon.Off)
-    ic.addPixmap(icona(nome, c["accento"]), QIcon.Normal, QIcon.On)
-    ic.addPixmap(icona(nome, c["accento"]), QIcon.Active, QIcon.On)
+    ic.addPixmap(icona(nome, c["nav_testo"]), QIcon.Normal, QIcon.Off)
+    ic.addPixmap(icona(nome, c["nav_testo_su"]), QIcon.Active, QIcon.Off)
+    ic.addPixmap(icona(nome, c["nav_accento"]), QIcon.Normal, QIcon.On)
+    ic.addPixmap(icona(nome, c["nav_accento"]), QIcon.Active, QIcon.On)
     return ic
 
 
 def marchio(lato):
-    """Il marchio di Argo's New Dreams nel menu: il disco con le sfere del logo «Dove il fantastico è il quotidiano»
-    (app/marchio.png, ritagliato dal logo originale del Brand Book)."""
+    """Il marchio di Argo's New Dreams nel menu: il disco con le due sfere, come nella favicon, ricavato da
+    Icona_AND.psd del Brand Book (app/marchio.png)."""
     pm = QPixmap(str(Path(__file__).resolve().parent / "marchio.png"))
     if pm.isNull():
         return QPixmap()
     pm = pm.scaled(lato * 2, lato * 2, Qt.KeepAspectRatio, Qt.SmoothTransformation)
     pm.setDevicePixelRatio(2)
     return pm
+
+
+def stato_vuoto(testo):
+    """HTML per i pannelli vuoti: l'illustrazione del Brand Book e il motto, con un invito a cosa fare."""
+    from html import escape
+    c = colori()
+    img = (Path(__file__).resolve().parent / "illustrazione.png").as_uri()
+    return (f"<div align='center' style='margin-top: 28px'><img src='{img}' width='240' height='240'/>"
+            f"<p style='font-size: 15px; color: {c['testo']}; margin-top: 14px'>Dove il fantastico è il quotidiano</p>"
+            f"<p style='color: {c['tenue']}'>{escape(testo)}</p></div>")
 
 
 class NavLaterale(QWidget):
