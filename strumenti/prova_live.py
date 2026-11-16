@@ -70,6 +70,16 @@ prova("mixer: l'eccesso resta in attesa per il blocco dopo", np.allclose(x2, 0.3
 mx.mescola(m, np.full(SR * 5, 0.2, np.float32))
 prova("mixer: attesa limitata a 2 s (niente deriva)", len(mx._attesa) <= 2 * SR)
 
+mx.g_mic, mx.g_sis = 0.5, 2.0
+mx._attesa = np.zeros(0, np.float32)
+x3 = mx.mescola(np.full(160, 0.2, np.float32), np.full(160, 0.1, np.float32))
+prova("mixer: volumi per sorgente", np.allclose(x3, 0.3))
+prova("sorgenti: «nessuna» = solo microfono", ca.sorgente_sistema("nessuna") == (None, ""))
+prova("sorgenti: dispositivo scollegato segnalato", ca.sorgente_sistema("dev:Cuffie inesistenti")[1].startswith("dispositivo"))
+el = [v for v, _ in ca.elenco_sistema()]
+prova("sorgenti: elenco con Automatico e Nessuno", el[:2] == ["auto", "nessuna"])
+prova("sorgenti: microfono predefinito sempre disponibile", ca.elenco_microfoni()[0][0] == "")
+
 # ---------------------------------------------------------------- tagliatore
 tg = live.Tagliatore()
 flusso = np.concatenate([voce(12), silenzio(0.8), voce(15), silenzio(1.0), voce(30), silenzio(0.6),

@@ -7,6 +7,7 @@ Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo 
   - Windows: WASAPI loopback, senza installare nulla;
   - macOS 13+: ScreenCaptureKit, solo audio, con il permesso *Registrazione schermo e audio di sistema*;
   - ripiego automatico su BlackHole, Missaggio stereo o VB-CABLE, se presenti.
+- **Sorgenti gestibili:** scelta del microfono e dell'audio del computer (automatico, nessuno, metodo nativo o dispositivo preciso), **volume di ciascuna sorgente** regolabile anche durante la registrazione, livelli in tempo reale. Le scelte vengono ricordate.
 - **Modalità Live:** trascrive mentre registri, a blocchi di 20-45 secondi tagliati sui silenzi, e **cancella ogni blocco audio appena il suo testo è salvato**. Alla fine resta solo la trascrizione con i nomi, pronta per il Verbale. I parlanti restano coerenti da un blocco all'altro: anagrafe voci prima, poi «Sconosciuto N» riconosciuti nella sessione.
 - **Modalità Archivia:** registrazione completa in `Documenti/Argo/Registrazioni` e **Metti in coda nel Trascrittore**.
 - **Consenso:** prima di ogni registrazione Argo chiede di confermare che i partecipanti sono informati e prepara l'avviso da incollare in chat.

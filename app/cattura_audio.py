@@ -95,12 +95,23 @@ class Microfono(Sorgente):
 
     def __init__(self, dispositivo=None):
         super().__init__()
-        self.dispositivo = dispositivo
+        self.dispositivo = dispositivo or None  # nome del dispositivo, None = predefinito
         self.flusso = None
 
     def avvia(self):
         import sounddevice as sd
-        self.flusso = sd.InputStream(samplerate=SR, channels=1, dtype="float32", device=self.dispositivo,
+        indice = None
+        if self.dispositivo:
+            indice = indice_dispositivo(self.dispositivo)
+            if indice is None:
+                raise RuntimeError(f"microfono «{self.dispositivo}» non trovato (scollegato?)")
+            self.nome = f"Microfono ({self.dispositivo})"
+        else:
+            try:
+                self.nome = f"Microfono ({sd.query_devices(kind='input')['name']})"
+            except Exception:
+                pass
+        self.flusso = sd.InputStream(samplerate=SR, channels=1, dtype="float32", device=indice,
                                      callback=lambda d, *_: self._metti(d[:, 0].copy(), SR))
         self.flusso.start()
 
@@ -290,8 +301,59 @@ class AudioSistemaMac(Sorgente):
             self.stream = None
 
 
-def sorgente_sistema():
-    """La migliore sorgente per l'audio del computer su questa macchina, già avviabile, oppure (None, motivo)."""
+def _dispositivi_ingresso():
+    try:
+        import sounddevice as sd
+        return [(i, d["name"]) for i, d in enumerate(sd.query_devices()) if d.get("max_input_channels", 0) > 0]
+    except Exception:
+        return []
+
+
+def elenco_microfoni():
+    """[(valore, etichetta)]: «» = microfono predefinito del sistema, altrimenti il nome del dispositivo."""
+    out = [("", "Predefinito del sistema")]
+    for _, nome in _dispositivi_ingresso():
+        if not any(k in nome.lower() for k in NOMI_LOOPBACK):
+            out.append((nome, nome))
+    return out
+
+
+def elenco_sistema():
+    """[(valore, etichetta)] per l'audio del computer. I dispositivi si salvano per nome (gli indici cambiano)."""
+    out = [("auto", "Automatico (consigliato)"), ("nessuna", "Nessuno: solo microfono")]
+    if sys.platform == "darwin":
+        out.append(("nativo", "Audio di sistema macOS (ScreenCaptureKit)"))
+    elif sys.platform == "win32":
+        out.append(("nativo", "Altoparlanti predefiniti di Windows (WASAPI)"))
+    for _, nome in _dispositivi_ingresso():
+        if any(k in nome.lower() for k in NOMI_LOOPBACK):
+            out.append(("dev:" + nome, nome))
+    return out
+
+
+def indice_dispositivo(nome):
+    for i, n in _dispositivi_ingresso():
+        if n == nome:
+            return i
+    return None
+
+
+def sorgente_sistema(scelta="auto"):
+    """Avvia la sorgente scelta per l'audio del computer: (sorgente, "") oppure (None, motivo).
+    scelta: "auto" | "nessuna" | "nativo" | "dev:<nome dispositivo>"."""
+    if scelta == "nessuna":
+        return None, ""
+    if scelta.startswith("dev:"):
+        nome = scelta[4:]
+        i = indice_dispositivo(nome)
+        if i is None:
+            return None, f"dispositivo «{nome}» non trovato (scollegato?)"
+        try:
+            s = DispositivoLoopback(i, nome)
+            s.avvia()
+            return s, ""
+        except Exception as e:
+            return None, f"{nome}: {e}"
     tentativi = []
     if sys.platform == "darwin":
         tentativi.append(AudioSistemaMac)
@@ -305,6 +367,8 @@ def sorgente_sistema():
             return s, ""
         except Exception as e:
             motivi.append(f"{cls.nome}: {e}")
+    if scelta == "nativo":
+        return None, "; ".join(motivi) or "non disponibile su questo sistema"
     trovato = DispositivoLoopback.trova()
     if trovato:
         try:
@@ -326,9 +390,12 @@ class Mixer:
     PASSO = 0.1
     MAX_RITARDO = 2.0  # secondi di audio del computer in attesa oltre i quali si scarta il più vecchio
 
-    def __init__(self, uscita, sistema=True, guadagno_mic=1.0, guadagno_sis=1.0):
+    def __init__(self, uscita, sistema="auto", guadagno_mic=1.0, guadagno_sis=1.0, microfono=None):
+        """sistema: "auto" | "nessuna" | "nativo" | "dev:<nome>" (True/False per compatibilità).
+        I guadagni si possono cambiare durante la registrazione."""
         self.uscita = uscita
-        self.vuole_sistema = sistema
+        self.scelta_sistema = {True: "auto", False: "nessuna"}.get(sistema, sistema)
+        self.microfono = microfono
         self.g_mic, self.g_sis = guadagno_mic, guadagno_sis
         self.mic = None
         self.sis = None
@@ -344,10 +411,9 @@ class Mixer:
         return self.campioni / SR
 
     def avvia(self):
-        self.mic = Microfono()
+        self.mic = Microfono(self.microfono)
         self.mic.avvia()
-        if self.vuole_sistema:
-            self.sis, self.avviso_sistema = sorgente_sistema()
+        self.sis, self.avviso_sistema = sorgente_sistema(self.scelta_sistema)
         self._stop.clear()
         self._thread = threading.Thread(target=self._ciclo, name="argo-mixer", daemon=True)
         self._thread.start()
