@@ -16,7 +16,14 @@ Non sono due prodotti. È **un solo repository con due canali**.
 | Governo IT | — | `criteri.json` di sistema (Intune/Jamf) |
 | Promessa | "Prova le novità" | "Non si rompe senza preavviso" |
 
-**Il flusso:** si sviluppa su `main` (Lab). Quando una versione ha girato abbastanza ed è stata provata, si crea il tag `v<VERSIONE>` e la GitHub Action *Rilascio Pro* pubblica la release: pacchetto, manifesto, firma e note prese dal CHANGELOG.
+**Il flusso:** si sviluppa su `main` (Lab). Quando una versione ha girato abbastanza ed è stata provata, la si promuove a Pro con un solo comando, che fa i controlli, mostra cosa arriverà agli utenti Pro e chiede conferma:
+
+```bash
+python strumenti/passa_a_pro.py --controlla   # solo controlli e riepilogo
+python strumenti/passa_a_pro.py               # controlli, riepilogo, conferma [s/N], tag e push
+```
+
+Il push del tag avvia la GitHub Action *Rilascio Pro*, che pubblica la release: pacchetto, manifesto, firma e note prese dal CHANGELOG. Quando cambiano le librerie: `python strumenti/blocca_librerie.py [freeze.txt]`.
 
 ---
 

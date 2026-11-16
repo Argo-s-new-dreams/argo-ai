@@ -21,8 +21,13 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 RADICE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RADICE / "app"))
+sys.path.insert(0, str(RADICE / "strumenti"))
 import aggiornamenti as agg  # noqa: E402
 import criteri  # noqa: E402
+import identita  # noqa: E402
+
+FILE_VERSIONE = identita.file_versione().name  # progetto.py nelle app dal modello, trascrittore.py in Argo
+VAR_CRITERI = getattr(criteri, "VARIABILE", "ARGO_CRITERI")
 
 esiti = []
 
@@ -50,8 +55,7 @@ def chiavi():
 
 
 def main():
-    versione = re.search(r'^VERSIONE\s*=\s*"(\d{8}\.\d{4})"',
-                         (RADICE / "app" / "trascrittore.py").read_text(encoding="utf-8"), re.M).group(1)
+    versione = identita.versione()
     priv, pub = chiavi()
     _, pub_altra = chiavi()
     with tempfile.TemporaryDirectory() as t:
@@ -89,25 +93,25 @@ def main():
 
         dest = t / "estratto"
         agg._estrai_app(zip_b, dest)
-        prova("pacchetto estratto con trascrittore.py e requisiti.lock",
-              (dest / "trascrittore.py").exists() and (dest / "requisiti.lock").exists()
+        prova(f"pacchetto estratto con {FILE_VERSIONE} e requisiti.lock",
+              (dest / FILE_VERSIONE).exists() and (dest / "requisiti.lock").exists()
               and not any("__pycache__" in p.parts for p in dest.rglob("*")))
 
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as z:
-            z.writestr("app/trascrittore.py", "VERSIONE = \"20990101.0000\"\n")
+            z.writestr(f"app/{FILE_VERSIONE}", "VERSIONE = \"20990101.0000\"\n")
             z.writestr("app/../../fuori.txt", "no")
         prova("percorsi che escono dalla cartella rifiutati", rifiuta(agg._estrai_app, buf.getvalue(), t / "slip"))
 
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as z:
-            z.writestr("argo-ai-main/app/trascrittore.py", "VERSIONE = \"20990101.0000\"\n")
+            z.writestr(f"repo-main/app/{FILE_VERSIONE}", "VERSIONE = \"20990101.0000\"\n")
         agg._estrai_app(buf.getvalue(), t / "lab")
-        prova("ZIP del ramo (canale Lab) ancora supportato", (t / "lab" / "trascrittore.py").exists())
+        prova("ZIP del ramo (canale Lab) ancora supportato", (t / "lab" / FILE_VERSIONE).exists())
 
         # criteri IT
         f = t / "criteri.json"
-        os.environ["ARGO_CRITERI"] = str(f)
+        os.environ[VAR_CRITERI] = str(f)
         prova("nessun file criteri: nessun criterio", criteri.carica() == {})
         f.write_text(json.dumps({"canale_aggiornamenti": "pro", "aggiornamenti_dall_app": False, "altro": 1}))
         c = criteri.carica()
@@ -119,7 +123,7 @@ def main():
         prova("valore non valido ignorato", criteri.carica() == {})
         f.write_text("{non è json")
         prova("file illeggibile vale come assente", criteri.carica() == {})
-        prova("canale predefinito Lab", agg.canale_effettivo({}, {}) == "lab")
+        prova("canale predefinito come da progetto", agg.canale_effettivo({}, {}) == agg.CANALE_PREDEFINITO)
 
     print(f"\n{sum(esiti)}/{len(esiti)} prove superate")
     sys.exit(0 if all(esiti) else 1)
