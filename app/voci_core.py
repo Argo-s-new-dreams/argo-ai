@@ -36,6 +36,8 @@ DEFAULT_SETTINGS = {
     "m365_client_id": "",  # Microsoft 365, facoltativo
     "m365_tenant_id": "",
     "m365_leggi_posta": False,  # Posta AI: lettura della posta, solo se attivata dall'utente
+    "modello_live": "large-v3-turbo",  # Registra · Live: modello più veloce, per stare dietro al parlato
+    "registra_audio_sistema": True,  # Registra: includi l'audio del computer (call Teams)
     "cartella_registrazioni": "",  # Agenda: dove salvare le registrazioni (vuoto = ~/Documents/Argo)  # all'avvio legge da GitHub solo il numero di versione
 }
 

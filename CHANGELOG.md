@@ -2,6 +2,19 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261116.1611: Registra, con Live senza audio conservato
+- **Nuova pagina Registra** per riunioni in presenza e **call Teams**: Argo prende il microfono e l'**audio del computer**, cioè le voci degli altri partecipanti.
+  - Windows: WASAPI loopback, senza installare nulla;
+  - macOS 13+: ScreenCaptureKit, solo audio, con il permesso *Registrazione schermo e audio di sistema*;
+  - ripiego automatico su BlackHole, Missaggio stereo o VB-CABLE, se presenti.
+- **Modalità Live:** trascrive mentre registri, a blocchi di 20-45 secondi tagliati sui silenzi, e **cancella ogni blocco audio appena il suo testo è salvato**. Alla fine resta solo la trascrizione con i nomi, pronta per il Verbale. I parlanti restano coerenti da un blocco all'altro: anagrafe voci prima, poi «Sconosciuto N» riconosciuti nella sessione.
+- **Modalità Archivia:** registrazione completa in `Documenti/Argo/Registrazioni` e **Metti in coda nel Trascrittore**.
+- **Consenso:** prima di ogni registrazione Argo chiede di confermare che i partecipanti sono informati e prepara l'avviso da incollare in chat.
+- **Recupero:** se Argo si chiude durante una Live, al prossimo ingresso in Registra propone di trascrivere il resto o di cancellare l'audio rimasto.
+- **Criterio IT** `registrazione`: `completa`, `solo_live` o `nessuna`.
+- Nuove librerie: `PyAudioWPatch` (solo Windows) e `pyobjc-framework-ScreenCaptureKit` (solo macOS). L'aggiornamento dall'app le installa se trova `uv`.
+- Prove automatiche in `strumenti/prova_live.py`.
+
 ## 20261116.0951: canali Lab e Pro
 - **Due canali di aggiornamento** in *Impostazioni → Aggiornamenti*:
   - **Lab** (predefinito): segue ogni novità appena pubblicata, come finora;
