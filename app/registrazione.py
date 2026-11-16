@@ -16,11 +16,11 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
-from PySide6.QtCore import QObject, QProcess, QTimer, QUrl, Signal
+from PySide6.QtCore import QObject, QProcess, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 from PySide6.QtWidgets import (
-    QButtonGroup, QCheckBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, QLineEdit,
-    QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QRadioButton, QVBoxLayout, QWidget,
+    QButtonGroup, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, QLineEdit,
+    QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QRadioButton, QSlider, QVBoxLayout, QWidget,
 )
 
 import cattura_audio as ca
@@ -134,14 +134,9 @@ class SchedaRegistra(QWidget):
         self.r_arch.setEnabled("archivia" in consentite)
         (self.r_live if "live" in consentite else self.r_arch).setChecked(True)
 
-        riga = QHBoxLayout()
         self.e_titolo = QLineEdit()
         self.e_titolo.setPlaceholderText("Titolo della riunione (facoltativo)")
-        riga.addWidget(self.e_titolo, 1)
-        self.c_sistema = QCheckBox("Includi l'audio del computer (call Teams)")
-        self.c_sistema.setChecked(bool(core.carica_impostazioni().get("registra_audio_sistema", True)))
-        riga.addWidget(self.c_sistema)
-        lay.addLayout(riga)
+        lay.addWidget(self.e_titolo)
 
         bar = QHBoxLayout()
         self.b_avvia = QPushButton("● Avvia")
@@ -169,24 +164,52 @@ class SchedaRegistra(QWidget):
             bar.addWidget(b)
         lay.addLayout(bar)
 
+        # ---- sorgenti: dispositivo, volume (anche durante la registrazione), livello
+        imp = core.carica_impostazioni()
         g = QGridLayout()
+        g.setHorizontalSpacing(10)
         self.l_rec = QLabel("")
         self.l_rec.setProperty("ruolo", "titolo")
-        g.addWidget(self.l_rec, 0, 0, 1, 3)
+        g.addWidget(self.l_rec, 0, 0, 1, 5)
+        self.c_mic = QComboBox()
+        self.c_sis = QComboBox()
+        self.v_mic = QSlider(Qt.Horizontal)
+        self.v_sis = QSlider(Qt.Horizontal)
+        self.l_vmic = QLabel()
+        self.l_vsis = QLabel()
         self.m_mic = QProgressBar()
         self.m_sis = QProgressBar()
-        for i, (m, nome) in enumerate(((self.m_mic, "Microfono"), (self.m_sis, "Audio del computer")), 1):
-            m.setRange(0, 100)
-            m.setTextVisible(False)
-            m.setFixedHeight(8)
+        righe = ((self.c_mic, self.v_mic, self.l_vmic, self.m_mic, "Microfono", "registra_volume_mic"),
+                 (self.c_sis, self.v_sis, self.l_vsis, self.m_sis, "Audio del computer", "registra_volume_sistema"))
+        for i, (combo, vol, etich, metro, nome, chiave) in enumerate(righe, 1):
+            combo.setMinimumWidth(260)
+            vol.setRange(0, 200)
+            vol.setValue(int(imp.get(chiave, 100)))
+            vol.setFixedWidth(140)
+            vol.setToolTip("Volume di questa sorgente nella registrazione (si può cambiare anche mentre registri)")
+            etich.setFixedWidth(42)
+            metro.setRange(0, 100)
+            metro.setTextVisible(False)
+            metro.setFixedHeight(8)
             g.addWidget(QLabel(nome), i, 0)
-            g.addWidget(m, i, 1)
+            g.addWidget(combo, i, 1)
+            g.addWidget(vol, i, 2)
+            g.addWidget(etich, i, 3)
+            g.addWidget(metro, i, 4)
+            vol.valueChanged.connect(self._volumi)
+        self.b_elenco = QPushButton("↻")
+        self.b_elenco.setToolTip("Aggiorna l'elenco dei dispositivi (dopo aver collegato cuffie o microfoni)")
+        self.b_elenco.setFixedWidth(36)
+        self.b_elenco.clicked.connect(self._riempi_sorgenti)
+        g.addWidget(self.b_elenco, 1, 5)
         self.l_sorgenti = QLabel("")
         self.l_sorgenti.setProperty("ruolo", "tenue")
         self.l_sorgenti.setWordWrap(True)
-        g.addWidget(self.l_sorgenti, 3, 0, 1, 3)
-        g.setColumnStretch(1, 1)
+        g.addWidget(self.l_sorgenti, 3, 0, 1, 6)
+        g.setColumnStretch(4, 1)
         lay.addLayout(g)
+        self._riempi_sorgenti()
+        self._volumi()
 
         self.testo = QPlainTextEdit()
         self.testo.setReadOnly(True)
@@ -204,6 +227,40 @@ class SchedaRegistra(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._aggiorna)
+
+    # ------------------------------------------------------------ sorgenti
+    def _riempi_sorgenti(self):
+        imp = core.carica_impostazioni()
+        voluto_mic = self.c_mic.currentData() if self.c_mic.count() else imp.get("registra_microfono", "")
+        voluto_sis = self.c_sis.currentData() if self.c_sis.count() else imp.get("registra_sistema", "auto")
+        if not self.c_sis.count() and imp.get("registra_audio_sistema") is False and voluto_sis == "auto":
+            voluto_sis = "nessuna"  # impostazione delle versioni precedenti
+        for combo, voci, voluto in ((self.c_mic, ca.elenco_microfoni(), voluto_mic),
+                                    (self.c_sis, ca.elenco_sistema(), voluto_sis)):
+            combo.blockSignals(True)
+            combo.clear()
+            for valore, etichetta in voci:
+                combo.addItem(etichetta, valore)
+            i = combo.findData(voluto)
+            if i < 0 and voluto:  # dispositivo salvato ma ora scollegato: resta visibile e segnalato
+                combo.addItem(f"{voluto.removeprefix('dev:')} (non collegato)", voluto)
+                i = combo.count() - 1
+            combo.setCurrentIndex(max(i, 0))
+            combo.blockSignals(False)
+
+    def _volumi(self):
+        self.l_vmic.setText(f"{self.v_mic.value()}%")
+        self.l_vsis.setText(f"{self.v_sis.value()}%")
+        if self.mixer:
+            self.mixer.g_mic = self.v_mic.value() / 100
+            self.mixer.g_sis = self.v_sis.value() / 100
+
+    def _salva_sorgenti(self):
+        s = core.carica_impostazioni()
+        s.update(registra_microfono=self.c_mic.currentData() or "", registra_sistema=self.c_sis.currentData() or "auto",
+                 registra_volume_mic=self.v_mic.value(), registra_volume_sistema=self.v_sis.value())
+        s.pop("registra_audio_sistema", None)
+        core.salva_impostazioni(s)
 
     # ------------------------------------------------------------ sessioni rimaste a metà
     def showEvent(self, e):
@@ -263,9 +320,7 @@ class SchedaRegistra(QWidget):
             return
         if DialogoConsenso(modo, self).exec() != QDialog.Accepted:
             return
-        s = core.carica_impostazioni()
-        s["registra_audio_sistema"] = self.c_sistema.isChecked()
-        core.salva_impostazioni(s)
+        self._salva_sorgenti()
         self.modo = modo
         self.testo.clear()
         self.risultato = None
@@ -285,7 +340,9 @@ class SchedaRegistra(QWidget):
                 self.wav.setnchannels(1)
                 self.wav.setsampwidth(2)
                 self.wav.setframerate(ca.SR)
-            self.mixer = ca.Mixer(self._audio, sistema=self.c_sistema.isChecked())
+            self.mixer = ca.Mixer(self._audio, sistema=self.c_sis.currentData() or "auto",
+                                  microfono=self.c_mic.currentData() or None,
+                                  guadagno_mic=self.v_mic.value() / 100, guadagno_sis=self.v_sis.value() / 100)
             self.mixer.avvia()
         except Exception as e:
             self._pulisci_dopo_errore()
@@ -294,13 +351,13 @@ class SchedaRegistra(QWidget):
             return
         sorgenti = self.mixer.mic.nome + (f" + {self.mixer.sis.nome}" if self.mixer.sis else "")
         avviso = ""
-        if self.c_sistema.isChecked() and not self.mixer.sis:
+        if self.c_sis.currentData() != "nessuna" and not self.mixer.sis:
             avviso = (" ⚠️ Audio del computer non disponibile: registro solo il microfono, le voci degli altri "
                       f"partecipanti alla call non saranno incluse. ({self.mixer.avviso_sistema})")
         self.l_sorgenti.setText("Sorgenti: " + sorgenti + avviso)
         self.registrando = True
         self.b_avvia.setText("■ Ferma")
-        for w in (self.r_live, self.r_arch, self.c_sistema, self.e_titolo):
+        for w in (self.r_live, self.r_arch, self.c_mic, self.c_sis, self.b_elenco, self.e_titolo):
             w.setEnabled(False)
         self.timer.start(200)
         if modo == "live":
@@ -327,6 +384,7 @@ class SchedaRegistra(QWidget):
         if not self.registrando:
             return
         self.registrando = False
+        self._salva_sorgenti()
         self.mixer.ferma()
         self.b_avvia.setText("● Avvia")
         if self.modo == "archivia":
@@ -355,7 +413,7 @@ class SchedaRegistra(QWidget):
         consentite = modalita_consentite()
         self.r_live.setEnabled("live" in consentite)
         self.r_arch.setEnabled("archivia" in consentite)
-        for w in (self.c_sistema, self.e_titolo):
+        for w in (self.c_mic, self.c_sis, self.b_elenco, self.e_titolo):
             w.setEnabled(True)
         self.b_avvia.setEnabled(bool(consentite))
 

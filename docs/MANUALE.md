@@ -174,12 +174,24 @@ Registra riunioni in presenza e **call Teams**. Argo prende due sorgenti e le me
 
 ### Come si usa
 
-1. Scegli la modalità, scrivi un titolo (facoltativo) e lascia attivo **Includi l'audio del computer** se è una call.
+1. Scegli la modalità e scrivi un titolo (facoltativo). Controlla le **sorgenti** (vedi sotto): con *Automatico* va bene quasi sempre.
 2. Premi **● Avvia**. Argo ti chiede di confermare che i partecipanti sono stati **informati**: una registrazione fatta con Argo, a differenza di quella di Teams, non avvisa nessuno. Con **Copia l'avviso** hai il testo da incollare nella chat della riunione.
 3. Durante la registrazione vedi i due livelli (microfono e audio del computer) e, in Live, il testo che compare blocco dopo blocco, con 20-45 secondi di ritardo.
 4. Premi **■ Ferma**. In Live, Argo finisce di trascrivere i blocchi rimasti e salva `data ora titolo (live)_nomi.txt` (più il `.json`) nella cartella delle registrazioni. Con **Apri nel Verbale →** passi subito al verbale.
 
 > **Usa le cuffie nelle call.** Senza cuffie il microfono riprende anche le voci che escono dagli altoparlanti, e le stesse frasi arrivano due volte con un piccolo ritardo.
+
+### Le sorgenti
+
+| Riga | Scelte | Volume |
+| --- | --- | --- |
+| **Microfono** | *Predefinito del sistema* oppure un dispositivo preciso: microfono interno, cuffie, microfono USB | Da 0 a 200% |
+| **Audio del computer** | *Automatico* (il metodo migliore disponibile), *Nessuno: solo microfono* (riunione in presenza), il metodo nativo del sistema oppure un dispositivo di loopback preciso (BlackHole…) | Da 0 a 200% |
+
+- I **volumi** si regolano anche durante la registrazione. Usali per bilanciare: se gli altri si sentono poco rispetto a te, alza l'audio del computer.
+- Accanto a ogni riga, la barra del **livello** si muove quando la sorgente riceve audio.
+- **↻** aggiorna l'elenco dopo aver collegato cuffie o microfoni. Un dispositivo salvato ma scollegato compare come *(non collegato)*.
+- Argo ricorda le scelte e i volumi per la volta successiva.
 
 ### L'audio del computer
 
@@ -189,7 +201,7 @@ Registra riunioni in presenza e **call Teams**. Argo prende due sorgenti e le me
 | **macOS 13 e successivi** | ScreenCaptureKit, solo l'audio (lo schermo non viene registrato) | La prima volta macOS chiede il permesso: *Impostazioni di Sistema → Privacy e sicurezza → Registrazione schermo e audio di sistema → Argo AI*. Dopo averlo concesso, riapri Argo |
 | **Ripiego** | Un dispositivo di loopback già installato: BlackHole, Missaggio stereo, VB-CABLE… | Argo lo trova da solo se ScreenCaptureKit o WASAPI non sono disponibili |
 
-Se l'audio del computer non è disponibile, Argo registra solo il microfono e lo scrive in chiaro sotto i livelli.
+Se l'audio del computer non è disponibile, Argo registra solo il microfono e lo scrive in chiaro sotto le sorgenti.
 
 ### Live: cosa sapere
 
