@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261116.1701 · riferita all'app versione 20261116.1701*
+*Versione del manuale: 20261116.1725 · riferita all'app versione 20261116.1725*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -154,7 +154,7 @@ Senza Ollama il Trascrittore e l'Anagrafe voci funzionano lo stesso. La Dettatur
 ## 4bis. L'interfaccia
 
 - **Menu laterale a icone:** Incarichi, Agenda, Posta, Registra, Trascrivi, Verbale, Documenti, Dettatura, Traduci, Voci e, in fondo, Impostazioni. Passando il mouse su un'icona compare il nome completo.
-- **Tema:** **Notte** (scuro, predefinito), **Carta** (chiaro), oppure come il sistema. Colori, marchio e carattere (Roboto) vengono dal Brand Book di Argo's New Dreams. Si sceglie in *Impostazioni → Aspetto* e cambia subito, senza riavviare.
+- **Tema:** **Notte** (scuro, predefinito), **Carta** (chiaro), oppure come il sistema. Colori, marchio e carattere (Roboto) vengono dal Brand Book di Argo's New Dreams e seguono il design system «Stile Argo», con contrasti verificati (WCAG 2.2 AA). Si sceglie in *Impostazioni → Aspetto* e cambia subito, senza riavviare.
 - **Bollino in basso a destra:** *100% locale* finché il modello linguistico gira su questo computer. Se punti Ollama a un'altra macchina, il bollino lo segnala.
 
 ![Trascrittore](screenshot-coda.png)
