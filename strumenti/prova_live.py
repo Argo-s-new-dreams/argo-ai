@@ -184,5 +184,17 @@ fc.unlink()
 prova("criteri: senza file entrambe le modalità", registrazione.modalita_consentite() == ("live", "archivia"))
 prova("misuratore di livello in dB", registrazione.percentuale(1.0) == 100 and registrazione.percentuale(0.0) == 0)
 
+# ---------------------------------------------------------------- Posta: HTML delle mail
+import m365  # noqa: E402
+
+h = ('<html><head><style>p{color:red}</style></head><body><p>Ciao <b>Luca</b>,</p><img src="https://t/x.gif">'
+     '<p>vedi <a href="https://linkedin.com/x?lipi=1" onclick="x()">il messaggio</a></p><script>alert(1)</script>'
+     '<table><tr><td>A</td><td>B</td></tr></table></body></html>')
+pul = m365.pulisci_html(h)
+prova("posta: niente script, immagini remote né eventi", all(x not in pul for x in ("<script", "<img", "onclick", "<style")))
+prova("posta: formattazione e link conservati", "<b>Luca</b>" in pul and 'href="https://linkedin.com' in pul)
+prova("posta: al modello va testo pulito senza indirizzi", m365.html_a_testo(h) == "Ciao Luca,\n\nvedi il messaggio\n\nA B",
+      repr(m365.html_a_testo(h)))
+
 print(f"\n{sum(esiti)}/{len(esiti)} prove superate")
 sys.exit(0 if all(esiti) else 1)

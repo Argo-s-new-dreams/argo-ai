@@ -2,6 +2,15 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261116.1636: stile Argo's New Dreams e Posta leggibile
+- **Nuovo aspetto dal Brand Book** di Argo's New Dreams («Dove il fantastico è il quotidiano»):
+  - due temi, **Notte** (antracite) e **Carta** (carta calda), con accento terracotta e ocra delle orbite;
+  - nuovo **marchio** a sfere e orbita nel menu e come icona dell'app;
+  - carattere **Roboto**, incluso nell'app: stesso aspetto su Mac e Windows;
+  - titoli leggeri e pulsanti principali arrotondati come le sfere del logo.
+- **Posta AI:** la mail si vede **formattata** (grassetti, paragrafi, tabelle, link cliccabili) invece del testo grezzo con gli indirizzi dei link. Script e moduli vengono tolti; le **immagini remote non vengono scaricate**, quindi niente pixel di tracciamento. Al modello locale va il testo pulito, senza indirizzi dei link.
+- La nuova icona dell'app compare nel Dock o nella barra delle applicazioni dopo aver rilanciato l'installer; la finestra la usa subito.
+
 ## 20261116.1611: Registra, con Live senza audio conservato
 - **Nuova pagina Registra** per riunioni in presenza e **call Teams**: Argo prende il microfono e l'**audio del computer**, cioè le voci degli altri partecipanti.
   - Windows: WASAPI loopback, senza installare nulla;
