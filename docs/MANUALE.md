@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261115.1415 · riferita all'app versione 20261115.1415*
+*Versione del manuale: 20261116.0951 · riferita all'app versione 20261116.0951*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Contiene cinque attrezzi:
 
@@ -163,6 +163,7 @@ Senza Ollama il Trascrittore e l'Anagrafe voci funzionano lo stesso. La Dettatur
 ## 5. Trascrittore
 
 La scheda principale. A sinistra c'è la **coda** di file audio o video da trascrivere; a destra il **dettaglio** del file selezionato:
+
 - le **corsie dei parlanti**, una per persona, colorate, che mostrano quando parla ciascuno lungo la registrazione;
 - la **trascrizione** con i nomi colorati allo stesso modo;
 - i pulsanti *Nomi dei parlanti*, *Marca voci*, *Apri testo*, *Word* e *Verbale →*.
@@ -660,6 +661,7 @@ Per `iscrivi` il token Hugging Face deve essere già salvato (lo fa l'app).
 **Aggiornare dall'app (consigliato).** All'avvio Argo controlla su GitHub se c'è una versione nuova. Se la trova, ti mostra le novità e propone tre scelte: **Aggiorna ora**, **Più tardi**, **Apri GitHub**.
 
 Con *Aggiorna ora* Argo:
+
 1. scarica il pacchetto;
 2. salva una copia della versione attuale in `whisperx-env/app_precedente`;
 3. sostituisce solo i file del programma;
@@ -669,9 +671,28 @@ Con *Aggiorna ora* Argo:
 Voci, token, impostazioni, glossario e documenti indicizzati non vengono toccati.
 
 In *Impostazioni → Aggiornamenti* trovi:
+
 - la versione installata;
+- il **canale** (Lab o Pro, vedi sotto);
 - **Controlla ora**;
 - la casella per disattivare il controllo all'avvio.
+
+**Canali Lab e Pro.**
+
+| Canale | Cosa ricevi | Controlli prima di installare |
+| --- | --- | --- |
+| **Lab** (predefinito) | Ogni novità appena pubblicata | Nessuno: per chi sperimenta |
+| **Pro** | Solo le versioni rilasciate | Firma Ed25519 del manifesto, impronta SHA-256 del pacchetto, librerie a versione fissa da `requisiti.lock` |
+
+Se un pacchetto Pro non supera i controlli, Argo non lo installa e la versione attuale resta com'è. A fine aggiornamento Argo indica canale e tipo di verifica eseguita.
+
+**Per l'IT.** Un file `criteri.json` in `/Library/Application Support/Argo/` (Mac) o in `%ProgramData%\Argo\` (Windows) ha la precedenza sulle scelte dell'utente:
+
+```json
+{ "canale_aggiornamenti": "pro", "aggiornamenti_dall_app": false }
+```
+
+`canale_aggiornamenti` blocca il canale (l'utente lo vede ma non lo cambia); `aggiornamenti_dall_app: false` spegne controllo e installazione dall'app, perché gli aggiornamenti li distribuisce l'IT.
 
 Il controllo legge da GitHub solo il numero di versione e le novità: nessun dato viene inviato.
 
