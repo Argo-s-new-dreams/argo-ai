@@ -123,11 +123,12 @@ class DettaglioTrascrizione(QWidget):
         for b in self.bottoni:
             b.setEnabled(completata)
         self.bottoni[1].setEnabled(bool(job))  # Marca voci funziona anche prima della trascrizione
+        self.corsie.setVisible(bool(job))
         if not job:
             self.titolo.setText("Nessun file selezionato")
             self.meta.setText("Scegli un file nella coda per vedere chi parla e cosa dice.")
             self.corsie.imposta([], 1)
-            self.testo.setHtml("")
+            self.testo.setHtml(tema.stato_vuoto("Trascina qui un audio o un video, oppure scegli un file nella coda."))
             return
         self.titolo.setText(Path(job["file"]).name)
         if not completata:
