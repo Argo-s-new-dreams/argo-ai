@@ -118,11 +118,6 @@ class SchedaRegistra(QWidget):
         self.ponte.nuovo_blocco.connect(self._blocco_pronto)
 
         lay = QVBoxLayout(self)
-        intro = QLabel("Registra riunioni in presenza e call Teams: Argo prende il <b>microfono</b> e "
-                       "l'<b>audio del computer</b> (le voci degli altri partecipanti). Tutto resta su questo computer.")
-        intro.setWordWrap(True)
-        lay.addWidget(intro)
-
         self.r_live = QRadioButton("Live: trascrive mentre registri e cancella l'audio appena trascritto. "
                                    "Alla fine resta solo il testo.")
         self.r_arch = QRadioButton("Archivia: salva la registrazione completa e la trascrivi dopo, dal Trascrittore.")
@@ -137,7 +132,6 @@ class SchedaRegistra(QWidget):
 
         self.e_titolo = QLineEdit()
         self.e_titolo.setPlaceholderText("Titolo della riunione (facoltativo)")
-        lay.addWidget(self.e_titolo)
 
         bar = QHBoxLayout()
         self.b_avvia = QPushButton("● Avvia")
@@ -160,10 +154,9 @@ class SchedaRegistra(QWidget):
             b.hide()
         for b in (self.b_avvia, self.b_scarta, self.b_riavvia):
             bar.addWidget(b)
-        bar.addStretch()
+        bar.addWidget(self.e_titolo, 1)
         for b in (self.b_verbale, self.b_coda, self.b_cartella):
             bar.addWidget(b)
-        lay.addLayout(bar)
 
         # ---- sorgenti: dispositivo, volume (anche durante la registrazione), livello
         imp = core.carica_impostazioni()
@@ -171,6 +164,7 @@ class SchedaRegistra(QWidget):
         g.setHorizontalSpacing(10)
         self.l_rec = QLabel("")
         self.l_rec.setProperty("ruolo", "titolo")
+        self.l_rec.hide()  # compare solo mentre registri
         g.addWidget(self.l_rec, 0, 0, 1, 5)
         self.c_mic = QComboBox()
         self.c_sis = QComboBox()
@@ -180,8 +174,9 @@ class SchedaRegistra(QWidget):
         self.l_vsis = QLabel()
         self.m_mic = QProgressBar()
         self.m_sis = QProgressBar()
-        righe = ((self.c_mic, self.v_mic, self.l_vmic, self.m_mic, "Microfono", "registra_volume_mic"),
-                 (self.c_sis, self.v_sis, self.l_vsis, self.m_sis, "Audio del computer", "registra_volume_sistema"))
+        righe = ((self.c_mic, self.v_mic, self.l_vmic, self.m_mic, "Microfono (tu)", "registra_volume_mic"),
+                 (self.c_sis, self.v_sis, self.l_vsis, self.m_sis, "Audio del computer (gli altri)",
+                  "registra_volume_sistema"))
         for i, (combo, vol, etich, metro, nome, chiave) in enumerate(righe, 1):
             combo.setMinimumWidth(260)
             vol.setRange(0, 200)
@@ -209,6 +204,9 @@ class SchedaRegistra(QWidget):
         g.addWidget(self.l_sorgenti, 3, 0, 1, 6)
         g.setColumnStretch(4, 1)
         lay.addLayout(g)
+        # Stile Argo · Organizzazione: prima si sceglie COSA registrare (modo e sorgenti), poi si avvia.
+        lay.addSpacing(6)
+        lay.addLayout(bar)
         self._riempi_sorgenti()
         self._volumi()
 
@@ -398,6 +396,7 @@ class SchedaRegistra(QWidget):
             self._sblocca()
             self.risultato = str(self.file_archivio)
             self.l_rec.setText("")
+            self.l_rec.hide()
             self.stato.setText(f"Registrazione salvata: {self.file_archivio.name} "
                                f"({live.mmss(self.mixer.secondi)}).")
             self.b_coda.show()
@@ -548,6 +547,7 @@ class SchedaRegistra(QWidget):
         self.b_riavvia.hide()
         self._sblocca()
         self.l_rec.setText("")
+        self.l_rec.hide()
         self._mostra_fine(s.concludi() if s else None)
 
     def _mostra_fine(self, out):
@@ -569,6 +569,7 @@ class SchedaRegistra(QWidget):
             mic, sis = self.mixer.livelli()
             self.m_mic.setValue(percentuale(mic))
             self.m_sis.setValue(percentuale(sis) if self.mixer.sis else 0)
+            self.l_rec.show()
             self.l_rec.setText(f"● REC  {live.mmss(self.mixer.secondi)}" + ("  · Live" if self.modo == "live" else ""))
         else:
             self.m_mic.setValue(0)

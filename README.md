@@ -91,8 +91,8 @@ Gli installer non sono firmati digitalmente: per questo Windows e macOS mostrano
 
 ## Uso in breve
 
-1. *Anagrafe voci → Nuova voce da audio…*: nome + 20-60 secondi in cui parla solo quella persona.
-2. *Coda trascrizioni*: trascina i file, imposta i partecipanti, **Avvia coda**.
+1. *Voci → ＋ Nuova voce ▾*: nome + 20-60 secondi in cui parla solo quella persona (dal microfono, da un file o segnandola in una registrazione).
+2. *Trascrivi*: trascina i file, imposta i partecipanti, **Avvia coda**.
 3. A fine lavoro: **Apri trascrizione** oppure **✏️ Nomi dei parlanti…** per correggere i nomi e spuntare **Memorizza**.
 
 | Anagrafe voci | Revisione parlanti | Impostazioni |

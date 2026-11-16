@@ -7,11 +7,10 @@ Argo non invia mai mail: le risposte finiscono nelle Bozze di Outlook.
 """
 import html
 import time
-import wave
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QSize, Qt, QTimer, QUrl
+from PySide6.QtCore import QSize, Qt, QUrl
 from PySide6.QtGui import QColor, QDesktopServices
 from PySide6.QtWidgets import (
     QComboBox, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit,
@@ -48,48 +47,6 @@ def cartella_registrazioni():
 
 def nome_sicuro(testo):
     return "".join(ch if ch.isalnum() or ch in " -_" else " " for ch in testo).strip()[:60] or "Riunione"
-
-
-class Registratore:
-    """Registra dal microfono direttamente su un file WAV (adatto anche a riunioni lunghe)."""
-
-    def __init__(self):
-        self.flusso = None
-        self.file = None
-        self.wav = None
-        self.inizio = 0.0
-        self.livello = 0.0
-
-    def avvia(self, percorso):
-        import numpy as np
-        import sounddevice as sd
-        self.file = Path(percorso)
-        self.wav = wave.open(str(self.file), "wb")
-        self.wav.setnchannels(1)
-        self.wav.setsampwidth(2)
-        self.wav.setframerate(16000)
-
-        def cb(dati, *_):
-            x = dati[:, 0]
-            self.livello = float(np.sqrt(np.mean(x ** 2)))
-            self.wav.writeframes((np.clip(x, -1, 1) * 32767).astype(np.int16).tobytes())
-
-        self.flusso = sd.InputStream(samplerate=16000, channels=1, dtype="float32", callback=cb)
-        self.flusso.start()
-        self.inizio = time.monotonic()
-
-    def secondi(self):
-        return time.monotonic() - self.inizio if self.flusso else 0
-
-    def ferma(self):
-        if self.flusso:
-            self.flusso.stop()
-            self.flusso.close()
-            self.flusso = None
-        if self.wav:
-            self.wav.close()
-            self.wav = None
-        return self.file
 
 
 class SchedaM365(QWidget):
@@ -158,8 +115,6 @@ class SchedaAgenda(SchedaM365):
     def __init__(self, finestra, parent=None):
         super().__init__(finestra, parent)
         self.eventi = []
-        self.reg = Registratore()
-        self.ultima_registrazione = None
         lay = QVBoxLayout(self.contenuto)
         lay.setContentsMargins(20, 16, 20, 12)
         self.c_giorni = QComboBox()
@@ -190,6 +145,7 @@ class SchedaAgenda(SchedaM365):
         self.b_prep = QPushButton("Prepara")
         self.b_prep.setToolTip("Briefing locale: partecipanti, verbali precedenti con le stesse persone, azioni aperte")
         self.b_reg = QPushButton("● Registra")
+        self.b_reg.setToolTip("Apre la pagina Registra con il titolo di questa riunione")
         self.b_inc = QPushButton("Incarico →")
         self.b_inc.setProperty("primario", True)
         self.b_out = QPushButton("Apri in Outlook")
@@ -213,8 +169,6 @@ class SchedaAgenda(SchedaM365):
         self.b_inc.clicked.connect(self.incarico)
         self.b_out.clicked.connect(lambda: self._apri("link"))
         self.b_join.clicked.connect(lambda: self._apri("link_riunione"))
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self._tick)
         self.lavoro = None
         self.mostra(-1)
 
@@ -351,38 +305,25 @@ class SchedaAgenda(SchedaM365):
 
     # ---- Registra
     def registra(self):
-        if self.reg.flusso:
-            f = self.reg.ferma()
-            self.timer.stop()
-            self.b_reg.setText("● Registra")
-            self.ultima_registrazione = f
-            self.l_reg.setText(f"Registrazione salvata: {f.name} · premi «Incarico →» per verbale, recap e task.")
-            return
+        """Una sola funzione di registrazione in tutta l'app (Stile Argo · Organizzazione): dall'Agenda si apre
+        la pagina Registra con il titolo della riunione già compilato. Lì ci sono Live, archivio, audio della call
+        e sorgenti, che il vecchio registratore dell'Agenda (solo microfono) non aveva."""
         ev = self.evento()
-        nome = f"{datetime.now():%Y-%m-%d %H.%M} {nome_sicuro(ev['oggetto'] if ev else 'Riunione')}.wav"
-        try:
-            self.reg.avvia(cartella_registrazioni() / nome)
-        except Exception as e:
-            QMessageBox.warning(self, "Microfono", f"Impossibile registrare: {e}\n\nSul Mac: Impostazioni di Sistema → "
-                                "Privacy e sicurezza → Microfono → abilita Argo AI.")
-            return
-        self.b_reg.setText("■ Ferma registrazione")
-        self.timer.start(500)
-        self._tick()
-
-    def _tick(self):
-        s = int(self.reg.secondi())
-        muto = "  ·  non sento audio: controlla il microfono" if s > 5 and self.reg.livello < 0.002 else ""
-        self.l_reg.setText(f"● Registrazione in corso: {s // 60:02d}:{s % 60:02d} · {self.reg.file.name}{muto}")
+        reg = self.finestra.tab_registra
+        if ev and not reg.occupata():
+            reg.e_titolo.setText(ev["oggetto"])
+        self.finestra.vai_a(reg)
 
     # ---- Incarico
     def incarico(self):
         ev = self.evento()
         inc = self.finestra.tab_incarichi
-        f = self.ultima_registrazione
-        if self.reg.flusso:
-            QMessageBox.information(self, "Registrazione", "Ferma prima la registrazione.")
+        reg = self.finestra.tab_registra
+        if reg.occupata():
+            QMessageBox.information(self, "Registrazione", "Ferma prima la registrazione nella pagina Registra.")
             return
+        # l'ultima registrazione archiviata dalla pagina Registra (in Live resta solo il testo, niente audio)
+        f = Path(reg.risultato) if reg.risultato and str(reg.risultato).endswith(".wav") else None
         if f and f.exists():
             inc.imposta_file(str(f))
         if ev:
