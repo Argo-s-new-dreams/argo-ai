@@ -32,6 +32,7 @@ L'audio non lascia mai il computer: Internet serve solo per installare i pacchet
 
 - **Nuova interfaccia «Studio»**: menu laterale, tema scuro o chiaro, corsie colorate dei parlanti nel Trascrittore.
 - **Aggiornamenti dall'app**: Argo controlla su GitHub se c'è una versione nuova e si aggiorna con un clic (voci e impostazioni restano).
+- **Canali Lab e Pro**: Lab per chi sperimenta; Pro accetta solo versioni rilasciate, verificate con firma e SHA-256 e con librerie a versione fissa, ed è governabile dall'IT con i criteri aziendali. Dettagli e roadmap in [docs/PRO.md](docs/PRO.md).
 - **Anche i video delle call**: mp4, mov, mkv, webm (Teams, Zoom, Meet…); in *Marca voci* il video si vede, sincronizzato con l'audio.
 - **Coda di trascrizioni**: trascini file o cartelle, imposti il numero di partecipanti, la coda lavora da sola e resta salvata anche chiudendo l'app.
 - **Anagrafe voci**: un'impronta vocale per persona. Si crea registrando la voce dal microfono, da un file audio, da una riunione già trascritta, oppure **marcando sulla forma d'onda** i tratti in cui parla ciascuno.
