@@ -258,7 +258,9 @@ class Sessione:
         """Salva il testo di un blocco con i parlanti della sessione, POI cancella il blocco audio."""
         blocco = Path(blocco)
         t0 = self.inizio_blocco(blocco)
-        mappa = self.parlanti.assegna(emb or {})
+        # solo chi ha almeno una frase: musica o rumori senza testo non creano «Sconosciuti» fantasma
+        con_testo = {s.get("speaker") for s in segmenti or [] if (s.get("text") or "").strip()}
+        mappa = self.parlanti.assegna({k: v for k, v in (emb or {}).items() if k in con_testo})
         segs = []
         for s in segmenti or []:
             testo = (s.get("text") or "").strip()
