@@ -64,6 +64,7 @@ Il push del tag avvia la GitHub Action *Rilascio Pro*, che pubblica la release: 
   - tempi di conservazione e cancellazione;
   - cifratura a livello di app;
   - possibilità di disattivare l'anagrafe con un criterio IT.
+- **Registrazione:** ✅ conferma dell'informativa prima di ogni registrazione, modalità Live senza audio conservato, criterio IT `registrazione` (dalla 20261116.1611).
 - **AI Act:** trasparenza verso chi viene registrato; valutare il riconoscimento dei parlanti rispetto alle categorie biometriche; materiali per l'alfabetizzazione AI (art. 4).
 - **Licenze:** SBOM generata in CI; registro delle licenze dei modelli (condizioni d'accesso di pyannote, licenze dei modelli Ollama) accanto a `THIRD_PARTY_LICENSES.md`.
 - **Microsoft 365:** guida per l'admin del tenant (registrazione dell'app in Entra ID, permessi delegati minimi, consenso).
@@ -81,9 +82,11 @@ Per aziende con molti utenti: Ollama e la trascrizione su un server in LAN con G
 ```json
 {
   "canale_aggiornamenti": "pro",
-  "aggiornamenti_dall_app": false
+  "aggiornamenti_dall_app": false,
+  "registrazione": "solo_live"
 }
 ```
 
 - `canale_aggiornamenti`: blocca il canale. L'utente lo vede ma non lo può cambiare.
 - `aggiornamenti_dall_app: false`: Argo non controlla e non installa aggiornamenti da solo, perché li distribuisce l'IT.
+- `registrazione`: `"completa"` (predefinito, Live e Archivia), `"solo_live"` (l'audio delle riunioni non viene mai conservato) oppure `"nessuna"` (pagina Registra disattivata).

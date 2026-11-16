@@ -19,7 +19,7 @@ Audio, documenti e testi non vengono mai inviati a servizi cloud.
 1. [Come è fatta Argo](#1-come-è-fatta-argo)
 2. [Requisiti](#2-requisiti)
 3. [Installazione](#3-installazione)
-4. [Primo avvio e configurazione](#4-primo-avvio-e-configurazione) · [L'interfaccia](#4bis-linterfaccia)
+4. [Primo avvio e configurazione](#4-primo-avvio-e-configurazione) · [L'interfaccia](#4bis-linterfaccia) · [Registra](#4ter-registra)
 5. [Trascrittore](#5-trascrittore) · [Incarichi](#5bis-incarichi) · [Agenda](#5ter-agenda) · [Posta AI](#5quater-posta-ai)
 6. [Anagrafe voci](#6-anagrafe-voci)
 7. [Verbale](#7-verbale)
@@ -152,11 +152,68 @@ Senza Ollama il Trascrittore e l'Anagrafe voci funzionano lo stesso. La Dettatur
 
 ## 4bis. L'interfaccia
 
-- **Menu laterale a icone:** Incarichi, Trascrivi, Verbale, Documenti, Dettatura, Traduci, Voci e, in fondo, Impostazioni. Passando il mouse su un'icona compare il nome completo.
-- **Tema:** scuro (predefinito), chiaro, oppure come il sistema. Si sceglie in *Impostazioni → Aspetto* e cambia subito, senza riavviare.
+- **Menu laterale a icone:** Incarichi, Agenda, Posta, Registra, Trascrivi, Verbale, Documenti, Dettatura, Traduci, Voci e, in fondo, Impostazioni. Passando il mouse su un'icona compare il nome completo.
+- **Tema:** **Notte** (scuro, predefinito), **Carta** (chiaro), oppure come il sistema. Colori, marchio e carattere (Roboto) vengono dal Brand Book di Argo's New Dreams. Si sceglie in *Impostazioni → Aspetto* e cambia subito, senza riavviare.
 - **Bollino in basso a destra:** *100% locale* finché il modello linguistico gira su questo computer. Se punti Ollama a un'altra macchina, il bollino lo segnala.
 
 ![Trascrittore](screenshot-coda.png)
+
+## 4ter. Registra
+
+Registra riunioni in presenza e **call Teams**. Argo prende due sorgenti e le mescola in un'unica traccia:
+
+- il **microfono**, cioè la tua voce e quella di chi è nella stanza;
+- l'**audio del computer**, cioè le voci degli altri partecipanti alla call, che escono dagli altoparlanti o dalle cuffie.
+
+### Le due modalità
+
+| Modalità | Cosa resta sul computer | Quando usarla |
+| --- | --- | --- |
+| **Live** | Solo il **testo**. Argo taglia l'audio in blocchi di 20-45 secondi, sui silenzi; trascrive ogni blocco appena è pronto e lo **cancella** subito dopo averne salvato il testo. La registrazione intera non esiste mai. | Riunioni di lavoro, dati riservati, quando vuoi ridurre al minimo i dati conservati |
+| **Archivia** | La **registrazione completa** in `Documenti/Argo/Registrazioni`, da trascrivere quando vuoi con **Metti in coda nel Trascrittore** | Quando vuoi poter riascoltare, o la massima qualità del riconoscimento dei parlanti |
+
+### Come si usa
+
+1. Scegli la modalità e scrivi un titolo (facoltativo). Controlla le **sorgenti** (vedi sotto): con *Automatico* va bene quasi sempre.
+2. Premi **● Avvia**. Argo ti chiede di confermare che i partecipanti sono stati **informati**: una registrazione fatta con Argo, a differenza di quella di Teams, non avvisa nessuno. Con **Copia l'avviso** hai il testo da incollare nella chat della riunione.
+3. Durante la registrazione vedi i due livelli (microfono e audio del computer) e, in Live, il testo che compare blocco dopo blocco, con 20-45 secondi di ritardo.
+4. Premi **■ Ferma**. In Live, Argo finisce di trascrivere i blocchi rimasti e salva `data ora titolo (live)_nomi.txt` (più il `.json`) nella cartella delle registrazioni. Con **Apri nel Verbale →** passi subito al verbale.
+
+> **Usa le cuffie nelle call.** Senza cuffie il microfono riprende anche le voci che escono dagli altoparlanti, e le stesse frasi arrivano due volte con un piccolo ritardo.
+
+### Le sorgenti
+
+| Riga | Scelte | Volume |
+| --- | --- | --- |
+| **Microfono** | *Predefinito del sistema* oppure un dispositivo preciso: microfono interno, cuffie, microfono USB | Da 0 a 200% |
+| **Audio del computer** | *Automatico* (il metodo migliore disponibile), *Nessuno: solo microfono* (riunione in presenza), il metodo nativo del sistema oppure un dispositivo di loopback preciso (BlackHole…) | Da 0 a 200% |
+
+- I **volumi** si regolano anche durante la registrazione. Usali per bilanciare: se gli altri si sentono poco rispetto a te, alza l'audio del computer.
+- Accanto a ogni riga, la barra del **livello** si muove quando la sorgente riceve audio.
+- **↻** aggiorna l'elenco dopo aver collegato cuffie o microfoni. Un dispositivo salvato ma scollegato compare come *(non collegato)*.
+- Argo ricorda le scelte e i volumi per la volta successiva.
+
+### L'audio del computer
+
+| Sistema | Come lo prende Argo | Cosa serve |
+| --- | --- | --- |
+| **Windows** | WASAPI loopback: l'audio degli altoparlanti o delle cuffie predefiniti | Niente. Scegli in Teams lo stesso dispositivo di uscita predefinito di Windows |
+| **macOS 13 e successivi** | ScreenCaptureKit, solo l'audio (lo schermo non viene registrato) | La prima volta macOS chiede il permesso: *Impostazioni di Sistema → Privacy e sicurezza → Registrazione schermo e audio di sistema → Argo AI*. Dopo averlo concesso, riapri Argo |
+| **Ripiego** | Un dispositivo di loopback già installato: BlackHole, Missaggio stereo, VB-CABLE… | Argo lo trova da solo se ScreenCaptureKit o WASAPI non sono disponibili |
+
+Se l'audio del computer non è disponibile, Argo registra solo il microfono e lo scrive in chiaro sotto le sorgenti.
+
+### Live: cosa sapere
+
+- **Parlanti tra un blocco e l'altro.** Chi è nell'anagrafe viene riconosciuto per nome in ogni blocco. Le persone sconosciute ricevono «Sconosciuto 1, 2…» e Argo le riconosce da un blocco all'altro confrontando la voce con quanto ha già sentito. La precisione è un po' inferiore a quella della trascrizione del file intero: è il prezzo del non conservare l'audio. Dopo la sessione puoi correggere i nomi con la revisione, come per le altre trascrizioni.
+- **Velocità.** La Live usa `large-v3-turbo` (impostazione `modello_live`). Se il computer è più lento del parlato, i blocchi si accodano e Argo finisce di trascriverli dopo **Ferma**. In attesa resta solo l'audio non ancora trascritto.
+- **Dove stanno i blocchi in attesa.** In `whisperx-env/live/<sessione>/`, una cartella leggibile solo dal tuo utente. Ogni blocco viene sovrascritto con zeri e cancellato appena il suo testo è salvato. A fine sessione la cartella sparisce.
+- **Se Argo si chiude a metà** (o il computer si spegne), al prossimo ingresso in *Registra* Argo propone di trascrivere il resto oppure di cancellare l'audio rimasto e salvare il testo già pronto.
+- **Scarta l'audio rimasto e concludi** chiude subito: perdi la parte non ancora trascritta, il resto viene salvato.
+
+### Criteri aziendali
+
+L'IT può limitare la pagina con `criteri.json` (vedi [PRO.md](PRO.md)): `"registrazione": "solo_live"` lascia solo la Live, `"nessuna"` disattiva la registrazione.
 
 ---
 
@@ -323,7 +380,7 @@ L'Agenda mostra le tue riunioni da Microsoft 365, raggruppate per giorno: oggi e
 
 Il flusso tipico: **Prepara** prima della call, **Registra** durante, **Incarico →** subito dopo per verbale, recap e task.
 
-> Sul Mac, la prima volta macOS chiede il permesso al microfono. Se l'hai negato: *Impostazioni di Sistema → Privacy e sicurezza → Microfono → Argo AI*. Registra la tua voce nella stanza: per una call Teams in cuffia registri solo te stesso, quindi è meglio usare la registrazione di Teams e passarla agli Incarichi.
+> Sul Mac, la prima volta macOS chiede il permesso al microfono. Se l'hai negato: *Impostazioni di Sistema → Privacy e sicurezza → Microfono → Argo AI*. **Registra** dell'Agenda prende solo il microfono: per una call Teams usa la pagina [Registra](#4ter-registra), che cattura anche le voci degli altri partecipanti e ha la modalità Live.
 
 ## 5quater. Posta AI
 
@@ -624,6 +681,7 @@ Puoi spostarla impostando la variabile d'ambiente `TRASCRITTORE_HOME`.
 | `trascrittore_coda.json` | La coda delle trascrizioni |
 | `documenti_indice.json` + `.npy` | Indice dei Documenti riservati, con gli estratti dei testi |
 | `glossario.csv` | Glossario di traduzione |
+| `live/<sessione>/` | Solo durante una sessione Live: blocchi audio in attesa di trascrizione e testo già trascritto. Si svuota da sola a fine sessione |
 
 Trascrizioni e verbali vengono salvati **accanto ai file audio**, non in questa cartella. I modelli scaricati stanno nelle cache di Hugging Face e di Ollama.
 
@@ -713,6 +771,10 @@ Il controllo legge da GitHub solo il numero di versione e le novità: nessun dat
 | Microsoft 365: «You don't have access to this», errore **53003** | Un criterio di accesso condizionale del tenant blocca l'accesso (per esempio il blocco del *device code flow*, usato fino alla 2015) | Aggiorna alla 2030, che accede dal browser; aggiungi il redirect `http://localhost` all'app. Se resta bloccato, in *Entra → Log di accesso → Accesso condizionale* trovi il criterio responsabile |
 | Microsoft 365: errore **50011** | Manca il redirect URI | Aggiungi `http://localhost` in *Authentication → Mobile and desktop applications* |
 | Posta AI dice «lettura della posta disattivata» | La spunta non è attiva | *Impostazioni → Microsoft 365 → Leggi la posta per «Posta AI»* |
+| Registra: «Audio del computer non disponibile» (Mac) | Permesso *Registrazione schermo e audio di sistema* non concesso | *Impostazioni di Sistema → Privacy e sicurezza → Registrazione schermo e audio di sistema → Argo AI*, poi riapri Argo |
+| Registra: livello «Audio del computer» fermo durante la call (Windows) | Teams usa un dispositivo d'uscita diverso da quello predefinito di Windows | In Teams, *Impostazioni → Dispositivi*: scegli come altoparlante il dispositivo predefinito di sistema |
+| Registra: frasi ripetute due volte nella trascrizione | Senza cuffie il microfono riprende anche gli altoparlanti | Usa le cuffie |
+| Live: «Blocchi da trascrivere» che crescono | Il computer è più lento del parlato | Lascia finire dopo **Ferma**; su NVIDIA usa CUDA |
 | Agenda: «Impossibile registrare» | Permesso del microfono negato | *Impostazioni di Sistema → Privacy e sicurezza → Microfono → Argo AI* |
 | "Controllo non riuscito" negli aggiornamenti | Nessuna connessione, oppure un firewall blocca GitHub | Riprova più tardi o aggiorna a mano dal pacchetto; puoi disattivare il controllo in *Impostazioni → Aggiornamenti* |
 | "Homebrew non trovato" (versioni fino alla 1830) | L'installer vecchio richiedeva Homebrew | Usa l'installer dalla versione 1845 in poi: Homebrew non serve più |
@@ -725,7 +787,8 @@ Se un file va in **Errore**, il log in fondo alla scheda Trascrittore riporta il
 
 - **Tutto locale.** Audio e documenti non lasciano il computer. La telemetria anonima di pyannote è disattivata dall'app. L'unica connessione che Argo fa da sé è il controllo degli aggiornamenti su GitHub, che legge solo numero di versione e novità e si può disattivare in *Impostazioni → Aggiornamenti*.
 - **Microsoft 365 è facoltativo:** se lo colleghi, Argo legge il calendario e scrive su Microsoft 365 solo la bozza della mail e i task che confermi, nel tuo tenant. Audio, trascrizioni e documenti non vengono inviati.
-- **Informa sempre** i partecipanti che la riunione viene registrata e trascritta.
+- **Informa sempre** i partecipanti che la riunione viene registrata e trascritta. La pagina *Registra* chiede la conferma prima di ogni registrazione e prepara l'avviso da incollare in chat.
+- **Modalità Live = minimizzazione dei dati** (art. 5, par. 1, lett. c GDPR): l'audio esiste solo per il tempo necessario a trascriverlo. È la scelta consigliata per le riunioni di lavoro. Tieni comunque attiva la cifratura del disco (FileVault, BitLocker): sugli SSD la sovrascrittura di un file cancellato non garantisce che il dato sparisca fisicamente.
 - **Le impronte vocali sono dati biometrici** (art. 9 GDPR). Registra le voci di altre persone solo con il loro consenso esplicito e cancellale quando non servono più (**Elimina** nell'Anagrafe).
 - **Documenti riservati:** l'indice contiene estratti testuali dei documenti. Proteggi il computer (cifratura del disco, account con password) come faresti con gli originali.
 

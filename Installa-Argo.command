@@ -72,7 +72,7 @@ cat > "$BUNDLE/Contents/Info.plist" <<EOF
   <key>CFBundleIdentifier</key><string>blog.argosnewdreams.trascrittore</string>
   <key>CFBundleVersion</key><string>$VERSIONE</string>
   <key>CFBundleExecutable</key><string>ArgoAI</string>
-  <key>NSMicrophoneUsageDescription</key><string>Argo usa il microfono solo per la dettatura, elaborata interamente su questo Mac.</string>
+  <key>NSMicrophoneUsageDescription</key><string>Argo usa il microfono per la dettatura e per registrare le riunioni, sempre elaborate interamente su questo Mac.</string>
   <key>CFBundleIconFile</key><string>icon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>NSHighResolutionCapable</key><true/>

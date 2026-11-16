@@ -8,6 +8,7 @@
 | **Incarichi** | In stile Cowork: «Call → recap + task» esegue trascrizione, verbale, Word, mail di recap e task in fila, con conferma dei nomi; con Microsoft 365 (facoltativo) bozza in Outlook e task in Planner | Tutti i motori qui sotto + Microsoft Graph (solo se collegato) |
 | **Agenda** | Riunioni da Microsoft 365: briefing locale con i verbali precedenti, registrazione dal microfono, passaggio diretto agli Incarichi | Microsoft Graph (calendario) + Ollama |
 | **Posta AI** | Assistente accanto a Outlook: riassunto, «cosa mi si chiede», risposta come bozza (mai inviata), task in Planner; lettura da attivare | Microsoft Graph (posta) + Ollama |
+| **Registra** | Registra riunioni e call Teams (microfono + audio del computer). **Live**: trascrive mentre registri e cancella l'audio man mano, alla fine resta solo il testo. **Archivia**: salva la registrazione da trascrivere dopo | WhisperX + pyannote, WASAPI (Windows) / ScreenCaptureKit (macOS) |
 | **Trascrittore** | Trascrive riunioni, separa le voci e riconosce chi parla grazie all'anagrafe delle voci | WhisperX + pyannote |
 | **Verbale** | Dalla trascrizione al verbale: decisioni, azioni, responsabili, scadenze; oppure mail di sintesi al cliente | LLM via [Ollama](https://ollama.com) |
 | **Documenti riservati** | Domande su NDA, contratti e capitolati (PDF, DOCX, TXT) con citazione delle fonti | Embedding + LLM via Ollama |
@@ -129,6 +130,10 @@ Queste note sono informative e non costituiscono consulenza legale.
 | `app/tema.py` | Tema scuro/chiaro, icone e menu laterale |
 | `app/dettaglio.py` | Dettaglio della trascrizione con le corsie dei parlanti |
 | `app/aggiornamenti.py` | Controllo e installazione degli aggiornamenti da GitHub |
+| `app/registrazione.py` | Pagina Registra: modalità Live e Archivia, consenso, recupero delle sessioni interrotte |
+| `app/cattura_audio.py` | Cattura di microfono e audio del computer (WASAPI loopback, ScreenCaptureKit, BlackHole…) e mixer a 16 kHz |
+| `app/live_core.py` | Live: taglio sui silenzi, continuità dei parlanti tra i blocchi, cancellazione dei blocchi trascritti |
+| `app/live_motore.py` | Processo di trascrizione della Live: carica i modelli una volta e trascrive i blocchi |
 | `app/voci_strumenti.py` | Registrazione delle voci dal microfono e marcatura delle voci su forma d'onda |
 | `app/esporta_word.py` | Esportazione in Word (.docx) dei testi prodotti dagli attrezzi |
 | `app/llm_locale.py` | Client minimale per Ollama: chat in streaming, embedding, download modelli |

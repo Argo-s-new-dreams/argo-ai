@@ -431,6 +431,10 @@ class SchedaPosta(SchedaM365):
         self.m_meta.setProperty("ruolo", "tenue")
         self.m_meta.setWordWrap(True)
         self.m_testo = QTextBrowser()
+        self.m_testo.setOpenExternalLinks(True)
+        # le mail HTML hanno colori pensati per lo sfondo chiaro: si mostrano su «carta», come in Outlook
+        self.m_testo.setObjectName("mail")
+        self.m_testo.document().setDefaultStyleSheet(f"a {{ color: {tema.CARTA_MAIL['link']}; }}")
         ml.addWidget(self.m_ogg)
         ml.addWidget(self.m_meta)
         ml.addWidget(self.m_testo, 1)
@@ -566,7 +570,7 @@ class SchedaPosta(SchedaM365):
             a = ", ".join(msg["a"])
             self.m_meta.setText(f"{msg['da']['nome']} <{msg['da']['email']}> · {msg['quando']}" + (f"\nA: {a}" if a else "")
                                 + ("\n📎 con allegati (aprili in Outlook)" if msg["allegati"] else ""))
-            self.m_testo.setPlainText(msg["testo"])
+            self.m_testo.setHtml(msg.get("html") or "")
             self._abilita(True)
 
         lav.sig_fine.connect(ok)

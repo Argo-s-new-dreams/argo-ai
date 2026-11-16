@@ -1,6 +1,6 @@
 # Componenti di terze parti
 
-Il repository non contiene codice né modelli di terze parti: gli installer scaricano i pacchetti da PyPI e i modelli da Hugging Face sul computer dell'utente. Ogni componente resta soggetto alla propria licenza.
+Il repository non contiene codice né modelli di terze parti, con l'eccezione del carattere Roboto (in `app/fonti/`, con la sua licenza): gli installer scaricano i pacchetti da PyPI e i modelli da Hugging Face sul computer dell'utente. Ogni componente resta soggetto alla propria licenza.
 
 | Componente | Uso | Licenza |
 | --- | --- | --- |
@@ -13,5 +13,8 @@ Il repository non contiene codice né modelli di terze parti: gli installer scar
 | [PyTorch](https://pytorch.org) | Calcolo | BSD-style |
 | [FFmpeg](https://ffmpeg.org) | Decodifica audio (installato tramite winget/Homebrew) | LGPL/GPL a seconda della build |
 | [uv](https://github.com/astral-sh/uv) | Ambiente Python | MIT o Apache-2.0 |
+| [Roboto](https://fonts.google.com/specimen/Roboto) (incluso in `app/fonti/`) | Carattere dell'interfaccia, dal Brand Book di Argo's New Dreams | Apache-2.0 |
+| [PyAudioWPatch](https://github.com/s0d3s/PyAudioWPatch) (solo Windows) | Audio del computer in Registra (WASAPI loopback) | MIT |
+| [PyObjC](https://github.com/ronaldoussoren/pyobjc) (solo macOS) | Audio del computer in Registra (ScreenCaptureKit) | MIT |
 
 PySide6 viene installato come libreria separata nell'ambiente dell'utente e non è modificato né incluso in questo repository.
