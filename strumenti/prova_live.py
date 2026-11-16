@@ -148,6 +148,13 @@ prova("conclusione: nessun file audio e cartella della sessione rimossa",
       not r.dir.exists() and not list(Path(CASA).rglob("*.wav")))
 f_json = out.with_name(out.name.replace("_nomi.txt", ".json"))
 dati = json.loads(f_json.read_text(encoding="utf-8"))
+s2 = live.Sessione.nuova("Fantasmi", dest)
+fb = s2.aggiungi_blocco(voce(21))
+s2.registra_risultato(fb, [{"start": 0.0, "end": 2.0, "text": "Ciao.", "speaker": "SPEAKER_01"}],
+                      {"SPEAKER_00": come("Ospite Y"), "SPEAKER_01": come("Ospite X")})
+prova("parlanti: chi non ha frasi (musica, rumore) non diventa uno Sconosciuto",
+      list(s2.parlanti.mappa_nomi().values()) == ["Sconosciuto 1"], str(s2.parlanti.mappa_nomi()))
+s2.elimina()
 prova("conclusione: JSON dichiara che l'audio non è conservato", dati["argo_live"]["audio_conservato"] is False)
 _, mappa, _, _ = core.identifica(f_json)
 prova("compatibile con Revisione nomi: Anna resta Anna, l'ospite resta sconosciuto",
