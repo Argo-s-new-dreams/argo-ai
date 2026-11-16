@@ -78,7 +78,10 @@ Servono anche circa 10 GB liberi e un account gratuito [Hugging Face](https://hu
 1. **Token Hugging Face (una volta sola)**
    - Accetta le condizioni del modello [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1).
    - Crea un token di tipo **Read** su [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
-2. **Scarica** il repository (`Code → Download ZIP`) oppure l'ultima release ed estrailo.
+2. **Scarica Argo ed estrailo**
+   - Clic su **[⬇ Scarica Argo (ZIP)](https://github.com/Argo-s-new-dreams/argo-ai/archive/refs/heads/main.zip)**: parte subito il download di `argo-ai-main.zip`.
+   - Estrai lo ZIP: su Windows tasto destro → *Estrai tutto…*; su Mac doppio clic. Ottieni la cartella `argo-ai-main`.
+   - Non serve un account GitHub e non devi usare Git: è un normale file da scaricare.
 3. **Avvia l'installer**
    - Windows: doppio clic su `Installa-Argo.bat`. Se compare SmartScreen: *Ulteriori informazioni → Esegui comunque*.
    - macOS: tasto destro su `Installa-Argo.command` → *Apri*. Se macOS lo blocca: *Impostazioni di Sistema → Privacy e sicurezza → Apri comunque*.
@@ -157,7 +160,8 @@ Codice rilasciato con licenza [MIT](LICENSE). Le dipendenze e i modelli hanno le
 **Argo** is a local AI toolbox (Windows x64/ARM, macOS Apple Silicon): a transcriber built on WhisperX and pyannote.audio, plus minutes, private document Q&A, dictation and glossary-aware translation powered by a local LLM through Ollama. It transcribes audio/video files, separates speakers and labels them by name using a local **voice registry**. Everything runs locally; the internet is only needed to install packages and download models once.
 
 1. Accept the conditions of [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1) and create a **Read** token on Hugging Face.
-2. Run `Installa-Argo.bat` (Windows) or `Installa-Argo.command` (macOS, right-click → Open).
-3. Open the app, paste the token in *Impostazioni* (Settings), enroll voices, queue your files.
+2. [Download the ZIP](https://github.com/Argo-s-new-dreams/argo-ai/archive/refs/heads/main.zip) and extract it.
+3. Run `Installa-Argo.bat` (Windows) or `Installa-Argo.command` (macOS, right-click → Open).
+4. Open the app, paste the token in *Impostazioni* (Settings), enroll voices, queue your files.
 
 The UI and the [full manual](docs/MANUALE.md) are in Italian. Voiceprints are biometric data: enroll other people's voices only with their explicit consent. Under the EU AI Act, recognising people from their voice against a stored registry is biometric identification: personal non-professional use is outside the deployer obligations, while professional use may fall under the high-risk category (Annex III, point 1(a)), applicable from 2 December 2027. Personal project, provided as is, MIT licensed; not legal advice.

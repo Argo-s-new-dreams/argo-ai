@@ -93,7 +93,13 @@ La barra in basso nella finestra mostra **🔒 100% locale** finché Ollama punt
 
 ### 3.2 Scarica Argo
 
-Da [github.com/Argo-s-new-dreams/argo-ai](https://github.com/Argo-s-new-dreams/argo-ai): **Code → Download ZIP**, poi estrai lo ZIP in una cartella qualsiasi (per esempio *Download*).
+1. Clic su **[⬇ Scarica Argo (ZIP)](https://github.com/Argo-s-new-dreams/argo-ai/archive/refs/heads/main.zip)**: il browser scarica il file `argo-ai-main.zip` (di solito nella cartella *Download*).
+2. Estrai lo ZIP:
+   - **Windows:** tasto destro sul file → *Estrai tutto…* → *Estrai*. Non avviare l'installer dall'anteprima dello ZIP: prima va estratto.
+   - **Mac:** doppio clic sul file.
+3. Ottieni la cartella `argo-ai-main`, che contiene gli installer del passo successivo.
+
+Non serve un account GitHub né usare Git: è un normale download. In alternativa, dalla pagina [github.com/Argo-s-new-dreams/argo-ai](https://github.com/Argo-s-new-dreams/argo-ai) puoi usare il pulsante verde **Code → Download ZIP**, che scarica lo stesso file.
 
 ### 3.3 Avvia l'installer
 
