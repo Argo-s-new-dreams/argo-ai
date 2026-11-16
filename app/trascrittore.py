@@ -25,11 +25,12 @@ import argo_attrezzi as attrezzi  # noqa: E402
 import llm_locale  # noqa: E402
 import voci_strumenti  # noqa: E402
 import aggiornamenti  # noqa: E402
+import criteri  # noqa: E402
 import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261115.1415"
+VERSIONE = "20261116.0951"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -1119,6 +1120,25 @@ class Finestra(QMainWindow):
 
         g4 = QGroupBox(f"Aggiornamenti · versione installata {VERSIONE}")
         f4 = QVBoxLayout(g4)
+        crit = criteri.carica()
+        r_canale = QHBoxLayout()
+        r_canale.addWidget(QLabel("Canale:"))
+        self.c_canale = QComboBox()
+        for val, etichetta in aggiornamenti.CANALI.items():
+            self.c_canale.addItem(etichetta, val)
+        self.c_canale.setCurrentIndex(max(0, self.c_canale.findData(aggiornamenti.canale_effettivo(imp, crit))))
+        self.c_canale.currentIndexChanged.connect(lambda _: self._salva_canale(self.c_canale.currentData()))
+        r_canale.addWidget(self.c_canale)
+        r_canale.addStretch()
+        f4.addLayout(r_canale)
+        if "canale_aggiornamenti" in crit:
+            self.c_canale.setEnabled(False)
+            self.c_canale.setToolTip("Impostato dall'IT con i criteri aziendali")
+        nota_canale = QLabel("<b>Pro</b>: solo versioni rilasciate, con pacchetto verificato (impronta SHA-256 "
+                             "e firma) e librerie a versione fissa. <b>Lab</b>: ogni novità appena pubblicata, "
+                             "senza verifiche: per chi sperimenta.")
+        nota_canale.setWordWrap(True)
+        f4.addWidget(nota_canale)
         self.cb_agg = QCheckBox("Controlla all'avvio se su GitHub c'è una versione nuova")
         self.cb_agg.setChecked(bool(imp.get("controlla_aggiornamenti", True)))
         self.cb_agg.toggled.connect(self._salva_pref_agg)
@@ -1137,6 +1157,14 @@ class Finestra(QMainWindow):
         r4.addWidget(b_gh)
         r4.addWidget(self.l_agg, 1)
         f4.addLayout(r4)
+        if crit.get("aggiornamenti_dall_app") is False:
+            for wdg in (self.cb_agg, self.b_agg, self.c_canale):
+                wdg.setEnabled(False)
+            self.l_agg.setText("Gli aggiornamenti di Argo li distribuisce l'IT.")
+        if crit:
+            nota_it = QLabel(f"🏢 Alcune impostazioni sono gestite dall'IT ({criteri.percorso()}).")
+            nota_it.setWordWrap(True)
+            f4.addWidget(nota_it)
         lay.addWidget(g4)
 
         riga2 = QHBoxLayout()
@@ -1221,12 +1249,25 @@ class Finestra(QMainWindow):
         imp["controlla_aggiornamenti"] = bool(on)
         core.salva_impostazioni(imp)
 
+    def _salva_canale(self, canale):
+        imp = core.carica_impostazioni()
+        imp["canale_aggiornamenti"] = canale
+        core.salva_impostazioni(imp)
+        if hasattr(self, "l_agg"):
+            self.l_agg.setText(f"Canale {canale.capitalize()}: premi «Controlla ora».")
+
+    def _canale(self):
+        return aggiornamenti.canale_effettivo(core.carica_impostazioni(), criteri.carica())
+
     def controlla_aggiornamenti(self, manuale=False):
         if getattr(self, "_lav_agg", None):
             return
+        if criteri.carica().get("aggiornamenti_dall_app") is False:
+            return
+        canale = self._canale()
         if hasattr(self, "l_agg"):
-            self.l_agg.setText("Controllo su GitHub…")
-        lav = attrezzi.Lavoro(lambda _l: aggiornamenti.controlla(VERSIONE), self)
+            self.l_agg.setText(f"Controllo su GitHub (canale {canale.capitalize()})…")
+        lav = attrezzi.Lavoro(lambda _l: aggiornamenti.controlla(VERSIONE, canale), self)
         lav.sig_fine.connect(lambda r: self._esito_controllo(r, manuale))
         lav.sig_errore.connect(lambda e: self._errore_controllo(e, manuale))
         self._lav_agg = lav
@@ -1283,8 +1324,12 @@ class Finestra(QMainWindow):
         if self.worker or self.worker_voce:
             QMessageBox.information(self, "Aggiornamento", "Aspetta che finisca l'elaborazione in corso, poi riprova.")
             return
+        if criteri.carica().get("aggiornamenti_dall_app") is False:
+            QMessageBox.information(self, "Aggiornamento", "Gli aggiornamenti di Argo li distribuisce l'IT.")
+            return
         cartella = Path(__file__).resolve().parent
-        lav = attrezzi.Lavoro(lambda l: aggiornamenti.installa(cartella, l.stato), self)
+        canale = self._canale()
+        lav = attrezzi.Lavoro(lambda l: aggiornamenti.installa(cartella, l.stato, canale), self)
         lav.sig_stato.connect(lambda t: self.statusBar().showMessage(t))
         lav.sig_fine.connect(self._fine_aggiornamento)
         lav.sig_errore.connect(lambda e: (QMessageBox.warning(
@@ -1306,7 +1351,8 @@ class Finestra(QMainWindow):
             extra = f"\n\nAggiornamento delle librerie non riuscito: {lib[7:]}\nRilancia l'installer dal pacchetto su GitHub."
         r = QMessageBox.question(
             self, "Aggiornamento installato",
-            f"Argo {esito['versione']} è installato.{extra}\n\nRiavvio Argo adesso per usarlo?\n"
+            f"Argo {esito['versione']} è installato (canale {esito.get('canale', 'lab').capitalize()}, "
+            f"verifica: {esito.get('verifica', 'nessuna')}).{extra}\n\nRiavvio Argo adesso per usarlo?\n"
             f"(La versione precedente è salvata in {esito['backup']}.)",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         self.statusBar().showMessage(f"Aggiornato alla versione {esito['versione']}.")
@@ -1358,7 +1404,8 @@ def main():
         app.setWindowIcon(QIcon(str(icona)))
     f = Finestra()
     f.show()
-    if core.carica_impostazioni().get("controlla_aggiornamenti", True):
+    if (core.carica_impostazioni().get("controlla_aggiornamenti", True)
+            and criteri.carica().get("aggiornamenti_dall_app") is not False):
         from PySide6.QtCore import QTimer
         QTimer.singleShot(3000, f.controlla_aggiornamenti)
     sys.exit(app.exec())

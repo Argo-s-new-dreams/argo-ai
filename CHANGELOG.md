@@ -2,6 +2,14 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261116.0951: canali Lab e Pro
+- **Due canali di aggiornamento** in *Impostazioni → Aggiornamenti*:
+  - **Lab** (predefinito): segue ogni novità appena pubblicata, come finora;
+  - **Pro**: solo versioni rilasciate. Il pacchetto si installa solo se impronta SHA-256 e firma corrispondono al manifesto, e le librerie arrivano a versione fissa da `requisiti.lock`.
+- **Criteri aziendali**: con un file `criteri.json` di sistema l'IT può bloccare il canale su Pro o disattivare gli aggiornamenti dall'app (vedi [docs/PRO.md](docs/PRO.md)).
+- Più sicurezza anche per Lab: vengono scartati i file con percorsi che escono dalla cartella del programma.
+- Roadmap di Argo Pro in [docs/PRO.md](docs/PRO.md).
+
 ## 20261115.1415: riapertura dopo l'aggiornamento (Mac)
 - Corretto di nuovo: sul Mac Argo non si riapriva dopo **Aggiorna ora**. macOS chiudeva il comando di riavvio insieme alla vecchia finestra; ora la nuova istanza viene chiesta subito a macOS (`open -n`), prima di chiudere quella vecchia.
 - La correzione vale dall'aggiornamento **successivo**: questo aggiornamento usa ancora il vecchio codice di riavvio, quindi dopo averlo installato riapri Argo a mano.
