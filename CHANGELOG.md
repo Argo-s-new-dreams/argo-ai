@@ -2,6 +2,9 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.1310: errori della ricerca web più chiari
+- *Impostazioni › Ricerca web*: se Ollama rifiuta la ricerca, Argo mostra anche il **motivo dato dal servizio** (es. 402 = serve un piano o un credito sull'account), non solo il codice.
+
 ## 20261117.1254: nuova pagina Clienti (Dynamics 365 Sales)
 - **Clienti › Cliente**: cerca l'account in Dynamics (nome, sito o dominio) con i suoi contatti; se non c'è, **🌐 Scheda pubblica** con le regole di **Client Intel Scout** in locale (10 sezioni, fonte e data su ogni dato, `[DATO NON DISPONIBILE]`, stop sugli omonimi) e **➕ Crea account…** precompilato da confermare, con la scheda come nota.
 - Ricerca web con **Ollama Web Search** (account gratuito, chiave in *Impostazioni › Ricerca web*): esce solo il nome dell'azienda; il modello locale scrive **solo** dalle pagine scaricate, con URL e data.

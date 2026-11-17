@@ -63,11 +63,25 @@ def _post(percorso, corpo, timeout=40):
             with urllib.request.urlopen(req, timeout=timeout, context=ctx) as r:
                 return json.loads(r.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
+            dettaglio = ""
+            try:
+                testo = e.read().decode("utf-8", "replace").strip()
+                try:
+                    dati = json.loads(testo)
+                    testo = dati.get("error") or dati.get("message") or testo
+                except Exception:
+                    pass
+                dettaglio = f" — {str(testo)[:200]}" if testo else ""
+            except Exception:
+                pass
             if e.code == 401:
-                raise ErroreRicerca("Chiave di Ollama Web Search non valida (401).") from None
+                raise ErroreRicerca(f"Chiave di Ollama Web Search non valida (401){dettaglio}.") from None
+            if e.code == 402:
+                raise ErroreRicerca("Ollama chiede un piano o un credito per la ricerca web (402)"
+                                    f"{dettaglio}. Controlla l'account su ollama.com › Settings.") from None
             if e.code == 429:
-                raise ErroreRicerca("Limite di ricerche di Ollama raggiunto (429): riprova più tardi.") from None
-            raise ErroreRicerca(f"Ollama Web Search ha risposto {e.code}.") from None
+                raise ErroreRicerca(f"Limite di ricerche di Ollama raggiunto (429){dettaglio}: riprova più tardi.") from None
+            raise ErroreRicerca(f"Ollama Web Search ha risposto {e.code}{dettaglio}.") from None
         except urllib.error.URLError as e:
             if "CERTIFICATE_VERIFY_FAILED" in str(getattr(e, "reason", "")):
                 ultimo = e
