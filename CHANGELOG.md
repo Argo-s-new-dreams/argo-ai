@@ -2,6 +2,14 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.1144: relazione degli incontri, anche guardando le foto
+- **Incontri › ✨ Scrivi relazione**: Ollama in locale legge la trascrizione con i nomi e le foto, e scrive una relazione strutturata con **contatti** (dai biglietti da visita), **aziende**, **interessi**, **opportunità** (prodotti, budget, tempi, decisori, prossimo passo), punti chiave e **azioni**. Nessun dato inventato: i campi sconosciuti restano vuoti.
+- **Foto con un modello vision** (menu «Foto:»): se in Ollama c'è un modello che vede le immagini (es. gemma3, qwen2.5vl) Argo descrive ogni foto e ne estrae i dati leggibili; altrimenti usa il testo letto dall'iPhone. Le descrizioni restano in cache nell'incontro.
+- Incontri lunghi: appunti a blocchi, poi la relazione.
+- Relazione **modificabile** con «Salva modifiche», **Salva ▾** in Word o Markdown; scheda «Trascrizione e foto» con la cronologia completa.
+- Solo Ollama locale: con un indirizzo non locale la relazione degli incontri non parte.
+- Dati pronti per il prossimo passo: Dynamics 365 Sales.
+
 ## 20261117.1135: Ponte con l'iPhone e pagina Incontri
 - **Nuova pagina Incontri** (gruppo Riunioni): fiere e visite ai clienti registrate con **Argo per iPhone**, con trascrizione divisa per persona, foto e testo letto dalle foto. Importa anche pacchetti `.zip` arrivati per altre vie.
 - **Ponte Argo**: canale cifrato in rete locale tra iPhone e computer, al posto di AirDrop. Si collega con **📱 Collega iPhone…** inquadrando un QR (codice monouso, 5 minuti). L'iPhone accetta solo il certificato di questo computer (pinning); niente cloud. Gli incontri arrivano da soli quando l'iPhone è sulla stessa rete e Argo è aperto. Dettagli in [docs/PONTE.md](docs/PONTE.md).

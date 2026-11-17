@@ -1,7 +1,7 @@
 """incontri.py - pagina Incontri: ciò che arriva da Argo per iPhone (fiere, visite ai clienti).
 
-Tappa 1: Ponte (abbinamento con QR, ricezione dei pacchetti), elenco e consultazione degli incontri.
-Tappe successive: relazione con Ollama (testo + foto, anche con modello vision) e Dynamics 365 Sales.
+Ponte (abbinamento con QR, ricezione dei pacchetti), elenco degli incontri, relazione con Ollama
+(trascrizione + foto, anche con un modello vision). Prossima tappa: Dynamics 365 Sales.
 """
 import io
 import json
@@ -11,11 +11,18 @@ from pathlib import Path
 from PySide6.QtCore import QObject, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QPixmap
 from PySide6.QtWidgets import (
-    QDialog, QFileDialog, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QMenu, QMessageBox,
-    QPlainTextEdit, QPushButton, QScrollArea, QSplitter, QToolButton, QVBoxLayout, QWidget,
+    QComboBox, QDialog, QFileDialog, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QMenu, QMessageBox,
+    QPlainTextEdit, QPushButton, QScrollArea, QSplitter, QTabWidget, QToolButton, QVBoxLayout, QWidget,
 )
 
+import argo_attrezzi as attrezzi
+import esporta_word
+import llm_locale as llm
 import ponte as pt
+import relazione_incontro as rel
+import voci_core as core
+
+SOLO_OCR = "Solo testo letto dall'iPhone"
 
 
 def _durata(secondi):
@@ -92,8 +99,8 @@ class SchedaIncontri(QWidget):
 
         lay = QVBoxLayout(self)
         bar = QHBoxLayout()
+        # Stile Argo: un solo pulsante principale per pagina («Scrivi relazione»); il collegamento è secondario.
         self.b_collega = QPushButton("📱 Collega iPhone…")
-        self.b_collega.setProperty("primario", True)
         self.b_collega.clicked.connect(self.collega)
         bar.addWidget(self.b_collega)
         self.b_dispositivi = QToolButton()
@@ -139,12 +146,54 @@ class SchedaIncontri(QWidget):
         scorri.setFixedHeight(150)
         self.scorri_foto = scorri
         dl.addWidget(scorri)
+        comandi = QHBoxLayout()
+        self.b_relazione = QPushButton("✨ Scrivi relazione")
+        self.b_relazione.setProperty("primario", True)
+        self.b_relazione.setToolTip("Ollama in locale: trascrizione con i nomi + foto → relazione con contatti, "
+                                    "aziende, opportunità e azioni")
+        self.b_relazione.clicked.connect(self.scrivi_relazione)
+        comandi.addWidget(self.b_relazione)
+        self.b_ferma = QPushButton("Ferma")
+        self.b_ferma.setVisible(False)
+        self.b_ferma.clicked.connect(lambda: self.lavoro and self.lavoro.ferma())
+        comandi.addWidget(self.b_ferma)
+        comandi.addWidget(QLabel("Foto:"))
+        self.c_vision = QComboBox()
+        self.c_vision.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        self.c_vision.setToolTip("Un modello vision di Ollama guarda anche le foto (prodotti, stand, schemi); "
+                                 "senza, si usa il testo letto dall'iPhone")
+        self.c_vision.currentTextChanged.connect(self._salva_vision)
+        comandi.addWidget(self.c_vision)
+        comandi.addStretch()
+        self.b_salva_mod = QPushButton("Salva modifiche")
+        self.b_salva_mod.setEnabled(False)
+        self.b_salva_mod.clicked.connect(self.salva_modifiche)
+        comandi.addWidget(self.b_salva_mod)
+        self.b_salva = QToolButton()
+        self.b_salva.setText("Salva ▾")
+        self.b_salva.setPopupMode(QToolButton.InstantPopup)
+        ms = QMenu(self.b_salva)
+        ms.addAction("Word (.docx)…").triggered.connect(lambda: self.esporta("docx"))
+        ms.addAction("Markdown (.md)…").triggered.connect(lambda: self.esporta("md"))
+        self.b_salva.setMenu(ms)
+        comandi.addWidget(self.b_salva)
+        dl.addLayout(comandi)
+        self.l_lavoro = QLabel("")
+        self.l_lavoro.setProperty("ruolo", "tenue")
+        self.l_lavoro.setWordWrap(True)
+        dl.addWidget(self.l_lavoro)
+
+        self.schede = QTabWidget()
         self.testo = QPlainTextEdit()
-        self.testo.setReadOnly(True)
-        dl.addWidget(self.testo, 1)
-        prossimi = QLabel("Prossimi passi: relazione con Ollama (testo + foto) e invio a Dynamics 365 Sales.")
-        prossimi.setProperty("ruolo", "tenue")
-        dl.addWidget(prossimi)
+        self.testo.setPlaceholderText("Nessuna relazione ancora: premi «✨ Scrivi relazione».")
+        self.testo.textChanged.connect(lambda: self.b_salva_mod.setEnabled(self._caricato))
+        self.schede.addTab(self.testo, "Relazione")
+        self.t_trascrizione = QPlainTextEdit()
+        self.t_trascrizione.setReadOnly(True)
+        self.schede.addTab(self.t_trascrizione, "Trascrizione e foto")
+        dl.addWidget(self.schede, 1)
+        self.lavoro = None
+        self._caricato = False
         div.addWidget(destra)
         div.setStretchFactor(1, 3)
         lay.addWidget(div, 1)
@@ -156,6 +205,7 @@ class SchedaIncontri(QWidget):
         lay.addWidget(self.vuoto, 1)
         self._incontri = []
 
+        QTimer.singleShot(800, self._carica_modelli_vision)
         # Il Ponte parte da solo se c'è già almeno un iPhone collegato.
         if pt.dispositivi():
             QTimer.singleShot(500, self._avvia_ponte)
@@ -239,7 +289,10 @@ class SchedaIncontri(QWidget):
                 extra.append(f"📷 {len(d['foto'])}")
             if d.get("partecipanti"):
                 extra.append(f"👥 {len(d['partecipanti'])}")
-            it = QListWidgetItem(f"{d.get('titolo', cartella.name)}\n{quando}  {'  '.join(extra)}")
+            titolo = rel.carica(cartella).get("relazione", {}).get("titolo") or d.get("titolo", cartella.name)
+            if (cartella / rel.FILE_TESTO).exists():
+                extra.append("✨")
+            it = QListWidgetItem(f"{titolo}\n{quando}  {'  '.join(extra)}")
             self.lista.addItem(it)
         self.lista.blockSignals(False)
         vuota = not self._incontri
@@ -283,8 +336,113 @@ class SchedaIncontri(QWidget):
             self.foto_lay.addWidget(l)
         self.foto_lay.addStretch()
         self.scorri_foto.setVisible(bool(d.get("foto")))
-        md = cartella / "relazione.md"
-        self.testo.setPlainText(md.read_text(encoding="utf-8") if md.exists() else "")
+        self._caricato = False
+        mia = cartella / rel.FILE_TESTO
+        if mia.exists():
+            self.testo.setPlainText(mia.read_text(encoding="utf-8"))
+            meta = rel.carica(cartella)
+            self.l_lavoro.setText(f"Relazione del {meta.get('generata', '')} con {meta.get('modello_testo', '')}"
+                                  + (f" · foto: {meta['modello_vision']}" if meta.get("modello_vision") else "")
+                                  + ". Puoi modificarla qui.")
+        else:
+            iphone = cartella / "relazione.md"
+            self.testo.setPlainText("")
+            self.l_lavoro.setText("Premi «✨ Scrivi relazione»." + (
+                " (C'è anche la bozza fatta sull'iPhone, nella scheda Trascrizione.)" if iphone.exists() else ""))
+        descrizioni = {k: v.get("descrizione", "") for k, v in rel.carica(cartella).get("foto", {}).items()}
+        self.t_trascrizione.setPlainText(rel.cronologia(cartella, d, descrizioni)
+                                         + (("\n\n— Bozza fatta sull'iPhone —\n\n" + (cartella / "relazione.md").read_text(encoding="utf-8"))
+                                            if (cartella / "relazione.md").exists() else ""))
+        self._caricato = True
+        self.b_salva_mod.setEnabled(False)
+
+    # -- relazione
+    def _carica_modelli_vision(self):
+        s = core.carica_impostazioni()
+        try:
+            vision = rel.modelli_vision(s.get("ollama_url", llm.DEFAULT_URL))
+        except Exception:
+            vision = []
+        self.c_vision.blockSignals(True)
+        self.c_vision.clear()
+        self.c_vision.addItem(SOLO_OCR)
+        self.c_vision.addItems(vision)
+        scelto = s.get("modello_vision")
+        if scelto in vision:
+            self.c_vision.setCurrentText(scelto)
+        elif scelto is None and vision:
+            self.c_vision.setCurrentIndex(1)  # prima volta: se c'è un modello vision, si usa
+        self.c_vision.blockSignals(False)
+        if not vision:
+            self.c_vision.setToolTip("Nessun modello vision in Ollama: es. «ollama pull qwen2.5vl:7b» o gemma3")
+
+    def _salva_vision(self, testo):
+        s = core.carica_impostazioni()
+        s["modello_vision"] = "" if testo == SOLO_OCR else testo
+        core.salva_impostazioni(s)
+
+    def scrivi_relazione(self):
+        cartella, d = self._corrente()
+        if not cartella or self.lavoro:
+            return
+        if (cartella / rel.FILE_TESTO).exists() and QMessageBox.question(
+                self, "Rifare la relazione?", "Esiste già una relazione (con eventuali tue modifiche): sostituirla?") != QMessageBox.Yes:
+            return
+        s = core.carica_impostazioni()
+        url, testo_mod = s.get("ollama_url", llm.DEFAULT_URL), s.get("modello_chat")
+        vision = "" if self.c_vision.currentText() == SOLO_OCR else self.c_vision.currentText()
+
+        def lavoro(lav):
+            return rel.scrivi_relazione(cartella, d, url, testo_mod, vision or None, stato=lav.stato, stop=lav.fermato)
+
+        self.lavoro = attrezzi.Lavoro(lavoro, self)
+        self.lavoro.sig_stato.connect(self.l_lavoro.setText)
+        self.lavoro.sig_fine.connect(lambda _r: self._fine_relazione(None))
+        self.lavoro.sig_errore.connect(self._fine_relazione)
+        self.b_relazione.setEnabled(False)
+        self.b_ferma.setVisible(True)
+        self.l_lavoro.setText("Preparo…")
+        self.lavoro.start()
+
+    def _fine_relazione(self, errore):
+        self.lavoro = None
+        self.b_relazione.setEnabled(True)
+        self.b_ferma.setVisible(False)
+        riga = self.lista.currentRow()
+        self._mostra(riga)
+        if errore:
+            self.l_lavoro.setText(f"⚠️ {errore}")
+        else:
+            self.aggiorna()
+            self.lista.setCurrentRow(riga)
+            self.schede.setCurrentIndex(0)
+            self.finestra.statusBar().showMessage("Relazione pronta: rileggila prima di usarla.", 6000)
+
+    def salva_modifiche(self):
+        cartella, _d = self._corrente()
+        if cartella:
+            (cartella / rel.FILE_TESTO).write_text(self.testo.toPlainText(), encoding="utf-8")
+            self.b_salva_mod.setEnabled(False)
+            self.finestra.statusBar().showMessage("Modifiche salvate.", 4000)
+
+    def esporta(self, formato):
+        cartella, d = self._corrente()
+        testo = self.testo.toPlainText().strip()
+        if not cartella or not testo:
+            QMessageBox.information(self, "Niente da salvare", "Scrivi prima la relazione.")
+            return
+        nome = "".join(c if c.isalnum() or c in " -_" else "_" for c in d.get("titolo", "Incontro"))[:60].strip()
+        estensione = ".docx" if formato == "docx" else ".md"
+        f, _ = QFileDialog.getSaveFileName(self, "Salva la relazione", str(Path.home() / "Documents" / (nome + estensione)),
+                                           "Word (*.docx)" if formato == "docx" else "Markdown (*.md)")
+        if not f:
+            return
+        if formato == "docx":
+            percorso = esporta_word.salva_docx(testo, f)
+        else:
+            percorso = Path(f)
+            percorso.write_text(testo, encoding="utf-8")
+        self.finestra.statusBar().showMessage(f"Salvata in {percorso}", 6000)
 
     def apri_cartella(self):
         cartella, _d = self._corrente()
