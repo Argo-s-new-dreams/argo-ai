@@ -5,6 +5,7 @@ pypdf
 python-docx
 sounddevice
 msal
+cryptography
 PyAudioWPatch; sys_platform == "win32"
 pyobjc-framework-ScreenCaptureKit; sys_platform == "darwin"
 segno

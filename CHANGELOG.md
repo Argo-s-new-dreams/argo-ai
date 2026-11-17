@@ -2,6 +2,14 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.1345: rilascio Lab · Argo per iPhone, Incontri e Clienti
+Prima versione Lab con tutto il percorso dalla fiera al CRM. Le voci qui sotto, dalla 20261117.1108 in poi, dicono cosa c'è nel dettaglio.
+- **Ponte Argo**: colleghi Argo per iPhone con un QR (Incontri › Collega iPhone…); incontri e impronte vocali passano in rete locale, cifrati.
+- **Incontri**: relazione con il modello locale, anche dalle foto, coda che riprende dopo la chiusura, invio a Dynamics 365 Sales.
+- **Clienti**: account in Dynamics, scheda pubblica con le regole di Client Intel Scout, partecipanti e task in Planner o Dynamics.
+- Librerie nuove, installate da sole con l'aggiornamento: `segno` (QR); `cryptography` ora è dichiarata esplicitamente.
+- Da configurare: Dynamics in *Impostazioni › Dynamics 365 Sales*, chiave di Ollama Web Search in *Impostazioni › Ricerca web*.
+
 ## 20261117.1330: indirizzo diviso nei campi del nuovo account
 - *Clienti › Crea account*: l'indirizzo trovato dalla scheda pubblica viene diviso in **via, CAP, città, provincia e nazione** con regole fisse (niente modello); la provincia si completa quando la città è un capoluogo. Se manca, il **sito** è quello ufficiale individuato dalla ricerca.
 - La descrizione dell'account si modifica su più righe.
