@@ -232,6 +232,7 @@ L'IT può limitare la pagina con `criteri.json` (vedi [PRO.md](PRO.md)): `"regis
 ## 5. Trascrivi
 
 La pagina del Trascrittore (nel menu: *Trascrivi*). In alto **▶ Avvia coda** e **+ Aggiungi file…**. A sinistra c'è la **coda** di file audio o video da trascrivere; a destra il **dettaglio** del file selezionato:
+
 - le **corsie dei parlanti**, una per persona, colorate, che mostrano quando parla ciascuno lungo la registrazione;
 - la **trascrizione** con i nomi colorati allo stesso modo;
 - i pulsanti *Nomi dei parlanti*, *Marca voci*, *Apri testo*, *Word* e *Verbale →*, che compaiono quando scegli un file (*Marca voci* anche prima della trascrizione, gli altri a trascrizione completata).
@@ -499,12 +500,14 @@ La pagina **Incontri** raccoglie ciò che registri con **Argo per iPhone** in fi
 Come è protetto il canale: [docs/PONTE.md](PONTE.md).
 
 **Relazione dell'incontro**
+
 1. Seleziona uno o più incontri nella tabella (con ⌘ o ⇧ per sceglierne più d'uno) e, in **Foto:**, un modello vision di Ollama (es. `gemma3:12b`, `qwen2.5vl:7b`) oppure «Solo testo letto dall'iPhone».
 2. Premi **✨ Scrivi relazione**: gli incontri vanno in **coda** e vengono elaborati uno alla volta, ognuno con la sua barra di avanzamento (**■ Ferma coda** per interrompere). Per ciascuno Argo descrive le foto, incrocia parole e immagini e scrive titolo, riassunto, contatti, aziende, opportunità, punti chiave e azioni.
 3. Correggi il testo se serve e premi **Salva modifiche**; **Salva ▾** la esporta in Word o Markdown.
 4. La scheda **Trascrizione e foto** mostra la cronologia completa, con la bozza fatta sull'iPhone.
 
 **Invio a Dynamics 365 Sales**
+
 1. Una volta sola: Impostazioni › **Dynamics 365 Sales**, indirizzo dell'ambiente e **Collega** (prima va aggiunto il permesso nell'app Entra: [docs/DYNAMICS.md](DYNAMICS.md)).
 2. Su un incontro con la relazione premi **☁️ Invia a Dynamics…**: per ogni contatto Argo propone dove registrarlo (contatto o lead già presenti, oppure nuovo lead); cambia la scelta se serve, correggi i dati, scegli cosa allegare.
 3. **Invia a Dynamics**: alla fine compaiono i link ai record; nella tabella la colonna **CRM** mostra ☁️.
@@ -771,6 +774,7 @@ Per `iscrivi` il token Hugging Face deve essere già salvato (lo fa l'app).
 **Aggiornare dall'app (consigliato).** All'avvio Argo controlla su GitHub se c'è una versione nuova. Se la trova, ti mostra le novità e propone tre scelte: **Aggiorna ora**, **Più tardi**, **Apri GitHub**.
 
 Con *Aggiorna ora* Argo:
+
 1. scarica il pacchetto;
 2. salva una copia della versione attuale in `whisperx-env/app_precedente`;
 3. sostituisce solo i file del programma;
@@ -780,6 +784,7 @@ Con *Aggiorna ora* Argo:
 Voci, token, impostazioni, glossario e documenti indicizzati non vengono toccati.
 
 In *Impostazioni → Aggiornamenti* trovi:
+
 - la versione installata;
 - **Controlla ora**;
 - la casella per disattivare il controllo all'avvio.
