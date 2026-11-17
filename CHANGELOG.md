@@ -2,6 +2,10 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.1330: indirizzo diviso nei campi del nuovo account
+- *Clienti › Crea account*: l'indirizzo trovato dalla scheda pubblica viene diviso in **via, CAP, città, provincia e nazione** con regole fisse (niente modello); la provincia si completa quando la città è un capoluogo. Se manca, il **sito** è quello ufficiale individuato dalla ricerca.
+- La descrizione dell'account si modifica su più righe.
+
 ## 20261117.1310: errori della ricerca web più chiari
 - *Impostazioni › Ricerca web*: se Ollama rifiuta la ricerca, Argo mostra anche il **motivo dato dal servizio** (es. 402 = serve un piano o un credito sull'account), non solo il codice.
 

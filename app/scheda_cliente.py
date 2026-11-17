@@ -102,6 +102,54 @@ SCHEMA_ACCOUNT = {
 }
 
 
+NAZIONI = {"italia": "Italia", "italy": "Italia", "svizzera": "Svizzera", "switzerland": "Svizzera",
+           "germania": "Germania", "germany": "Germania", "deutschland": "Germania", "francia": "Francia",
+           "france": "Francia", "austria": "Austria", "spagna": "Spagna", "spain": "Spagna"}
+
+
+# Capoluoghi di provincia → sigla (solo per completare la provincia quando la città è un capoluogo)
+CAPOLUOGHI = {"agrigento": "AG", "alessandria": "AL", "ancona": "AN", "aosta": "AO", "arezzo": "AR", "ascoli piceno": "AP", "asti": "AT", "avellino": "AV", "bari": "BA", "barletta": "BT", "belluno": "BL", "benevento": "BN", "bergamo": "BG", "biella": "BI", "bologna": "BO", "bolzano": "BZ", "brescia": "BS", "brindisi": "BR", "cagliari": "CA", "caltanissetta": "CL", "campobasso": "CB", "caserta": "CE", "catania": "CT", "catanzaro": "CZ", "chieti": "CH", "como": "CO", "cosenza": "CS", "cremona": "CR", "crotone": "KR", "cuneo": "CN", "enna": "EN", "fermo": "FM", "ferrara": "FE", "firenze": "FI", "foggia": "FG", "forlì": "FC", "frosinone": "FR", "genova": "GE", "gorizia": "GO", "grosseto": "GR", "imperia": "IM", "isernia": "IS", "l'aquila": "AQ", "la spezia": "SP", "latina": "LT", "lecce": "LE", "lecco": "LC", "livorno": "LI", "lodi": "LO", "lucca": "LU", "macerata": "MC", "mantova": "MN", "massa": "MS", "matera": "MT", "messina": "ME", "milano": "MI", "modena": "MO", "monza": "MB", "napoli": "NA", "novara": "NO", "nuoro": "NU", "oristano": "OR", "padova": "PD", "palermo": "PA", "parma": "PR", "pavia": "PV", "perugia": "PG", "pesaro": "PU", "pescara": "PE", "piacenza": "PC", "pisa": "PI", "pistoia": "PT", "pordenone": "PN", "potenza": "PZ", "prato": "PO", "ragusa": "RG", "ravenna": "RA", "reggio calabria": "RC", "reggio emilia": "RE", "rieti": "RI", "rimini": "RN", "roma": "RM", "rovigo": "RO", "salerno": "SA", "sassari": "SS", "savona": "SV", "siena": "SI", "siracusa": "SR", "sondrio": "SO", "taranto": "TA", "teramo": "TE", "terni": "TR", "torino": "TO", "trapani": "TP", "trento": "TN", "treviso": "TV", "trieste": "TS", "udine": "UD", "varese": "VA", "venezia": "VE", "verbania": "VB", "vercelli": "VC", "verona": "VR", "vibo valentia": "VV", "vicenza": "VI", "viterbo": "VT"}
+
+
+def dividi_indirizzo(testo):
+    """«Via Spadolini 7, 20141 Milano (MI) Italia» → via, cap, città, provincia, nazione.
+
+    Regole fisse (nessun modello): CAP a 5 cifre, sigla di provincia tra parentesi o dopo la città,
+    nazione riconosciuta da un elenco. Ciò che non si riconosce resta nel campo «indirizzo»."""
+    out = {"indirizzo": (testo or "").strip(), "cap": "", "citta": "", "provincia": "", "nazione": ""}
+    t = re.sub(r"\s+", " ", out["indirizzo"]).strip(" ,;-")
+    if not t:
+        return out
+    for parola, nome in NAZIONI.items():
+        m = re.search(rf"[\s,–-]+{parola}\.?$", t, re.I)
+        if m:
+            out["nazione"], t = nome, t[:m.start()].strip(" ,;-")
+            break
+    m = re.search(r"\b(\d{5})\b\s*[-–]?\s*([A-Za-zÀ-ÿ'’. ]+?)\s*(?:\(([A-Za-z]{2})\)|\s([A-Z]{2}))?$", t)
+    if m:
+        out["cap"], out["citta"] = m.group(1), m.group(2).strip(" ,.-")
+        out["provincia"] = (m.group(3) or m.group(4) or "").upper()
+        t = t[:m.start()].strip(" ,;-")
+    out["indirizzo"] = t
+    if out["citta"] and not out["provincia"] and out["nazione"] in ("", "Italia"):
+        out["provincia"] = CAPOLUOGHI.get(out["citta"].lower(), "")
+    return out
+
+
+def sistema_account(account, sito=""):
+    """Completa i dati proposti per l'account: indirizzo diviso nei campi, sito ufficiale se manca."""
+    a = dict(account or {})
+    pezzi = dividi_indirizzo(a.get("indirizzo", ""))
+    if any(pezzi[k] for k in ("cap", "citta", "provincia", "nazione")):
+        a["indirizzo"] = pezzi["indirizzo"]
+        for k in ("cap", "citta", "provincia", "nazione"):
+            if not str(a.get(k) or "").strip() and pezzi[k]:
+                a[k] = pezzi[k]
+    if not str(a.get("sito") or "").strip() and sito:
+        a["sito"] = sito
+    return a
+
+
 class ErroreScheda(RuntimeError):
     pass
 
@@ -227,6 +275,7 @@ def ricerca(nome, extra="", url_ollama=None, modello=None, stato=lambda _t: None
         "Estrai dati anagrafici dal profilo. Solo dati presenti nel testo; campi assenti vuoti o omessi. "
         "Niente valori con [DATO NON DISPONIBILE]. Fatturato in euro come numero, solo se scritto.",
         markdown, formato=SCHEMA_ACCOUNT, stop=stop))
+    account = sistema_account(account, sito)
     avanzamento(100)
 
     cartella = CARTELLA / _slug(account.get("ragione_sociale") or nome)

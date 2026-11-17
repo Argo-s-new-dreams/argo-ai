@@ -17,7 +17,7 @@ from PySide6.QtCore import QObject, Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QHeaderView,
-    QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMenu, QMessageBox, QProgressBar, QPushButton,
+    QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMenu, QMessageBox, QProgressBar, QPlainTextEdit, QPushButton,
     QRadioButton, QSplitter, QTableWidget, QTableWidgetItem, QTabWidget, QTextBrowser, QToolButton, QVBoxLayout,
     QWidget,
 )
@@ -112,6 +112,7 @@ class DialogoAccount(QDialog):
         lay.addWidget(nota)
         f = QFormLayout()
         self.e = {}
+        proposta = scheda.sistema_account(proposta, proposta.get("sito", ""))
         for chiave, etichetta in self.CAMPI:
             valore = proposta.get(chiave)
             if chiave == "descrizione":
@@ -121,7 +122,11 @@ class DialogoAccount(QDialog):
                          proposta.get("fatturato_euro") and f"Fatturato: {proposta['fatturato_euro']:,.0f} € "
                          f"({proposta.get('fatturato_anno', 's.d.')})"]
                 valore = "\n".join(p for p in pezzi if p)
-            self.e[chiave] = QLineEdit(_testo(valore))
+            if chiave == "descrizione":
+                self.e[chiave] = QPlainTextEdit(_testo(valore))
+                self.e[chiave].setFixedHeight(90)
+            else:
+                self.e[chiave] = QLineEdit(_testo(valore))
             f.addRow(etichetta + ":", self.e[chiave])
         lay.addLayout(f)
         self.cb_nota = QCheckBox("Allega la scheda pubblica come nota sull'account")
@@ -140,7 +145,8 @@ class DialogoAccount(QDialog):
         self.accept()
 
     def valori(self):
-        return {k: e.text().strip() for k, e in self.e.items()}
+        return {k: (e.toPlainText() if isinstance(e, QPlainTextEdit) else e.text()).strip()
+                for k, e in self.e.items()}
 
 
 class DialogoTask(QDialog):
