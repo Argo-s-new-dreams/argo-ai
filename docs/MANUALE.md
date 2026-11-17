@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261116.1818 · riferita all'app versione 20261116.1818*
+*Versione del manuale: 20261117.2025 · riferita all'app versione 20261117.2025*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -182,7 +182,7 @@ Registra riunioni in presenza e **call Teams**. Argo prende due sorgenti e le me
 | Modalità | Cosa resta sul computer | Quando usarla |
 | --- | --- | --- |
 | **Live** | Solo il **testo**. Argo taglia l'audio in blocchi di 20-45 secondi, sui silenzi; trascrive ogni blocco appena è pronto e lo **cancella** subito dopo averne salvato il testo. La registrazione intera non esiste mai. | Riunioni di lavoro, dati riservati, quando vuoi ridurre al minimo i dati conservati |
-| **Archivia** | La **registrazione completa** in `Documenti/Argo/Registrazioni`, da trascrivere quando vuoi con **Metti in coda nel Trascrittore** | Quando vuoi poter riascoltare, o la massima qualità del riconoscimento dei parlanti |
+| **Archivia** | La **registrazione completa** in `Documenti/Argo/Registrazioni`, da trascrivere quando vuoi con **Metti in coda in Trascrivi →** | Quando vuoi poter riascoltare, o la massima qualità del riconoscimento dei parlanti |
 
 ### Come si usa
 
@@ -202,7 +202,7 @@ Registra riunioni in presenza e **call Teams**. Argo prende due sorgenti e le me
 
 - I **volumi** si regolano anche durante la registrazione. Usali per bilanciare: se gli altri si sentono poco rispetto a te, alza l'audio del computer.
 - Accanto a ogni riga, la barra del **livello** si muove quando la sorgente riceve audio.
-- **↻** aggiorna l'elenco dopo aver collegato cuffie o microfoni. Un dispositivo salvato ma scollegato compare come *(non collegato)*.
+- **Aggiorna elenco** rilegge i dispositivi dopo aver collegato cuffie o microfoni. Un dispositivo salvato ma scollegato compare come *(non collegato)*.
 - Argo ricorda le scelte e i volumi per la volta successiva.
 
 ### L'audio del computer
@@ -554,7 +554,7 @@ Fai domande su contratti, NDA e capitolati senza caricarli nel cloud. Richiede i
   2. lo divide in estratti di circa 1.200 caratteri, parzialmente sovrapposti;
   3. calcola gli embedding con il modello scelto;
   4. salva l'indice nella cartella dati.
-- **Esempio** carica i due documenti fittizi. **Svuota** cancella l'indice: i file originali non vengono toccati.
+- **Esempio** carica i due documenti fittizi. **Svuota indice** (a destra, compare solo con documenti nell'indice) cancella l'indice: i file originali non vengono toccati.
 - I PDF scansionati (solo immagini, senza testo selezionabile) non vengono letti: Argo non fa OCR.
 - Se cambi il modello di embedding, Argo svuota l'indice e lo ricostruisce: vettori calcolati con modelli diversi non sono confrontabili.
 
@@ -642,7 +642,9 @@ ordine di acquisto;purchase order;Bestellung
 
 ## 11. Impostazioni nel dettaglio
 
-La scheda è scorrevole: le sezioni sono quattro.
+In cima alla pagina, **Vai a:** porta direttamente a ogni riquadro (Hugging Face, Trascrizione, Voci, Ollama, Microsoft 365, Dynamics, Ricerca web, Aspetto, Aggiornamenti). Anche i pulsanti «Collega…» delle altre pagine (Agenda, Posta, Clienti) aprono le Impostazioni sul riquadro giusto. Dopo le modifiche premi **Salva impostazioni**, il pulsante principale in fondo.
+
+La scheda è scorrevole ed è divisa in riquadri, uno per argomento.
 
 ### 11.1 Hugging Face
 
@@ -830,7 +832,7 @@ Il controllo legge da GitHub solo il numero di versione e le novità: nessun dat
 | "Controllo non riuscito" negli aggiornamenti | Nessuna connessione, oppure un firewall blocca GitHub | Riprova più tardi o aggiorna a mano dal pacchetto; puoi disattivare il controllo in *Impostazioni → Aggiornamenti* |
 | "Homebrew non trovato" (versioni fino alla 1830) | L'installer vecchio richiedeva Homebrew | Usa l'installer dalla versione 1845 in poi: Homebrew non serve più |
 
-Se un file va in **Errore**, il log in fondo alla scheda Trascrittore riporta il messaggio: è il primo posto dove guardare, e il testo da allegare a una segnalazione su GitHub.
+Se un file va in **Errore**, il registro tecnico sotto la coda di *Trascrivi* (compare appena c'è qualcosa da leggere) riporta il messaggio: è il primo posto dove guardare, e il testo da allegare a una segnalazione su GitHub.
 
 ---
 

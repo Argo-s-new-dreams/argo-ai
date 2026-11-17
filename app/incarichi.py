@@ -452,8 +452,8 @@ class SchedaIncarichi(QWidget):
         fw._salva_coda()
         if not fw.in_esecuzione:
             fw.avvia_o_ferma()
-        p.imposta("corso", "In coda nel Trascrittore…")
-        self.log("Trascrizione avviata nella coda del Trascrittore.")
+        p.imposta("corso", "In coda in Trascrivi…")
+        self.log("Trascrizione avviata nella coda di Trascrivi.")
         self.timer.start(1000)
 
     def _controlla_trascrizione(self):

@@ -186,7 +186,8 @@ class SchedaIncontri(QWidget):
         self.b_riprendi.clicked.connect(self.riprendi_coda)
         comandi.addWidget(self.b_riprendi)
         comandi.addSpacing(12)
-        comandi.addWidget(QLabel("Foto:"))
+        self.l_foto = QLabel("Foto:")
+        comandi.addWidget(self.l_foto)
         self.c_vision = QComboBox()
         self.c_vision.setSizeAdjustPolicy(QComboBox.AdjustToContents)
         self.c_vision.setToolTip("Un modello vision di Ollama guarda anche le foto (prodotti, stand, schemi); "
@@ -297,10 +298,8 @@ class SchedaIncontri(QWidget):
         self._lento.setInterval(2500)
         self._lento.timeout.connect(self._avanza_piano)
 
-        self.vuoto = QLabel("Nessun incontro ancora.\nCollega l'iPhone con «📱 Collega iPhone…»: "
-                            "gli incontri registrati in fiera o dai clienti arriveranno qui.")
-        self.vuoto.setProperty("ruolo", "tenue")
-        self.vuoto.setAlignment(Qt.AlignCenter)
+        self.vuoto = tema.StatoVuoto("Nessun incontro ancora. Collega l'iPhone con «📱 Collega iPhone…» in alto: "
+                                     "gli incontri registrati in fiera o dai clienti arriveranno qui da soli.")
         lay.addWidget(self.vuoto, 1)
         self._incontri = []
 
@@ -425,7 +424,11 @@ class SchedaIncontri(QWidget):
         vuota = not self._incontri
         self.vuoto.setVisible(vuota)
         self.div.setVisible(not vuota)
-        self.b_cartella.setEnabled(not vuota)
+        # Stile Argo: senza incontri le azioni sugli incontri si nascondono e il primario diventa «Collega iPhone»
+        self.b_cartella.setVisible(not vuota)
+        for w in (self.b_relazione, self.l_foto, self.c_vision):
+            w.setVisible(not vuota)
+        tema.rimarca(self.b_collega, vuota)
         if not vuota:
             ids = [c.name for c, _d in self._incontri]
             t.selectRow(ids.index(scelto.name) if scelto and scelto.name in ids else 0)

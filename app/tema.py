@@ -1,12 +1,13 @@
 """tema.py - aspetto di Argo: tema scuro / chiaro, icone e menu laterale (stile «Studio»)."""
 from PySide6.QtCore import QByteArray, QRectF, QSize, Qt, Signal
+import weakref
 from pathlib import Path
 
 QUI = Path(__file__).resolve().parent
 
 from PySide6.QtGui import QColor, QFontDatabase, QGuiApplication, QIcon, QPainter, QPalette, QPixmap
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtWidgets import QButtonGroup, QLabel, QSizePolicy, QToolButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QButtonGroup, QFrame, QLabel, QSizePolicy, QToolButton, QVBoxLayout, QWidget
 
 # Palette dal Brand Book di Argo's New Dreams («Dove il fantastico è il quotidiano»): carta calda, antracite delle
 # sfere, terracotta e ocra delle orbite. «scuro» = Notte, «chiaro» = Carta (le chiavi restano per le impostazioni).
@@ -130,6 +131,21 @@ QCheckBox::indicator {{ width: 16px; height: 16px; border: 1.5px solid {c['bordo
 QCheckBox::indicator:hover {{ border-color: {c['accento']}; }}
 QCheckBox::indicator:checked {{ background: {c['accento']}; border-color: {c['accento']}; }}
 QCheckBox::indicator:disabled {{ border-color: {c['bordo']}; background: transparent; }}
+QRadioButton {{ spacing: 8px; }}
+QRadioButton::indicator {{ width: 16px; height: 16px; border: 1.5px solid {c['bordo_controllo']}; border-radius: 9px;
+    background: {c['pannello2']}; }}
+QRadioButton::indicator:hover {{ border-color: {c['accento']}; }}
+QRadioButton::indicator:checked {{ background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5,
+    stop:0 {c['accento']}, stop:0.45 {c['accento']}, stop:0.55 {c['pannello2']}, stop:1 {c['pannello2']});
+    border-color: {c['accento']}; }}
+QRadioButton::indicator:disabled {{ border-color: {c['bordo']}; background: transparent; }}
+QRadioButton:disabled {{ color: {c['debole']}; }}
+QTabBar::tab {{ background: transparent; color: {c['tenue']}; border: none; border-bottom: 2px solid transparent;
+    padding: 6px 14px; margin-right: 4px; min-height: 20px; }}
+QTabBar::tab:hover {{ color: {c['testo']}; }}
+QTabBar::tab:selected {{ color: {c['accento_forte']}; border-bottom: 2px solid {c['accento']}; font-weight: 500; }}
+QFrame#vuoto {{ background: {c['pannello']}; border: 1px solid {c['bordo']}; border-radius: 12px; }}
+QLabel[ruolo="motto"] {{ font-size: 16px; }}
 QToolTip {{ background: {c['pannello2']}; color: {c['testo']}; border: 1px solid {c['bordo2']}; padding: 6px; }}
 QMenu {{ background: {c['pannello2']}; color: {c['testo']}; border: 1px solid {c['bordo2']}; padding: 4px; }}
 QMenu::item {{ padding: 6px 18px; border-radius: 6px; }}
@@ -163,6 +179,12 @@ def applica(app, nome="scuro"):
         pal.setColor(ruolo, QColor(c[chiave]))
     app.setPalette(pal)
     app.setStyleSheet(qss(c))
+    # le filigrane hanno il colore del pannello «cotto» nell'immagine: al cambio di tema si rigenerano
+    for w in list(_filigrane):
+        try:
+            imposta_filigrana(w, True)
+        except RuntimeError:  # widget già distrutto da Qt
+            _filigrane.discard(w)
     return n
 
 
@@ -253,14 +275,22 @@ def filigrana(lato=380):
     return f
 
 
+_filigrane = weakref.WeakSet()  # pannelli che mostrano ora la filigrana (si ridisegnano al cambio di tema)
+
+
 def imposta_filigrana(widget, attiva):
     """Mostra o toglie la filigrana del logo al centro di un pannello di testo (QTextBrowser, QPlainTextEdit…)."""
     if attiva:
         url = filigrana().as_posix()
-        widget.setStyleSheet(f"background-color: {colori()['pannello']}; background-image: url('{url}'); "
-                             "background-position: center; background-repeat: no-repeat; background-origin: content;")
+        regola = (f"background-color: {colori()['pannello']}; background-image: url('{url}'); "
+                  "background-position: center; background-repeat: no-repeat; background-origin: content;")
+        # con un objectName la regola vale solo per il pannello, non per le etichette che contiene
+        nome = widget.objectName()
+        widget.setStyleSheet(f"#{nome} {{ {regola} }}" if nome and not hasattr(widget, "viewport") else regola)
+        _filigrane.add(widget)
     else:
         widget.setStyleSheet("")
+        _filigrane.discard(widget)
 
 
 def stato_vuoto(testo):
@@ -270,6 +300,49 @@ def stato_vuoto(testo):
     return (f"<div align='center' style='margin-top: 12px'>"
             f"<p style='font-size: 16px; color: {c['testo']}'>Dove il fantastico è il quotidiano</p>"
             f"<p style='color: {c['tenue']}'>{escape(testo)}</p></div>")
+
+
+class StatoVuoto(QFrame):
+    """Pannello per le pagine senza contenuto (Stile Argo · Stati vuoti): logo in filigrana, motto, cosa fare
+    adesso e, se serve, un pulsante che porta lì. Segue il cambio di tema da solo."""
+
+    def __init__(self, testo, azione=None, alla_azione=None, parent=None):
+        super().__init__(parent)
+        self.setObjectName("vuoto")
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(24, 24, 24, 24)
+        lay.addStretch(2)
+        motto = QLabel("Dove il fantastico è il quotidiano")
+        motto.setProperty("ruolo", "motto")
+        motto.setAlignment(Qt.AlignCenter)
+        lay.addWidget(motto)
+        self.testo = QLabel(testo)
+        self.testo.setProperty("ruolo", "tenue")
+        self.testo.setAlignment(Qt.AlignCenter)
+        self.testo.setWordWrap(True)
+        lay.addWidget(self.testo)
+        self.pulsante = None
+        if azione:
+            from PySide6.QtWidgets import QPushButton
+            self.pulsante = QPushButton(azione)
+            self.pulsante.setProperty("primario", True)
+            if alla_azione:
+                self.pulsante.clicked.connect(alla_azione)
+            lay.addSpacing(6)
+            lay.addWidget(self.pulsante, alignment=Qt.AlignHCenter)
+        lay.addStretch(3)
+        imposta_filigrana(self, True)
+
+    def imposta_testo(self, testo):
+        self.testo.setText(testo)
+
+
+def rimarca(widget, primario):
+    """Rende un pulsante primario (pillola terracotta) o secondario e lo ridisegna subito."""
+    widget.setProperty("primario", bool(primario))
+    widget.style().unpolish(widget)
+    widget.style().polish(widget)
 
 
 class NavLaterale(QWidget):

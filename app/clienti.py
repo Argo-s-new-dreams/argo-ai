@@ -29,6 +29,7 @@ import ponte as pt
 import relazione_incontro as rel
 import ricerca_web as web
 import scheda_cliente as scheda
+import tema
 
 DA_DECIDERE, INTERNO, NUOVO, ALTRA = "decidere", "interno", "nuovo", "altra"
 NOMI_PROPRI = ("io", "me", "io stesso", "me stesso")
@@ -259,6 +260,8 @@ class SchedaClienti(QWidget):
         self.l_stato = QLabel("")
         self.l_stato.setProperty("ruolo", "tenue")
         self.l_stato.setWordWrap(True)
+        self.l_stato.setTextFormat(Qt.AutoText)
+        self.l_stato.linkActivated.connect(lambda sezione: self.finestra.vai_a_impostazioni(sezione))
         self.barra = QProgressBar()
         self.barra.setFixedHeight(8)
         self.barra.setTextVisible(False)
@@ -271,10 +274,10 @@ class SchedaClienti(QWidget):
     def _aggiorna_stato_servizi(self):
         manca = []
         if not crm.configurato():
-            manca.append("Dynamics (Impostazioni › Dynamics 365 Sales)")
+            manca.append("<a href='dynamics'>Dynamics 365 Sales</a>")
         if not web.configurata():
-            manca.append("chiave di Ollama Web Search (Impostazioni › Ricerca web)")
-        self.l_stato.setText(("Da configurare: " + "; ".join(manca)) if manca else
+            manca.append("<a href='web'>chiave di Ollama Web Search</a>")
+        self.l_stato.setText(("Da configurare nelle Impostazioni: " + " · ".join(manca)) if manca else
                              "🔒 Trascrizioni e partecipanti restano su questo computer; sul web esce solo il nome "
                              "dell'azienda; su Dynamics va solo ciò che confermi.")
 
@@ -327,12 +330,12 @@ class SchedaClienti(QWidget):
         self.b_scheda.clicked.connect(self.scheda_pubblica)
         comandi.addWidget(self.b_scheda)
         self.b_crea = QPushButton("➕ Crea account…")
-        self.b_crea.setEnabled(False)
+        self.b_crea.setVisible(False)  # compare quando c'è una scheda pubblica da trasformare in account
         self.b_crea.clicked.connect(self.crea_account)
         comandi.addWidget(self.b_crea)
         comandi.addStretch()
         self.b_apri = QPushButton("Apri in Dynamics")
-        self.b_apri.setEnabled(False)
+        self.b_apri.setVisible(False)  # compare quando scegli un account trovato
         self.b_apri.clicked.connect(self._apri_account)
         comandi.addWidget(self.b_apri)
         lay.addLayout(comandi)
@@ -347,13 +350,21 @@ class SchedaClienti(QWidget):
         div.addWidget(self.t_account)
         self.v_cliente = QTextBrowser()
         self.v_cliente.setOpenExternalLinks(True)
-        self.v_cliente.setMarkdown("*Cerca un cliente: se non è in Dynamics, prepara la scheda pubblica.*")
+        self.v_cliente.setHtml(tema.stato_vuoto("Cerca un cliente per nome, sito o dominio: se non è in Dynamics, "
+                                                "prepara la scheda pubblica."))
+        tema.imposta_filigrana(self.v_cliente, True)
+        self.v_cliente.textChanged.connect(self._togli_filigrana)
         div.addWidget(self.v_cliente)
         div.setStretchFactor(1, 2)
         lay.addWidget(div, 1)
         self._account = []
         self._scheda = None
         return w
+
+    def _togli_filigrana(self):
+        """Al primo contenuto vero il pannello perde la filigrana (Stile Argo · Stati vuoti)."""
+        if "Dove il fantastico" not in self.v_cliente.toPlainText():
+            tema.imposta_filigrana(self.v_cliente, False)
 
     def cerca_cliente(self):
         testo = self.e_cerca.text().strip()
@@ -388,7 +399,7 @@ class SchedaClienti(QWidget):
 
     def _mostra_account(self):
         a = self._account_corrente()
-        self.b_apri.setEnabled(bool(a))
+        self.b_apri.setVisible(bool(a))
         if not a:
             return
         righe = [f"## {a.get('name')}", ""]
@@ -439,7 +450,7 @@ class SchedaClienti(QWidget):
             return
         self._scheda = r
         self.v_cliente.setMarkdown(r["markdown"])
-        self.b_crea.setEnabled(crm.configurato())
+        self.b_crea.setVisible(crm.configurato())
         self.l_stato.setText(f"Scheda salvata in {r['cartella']}. Rileggila: poi «➕ Crea account…».")
 
     def crea_account(self):

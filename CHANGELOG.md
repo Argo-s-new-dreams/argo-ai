@@ -2,6 +2,16 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.2025: manutenzione UX (Stile Argo)
+Revisione di tutte le pagine con le regole dello Stile Argo; nessuna funzione cambia.
+- **Stati vuoti uguali ovunque**: Agenda, Posta, Incontri, Clienti e Voci mostrano logo in filigrana, motto e cosa fare; Agenda e Posta tengono titolo e sottotitolo anche prima di collegare Microsoft 365.
+- **«Collega…» porta al riquadro giusto**: da Agenda, Posta e Clienti le Impostazioni si aprono già su Microsoft 365, Dynamics o Ricerca web. In cima alle Impostazioni c'è un indice «Vai a»; **Salva impostazioni** è il pulsante principale, in fondo.
+- **Azioni solo quando servono**: in Incontri, senza incontri, il primario è «📱 Collega iPhone…» e «Scrivi relazione», «Foto» e «Apri cartella» compaiono col primo incontro; in Clienti «Crea account…» e «Apri in Dynamics» compaiono quando servono; in Trascrivi «Rimuovi» e «Rimetti in coda» con un file scelto e il registro tecnico solo quando ha qualcosa da dire; in Impostazioni «Scollega» solo se collegato.
+- **Documenti riservati**: «Svuota indice» in disparte e solo con documenti nell'indice.
+- **Controlli più leggibili**: pallini di Live/Archivia visibili in entrambi i temi; schede (Cliente/Dalla call, risultati degli Incarichi) nello stile Argo; «Aggiorna elenco» dei dispositivi al posto del simbolo ↻ che Roboto non disegna.
+- Nomi coerenti col menu: «Trascrivi» al posto di «Trascrittore» nei testi; Microsoft 365 «per Agenda, Posta e Incarichi», Dynamics «per Incontri e Clienti».
+- Cambiando tema, le filigrane si ridisegnano con i colori nuovi.
+
 ## 20261117.1345: rilascio Lab · Argo per iPhone, Incontri e Clienti
 Prima versione Lab con tutto il percorso dalla fiera al CRM. Le voci qui sotto, dalla 20261117.1108 in poi, dicono cosa c'è nel dettaglio.
 - **Ponte Argo**: colleghi Argo per iPhone con un QR (Incontri › Collega iPhone…); incontri e impronte vocali passano in rete locale, cifrati.

@@ -120,7 +120,7 @@ class SchedaRegistra(QWidget):
         lay = QVBoxLayout(self)
         self.r_live = QRadioButton("Live: trascrive mentre registri e cancella l'audio appena trascritto. "
                                    "Alla fine resta solo il testo.")
-        self.r_arch = QRadioButton("Archivia: salva la registrazione completa e la trascrivi dopo, dal Trascrittore.")
+        self.r_arch = QRadioButton("Archivia: salva la registrazione completa e la trascrivi dopo, nella pagina Trascrivi.")
         self.gruppo = QButtonGroup(self)
         for r in (self.r_live, self.r_arch):
             self.gruppo.addButton(r)
@@ -145,7 +145,7 @@ class SchedaRegistra(QWidget):
         self.b_riavvia.hide()
         self.b_verbale = QPushButton("Apri nel Verbale →")
         self.b_verbale.clicked.connect(self.apri_verbale)
-        self.b_coda = QPushButton("Metti in coda nel Trascrittore →")
+        self.b_coda = QPushButton("Metti in coda in Trascrivi →")
         self.b_coda.clicked.connect(self.metti_in_coda)
         self.b_cartella = QPushButton("Apri cartella")
         self.b_cartella.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(
@@ -193,9 +193,8 @@ class SchedaRegistra(QWidget):
             g.addWidget(etich, i, 3)
             g.addWidget(metro, i, 4)
             vol.valueChanged.connect(self._volumi)
-        self.b_elenco = QPushButton("↻")
+        self.b_elenco = QPushButton("Aggiorna elenco")  # il simbolo ↻ non c'è in Roboto: meglio un verbo
         self.b_elenco.setToolTip("Aggiorna l'elenco dei dispositivi (dopo aver collegato cuffie o microfoni)")
-        self.b_elenco.setFixedWidth(36)
         self.b_elenco.clicked.connect(self._riempi_sorgenti)
         g.addWidget(self.b_elenco, 1, 5)
         self.l_sorgenti = QLabel("")

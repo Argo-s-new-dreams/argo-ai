@@ -10,7 +10,7 @@ import time
 import uuid
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QThread, QUrl, Signal
+from PySide6.QtCore import QPoint, Qt, QThread, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
@@ -30,7 +30,7 @@ import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261117.1345"
+VERSIONE = "20261117.2025"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -335,7 +335,7 @@ class Finestra(QMainWindow):
         self._aggiorna_voci()
         self._stato_m365()
         if not core.leggi_token():
-            self.tabs.setCurrentWidget(self.tab_imp)
+            self.vai_a_impostazioni("hf")
             QMessageBox.information(self, "Primo avvio",
                                     "Benvenuto! Inserisci il token Hugging Face nelle Impostazioni e premi «Verifica».")
 
@@ -361,6 +361,17 @@ class Finestra(QMainWindow):
 
     def vai_a(self, contenuto):
         self.tabs.setCurrentWidget(self._pagine.get(id(contenuto), contenuto))
+
+    def vai_a_impostazioni(self, sezione=None):
+        """Apre le Impostazioni già sulla sezione giusta (es. «m365», «dynamics», «web»): chi arriva da un invito
+        «Collega…» non deve cercare il riquadro in una pagina lunga."""
+        self.tabs.setCurrentWidget(self.tab_imp)
+        gruppo = getattr(self, "_sezioni_imp", {}).get(sezione)
+        if gruppo is not None:
+            def scorri():
+                y = gruppo.mapTo(self.tab_imp.widget(), QPoint(0, 0)).y()
+                self.tab_imp.verticalScrollBar().setValue(max(0, y - 12))
+            QTimer.singleShot(0, scorri)
 
     # ------------------------------------------------------------ tab coda
     def _tab_coda(self):
@@ -397,6 +408,7 @@ class Finestra(QMainWindow):
         self.tab_coda.verticalHeader().setDefaultSectionSize(40)
         self.tab_coda.setWordWrap(False)
         self.tab_coda.itemSelectionChanged.connect(self._aggiorna_dettaglio)
+        self.tab_coda.itemSelectionChanged.connect(self._azioni_coda)
         self.tab_coda.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tab_coda.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tab_coda.customContextMenuRequested.connect(self._menu_coda)
@@ -450,6 +462,9 @@ class Finestra(QMainWindow):
         self.log.setMaximumBlockCount(3000)
         self.log.setFont(QFont("Consolas" if os.name == "nt" else "Menlo", 9))
         self.fase.setProperty("ruolo", "tenue")
+        # Il registro tecnico compare solo quando c'è qualcosa da leggere (Stile Argo: niente pannelli vuoti)
+        self.log.setVisible(False)
+        self.log.textChanged.connect(lambda: self.log.setVisible(not self.log.document().isEmpty()))
         split = QSplitter(Qt.Vertical)
         split.addWidget(self.tab_coda)
         split.addWidget(self.log)
@@ -460,6 +475,7 @@ class Finestra(QMainWindow):
         self.b_cart.setParent(sinistra)
         bar.insertWidget(3, self.b_cart)
 
+        self._azioni_coda()
         self.dettaglio = dettaglio.DettaglioTrascrizione()
         self.dettaglio.nomi.connect(self.rivedi_parlanti)
         self.dettaglio.marca.connect(lambda: (lambda j: j and self.marca_voci(j["file"]))(self._job_selezionato()))
@@ -472,6 +488,13 @@ class Finestra(QMainWindow):
         sp.setSizes([560, 620])
         esterno.addWidget(sp)
         return w
+
+    def _azioni_coda(self):
+        """Rimuovi e Rimetti in coda servono solo su un file scelto: fino ad allora restano nascosti."""
+        if hasattr(self, "b_rim"):
+            scelto = bool(self.tab_coda.selectionModel().selectedRows())
+            self.b_rim.setVisible(scelto)
+            self.b_rip.setVisible(scelto)
 
     def _aggiorna_dettaglio(self):
         if not hasattr(self, "dettaglio"):
@@ -678,7 +701,7 @@ class Finestra(QMainWindow):
             return
         if not core.leggi_token():
             QMessageBox.warning(self, "Token mancante", "Inserisci prima il token Hugging Face nelle Impostazioni.")
-            self.tabs.setCurrentWidget(self.tab_imp)
+            self.vai_a_impostazioni("hf")
             return
         if not any(j["stato"] == "In attesa" for j in self.jobs):
             QMessageBox.information(self, "Coda vuota", "Non ci sono file «In attesa». Aggiungi dei file o rimettili in coda.")
@@ -921,11 +944,9 @@ class Finestra(QMainWindow):
         self.tab_voci.setShowGrid(False)
         self.tab_voci.itemSelectionChanged.connect(self._azioni_voce)
         lay.addWidget(self.tab_voci, 1)
-        self.vuoto_voci = QLabel("Nessuna voce ancora.\nPremi «＋ Nuova voce» e scegli come crearla: "
-                                 "Argo riconoscerà la persona nelle trascrizioni.")
-        self.vuoto_voci.setProperty("ruolo", "tenue")
-        self.vuoto_voci.setAlignment(Qt.AlignCenter)
-        lay.addWidget(self.vuoto_voci)
+        self.vuoto_voci = tema.StatoVuoto("Nessuna voce ancora. Premi «＋ Nuova voce» e scegli come crearla: "
+                                          "Argo riconoscerà la persona nelle trascrizioni (solo con il suo consenso).")
+        lay.addWidget(self.vuoto_voci, 1)
         self.stato_voci = QLabel("")
         lay.addWidget(self.stato_voci)
         self.b_reg_voce.triggered.connect(self.registra_voce)
@@ -1046,7 +1067,7 @@ class Finestra(QMainWindow):
         if codice == 0:
             self._fatte_voci.append(nome)
         else:
-            err = next((r for r in reversed(self._righe_voce) if r.startswith("ERRORE")), "vedi registro nella scheda Trascrittore")
+            err = next((r for r in reversed(self._righe_voce) if r.startswith("ERRORE")), "vedi il registro nella pagina Trascrivi")
             self._errori_voci.append(f"{nome}: {err}")
         self._prossima_iscrizione()
 
@@ -1180,7 +1201,7 @@ class Finestra(QMainWindow):
         self.pannello_ollama.cambiato.connect(lambda: self._aggiorna_badge() if hasattr(self, "badge") else None)
         lay.addWidget(self.pannello_ollama)
 
-        g6 = QGroupBox("Microsoft 365 (facoltativo) · per gli Incarichi")
+        g6 = QGroupBox("Microsoft 365 (facoltativo) · per Agenda, Posta e Incarichi")
         f6 = QFormLayout(g6)
         self.e_m365_client = QLineEdit(imp.get("m365_client_id", ""))
         self.e_m365_client.setPlaceholderText("Application (client) ID dell'app registrata in Entra ID")
@@ -1211,7 +1232,7 @@ class Finestra(QMainWindow):
         f6.addRow("", n6)
         lay.addWidget(g6)
 
-        g7 = QGroupBox("Dynamics 365 Sales (facoltativo) · per gli Incontri")
+        g7 = QGroupBox("Dynamics 365 Sales (facoltativo) · per Incontri e Clienti")
         f7 = QFormLayout(g7)
         self.e_d365 = QLineEdit(imp.get("d365_url", ""))
         self.e_d365.setPlaceholderText("https://nome-ambiente.crm4.dynamics.com")
@@ -1318,6 +1339,7 @@ class Finestra(QMainWindow):
 
         riga2 = QHBoxLayout()
         b_salva = QPushButton("Salva impostazioni")
+        b_salva.setProperty("primario", True)  # pagina-modulo: il primario chiude il modulo, in fondo
         b_salva.clicked.connect(self.salva_impostazioni)
         b_dati = QPushButton("Apri cartella dati")
         b_dati.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(core.APP_HOME))))
@@ -1327,13 +1349,26 @@ class Finestra(QMainWindow):
         lay.addLayout(riga2)
         lay.addStretch()
         lay.addWidget(QLabel(f"Dati in: {core.APP_HOME}  ·  L'audio non lascia mai questo computer."))
+
+        # Indice in cima: la pagina è lunga, ogni voce porta al suo riquadro (link, non pulsanti)
+        self._sezioni_imp = {"hf": g1, "trascrizione": g2, "voci": g3, "ollama": self.pannello_ollama, "m365": g6,
+                             "dynamics": g7, "web": g8, "aspetto": g5, "aggiornamenti": g4}
+        voci = (("hf", "Hugging Face"), ("trascrizione", "Trascrizione"), ("voci", "Voci"), ("ollama", "Ollama"),
+                ("m365", "Microsoft 365"), ("dynamics", "Dynamics"), ("web", "Ricerca web"),
+                ("aspetto", "Aspetto"), ("aggiornamenti", "Aggiornamenti"))
+        indice = QLabel("Vai a: " + "  ·  ".join(f"<a href='{k}'>{t}</a>" for k, t in voci))
+        indice.setTextFormat(Qt.RichText)
+        indice.setProperty("ruolo", "tenue")
+        indice.setWordWrap(True)
+        indice.linkActivated.connect(self.vai_a_impostazioni)
+        lay.insertWidget(0, indice)
         return w
 
     def _stato_m365(self):
         acc = m365.account()
         if hasattr(self, "l_m365"):
             self.l_m365.setText(f"✅ Collegato come {acc}" if acc else "Non collegato")
-            self.b_m365_off.setEnabled(bool(acc))
+            self.b_m365_off.setVisible(bool(acc))  # Scollega solo se collegato
         if hasattr(self, "tab_incarichi"):
             self.tab_incarichi.aggiorna_m365()
         for s in ("tab_agenda", "tab_posta"):

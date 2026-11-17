@@ -62,19 +62,14 @@ class SchedaM365(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         self.pile = QStackedWidget()
         lay.addWidget(self.pile)
+        # Stato vuoto (Stile Argo): la pagina conserva titolo e sottotitolo, poi filigrana, motto e cosa fare
         vuota = QWidget()
         vl = QVBoxLayout(vuota)
-        vl.addStretch()
-        self.l_vuota = QLabel("")
-        self.l_vuota.setAlignment(Qt.AlignCenter)
-        self.l_vuota.setWordWrap(True)
-        self.l_vuota.setProperty("ruolo", "tenue")
-        vl.addWidget(self.l_vuota)
-        b = QPushButton("Vai a Impostazioni → Microsoft 365")
-        b.setProperty("primario", True)
-        b.clicked.connect(lambda: self.finestra.tabs.setCurrentWidget(self.finestra.tab_imp))
-        vl.addWidget(b, alignment=Qt.AlignHCenter)
-        vl.addStretch()
+        vl.setContentsMargins(20, 16, 20, 12)
+        self.titolo(vl)
+        self.vuoto = tema.StatoVuoto("", "Collega Microsoft 365…",
+                                     lambda: self.finestra.vai_a_impostazioni("m365"))
+        vl.addWidget(self.vuoto, 1)
         self.pile.addWidget(vuota)
         self.contenuto = QWidget()
         self.pile.addWidget(self.contenuto)
@@ -102,7 +97,7 @@ class SchedaM365(QWidget):
 
     def aggiorna_stato(self):
         motivo = self.motivo_non_pronto()
-        self.l_vuota.setText(motivo or "")
+        self.vuoto.imposta_testo(motivo or "")
         self.pile.setCurrentIndex(0 if motivo else 1)
         return motivo is None
 

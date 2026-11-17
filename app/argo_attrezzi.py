@@ -443,9 +443,13 @@ class SchedaDocumenti(SchedaBase):
         r = QHBoxLayout()
         b_agg = QPushButton("➕ Aggiungi…")
         b_es = QPushButton("Esempio")
-        b_svuota = QPushButton("Svuota")
-        for b in (b_agg, b_es, b_svuota):
+        b_svuota = QPushButton("Svuota indice")
+        b_svuota.setToolTip("Toglie tutti i documenti dall'indice; i file originali non vengono toccati")
+        self.b_svuota = b_svuota
+        for b in (b_agg, b_es):
             r.addWidget(b)
+        r.addStretch()  # Stile Argo: l'azione che cancella sta in disparte e solo quando c'è qualcosa
+        r.addWidget(b_svuota)
         lsx.addLayout(r)
         dx = QWidget()
         ldx = QVBoxLayout(dx)
@@ -508,6 +512,8 @@ class SchedaDocumenti(SchedaBase):
             conteggio[p["file"]] = conteggio.get(p["file"], 0) + 1
         for f, n in conteggio.items():
             self.lista.addItem(f"{Path(f).name}  ({n} estratti)")
+        if hasattr(self, "b_svuota"):
+            self.b_svuota.setVisible(bool(conteggio))
 
     def svuota(self):
         if QMessageBox.question(self, "Svuota", "Eliminare l'indice dei documenti? I file originali non vengono toccati.") \
