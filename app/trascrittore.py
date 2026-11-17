@@ -30,7 +30,7 @@ import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261117.1108"
+VERSIONE = "20261117.1135"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -259,8 +259,10 @@ class Finestra(QMainWindow):
         self.tab_verbale = attrezzi.SchedaVerbale()
         import agenda_posta
         import incarichi
+        import incontri
         import registrazione
         self.tab_incarichi = incarichi.SchedaIncarichi(self)
+        self.tab_incontri = incontri.SchedaIncontri(self, VERSIONE)
         self.tab_agenda = agenda_posta.SchedaAgenda(self)
         self.tab_posta = agenda_posta.SchedaPosta(self)
         self.tab_registra = registrazione.SchedaRegistra(self)
@@ -285,6 +287,9 @@ class Finestra(QMainWindow):
                 self.tab_verbale, "Verbale",
                 "Dalla trascrizione con i nomi al verbale, con il modello locale. Per verbale, mail e task in un colpo: Incarichi.")),
             ("incarichi", "Incarichi", "Incarichi", self.tab_incarichi),
+            ("incontri", "Incontri dall'iPhone", "Incontri", self._pagina(
+                self.tab_incontri, "Incontri",
+                "Fiere e visite ai clienti registrate con Argo per iPhone: trascrizione con i nomi, foto e testo letto.")),
             ("ATTREZZI", None, None, None),
             ("posta", "Posta AI", "Posta", self.tab_posta),
             ("documenti", "Documenti riservati", "Documenti", self._pagina(
@@ -1066,6 +1071,20 @@ class Finestra(QMainWindow):
         dlg = voci_strumenti.EsportaIphoneDialog(voci, imp.get("voci_iphone"), self)
         if not dlg.exec() or not dlg.scelte:
             return
+        imp["voci_iphone"] = dlg.scelte
+        core.salva_impostazioni(imp)
+        import ponte
+        n = len(dlg.scelte)
+        if ponte.dispositivi():
+            # Con il Ponte l'iPhone scarica da solo la scelta; il file serve solo per altre vie (AirDrop).
+            r = QMessageBox.question(
+                self, "Voci per iPhone",
+                f"Fatto: l'iPhone collegato riceverà {n} voci alla prossima sincronizzazione.\n\n"
+                "Vuoi anche un file .argovoci da passare con AirDrop?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if r != QMessageBox.Yes:
+                self.stato_voci.setText(f"{n} voci pronte per l'iPhone (Ponte).")
+                return
         predefinito = str(Path.home() / "Desktop" / ("anagrafe" + core.ESTENSIONE_IPHONE))
         f, _ = QFileDialog.getSaveFileName(self, "Salva l'anagrafe per iPhone", predefinito,
                                            f"Anagrafe voci per iPhone (*{core.ESTENSIONE_IPHONE})")
@@ -1076,8 +1095,6 @@ class Finestra(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "Esportazione non riuscita", str(e))
             return
-        imp["voci_iphone"] = dlg.scelte
-        core.salva_impostazioni(imp)
         if sys.platform == "darwin":
             subprocess.run(["open", "-R", str(percorso)], check=False)
         else:
@@ -1465,6 +1482,7 @@ class Finestra(QMainWindow):
         self.statusBar().showMessage("Impostazioni salvate.", 5000)
 
     def closeEvent(self, e):
+        self.tab_incontri.ferma()
         if self.tab_registra.occupata():
             if QMessageBox.question(self, "Uscire?", "C'è una registrazione in corso: verrà fermata. In modalità Live "
                                     "l'audio non ancora trascritto resta in una cartella privata e Argo ti chiederà "

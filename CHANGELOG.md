@@ -2,6 +2,13 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.1135: Ponte con l'iPhone e pagina Incontri
+- **Nuova pagina Incontri** (gruppo Riunioni): fiere e visite ai clienti registrate con **Argo per iPhone**, con trascrizione divisa per persona, foto e testo letto dalle foto. Importa anche pacchetti `.zip` arrivati per altre vie.
+- **Ponte Argo**: canale cifrato in rete locale tra iPhone e computer, al posto di AirDrop. Si collega con **📱 Collega iPhone…** inquadrando un QR (codice monouso, 5 minuti). L'iPhone accetta solo il certificato di questo computer (pinning); niente cloud. Gli incontri arrivano da soli quando l'iPhone è sulla stessa rete e Argo è aperto. Dettagli in [docs/PONTE.md](docs/PONTE.md).
+- **Voci › 📱 Per iPhone…**: la scelta delle persone ora arriva all'iPhone dal Ponte; il file `.argovoci` resta come alternativa.
+- Nuova libreria **segno** (QR code, pura Python). Per il canale Pro va rigenerato `requisiti.lock` con `strumenti/blocca_librerie.py`.
+- Prossimi passi: relazione dell'incontro con Ollama (testo, foto e modello vision) e invio a Dynamics 365 Sales.
+
 ## 20261117.1108: le voci dell'anagrafe anche sull'iPhone
 - **Voci › 📱 Per iPhone…**: esporta le persone scelte in un file `anagrafe.argovoci` da passare con AirDrop ad **Argo per iPhone**, che le riconosce negli incontri (registrati in fiera o in riunione direttamente dal telefono).
 - Prima di esportare: spunte sulle persone da portare (la scelta viene ricordata) e **conferma del consenso** obbligatoria, perché le impronte vocali sono dati biometrici. Il file è leggibile solo dal tuo utente; dopo il trasferimento va cancellato dal Mac.
