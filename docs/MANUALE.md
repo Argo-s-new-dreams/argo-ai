@@ -509,6 +509,10 @@ Come è protetto il canale: [docs/PONTE.md](PONTE.md).
 2. Su un incontro con la relazione premi **☁️ Invia a Dynamics…**: per ogni contatto Argo propone dove registrarlo (contatto o lead già presenti, oppure nuovo lead); cambia la scelta se serve, correggi i dati, scegli cosa allegare.
 3. **Invia a Dynamics**: alla fine compaiono i link ai record; nella tabella la colonna **CRM** mostra ☁️.
 
+### Clienti (Dynamics 365 Sales)
+
+Pagina dedicata al cliente, accanto agli Incontri: ricerca dell'account, scheda pubblica in stile Client Intel Scout quando il cliente non c'è, e dalla call partecipanti, aziende, relazione e task (Planner o Dynamics). Guida completa: [docs/CLIENTI.md](CLIENTI.md).
+
 ## 7. Verbale
 
 Trasforma una trascrizione con i nomi in un testo pronto da usare. Richiede un modello per i testi in Ollama.

@@ -30,7 +30,7 @@ import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261117.1216"
+VERSIONE = "20261117.1254"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -259,10 +259,12 @@ class Finestra(QMainWindow):
         self.tab_verbale = attrezzi.SchedaVerbale()
         import agenda_posta
         import incarichi
+        import clienti
         import incontri
         import registrazione
         self.tab_incarichi = incarichi.SchedaIncarichi(self)
         self.tab_incontri = incontri.SchedaIncontri(self, VERSIONE)
+        self.tab_clienti = clienti.SchedaClienti(self)
         self.tab_agenda = agenda_posta.SchedaAgenda(self)
         self.tab_posta = agenda_posta.SchedaPosta(self)
         self.tab_registra = registrazione.SchedaRegistra(self)
@@ -290,6 +292,10 @@ class Finestra(QMainWindow):
             ("incontri", "Incontri dall'iPhone", "Incontri", self._pagina(
                 self.tab_incontri, "Incontri",
                 "Fiere e visite ai clienti registrate con Argo per iPhone: trascrizione con i nomi, foto e testo letto.")),
+            ("clienti", "Clienti", "Clienti", self._pagina(
+                self.tab_clienti, "Clienti",
+                "Dynamics 365 Sales: cerca il cliente o prepara la scheda pubblica; dalla call partecipanti, aziende, "
+                "relazione e task.")),
             ("ATTREZZI", None, None, None),
             ("posta", "Posta AI", "Posta", self.tab_posta),
             ("documenti", "Documenti riservati", "Documenti", self._pagina(
@@ -1226,6 +1232,29 @@ class Finestra(QMainWindow):
         f7.addRow("", n7)
         lay.addWidget(g7)
 
+        g8 = QGroupBox("Ricerca web (facoltativa) · scheda pubblica dei clienti")
+        f8 = QFormLayout(g8)
+        import ricerca_web
+        self.e_web = QLineEdit(ricerca_web.chiave())
+        self.e_web.setEchoMode(QLineEdit.Password)
+        self.e_web.setPlaceholderText("Chiave API di Ollama Web Search (ollama.com › Settings › Keys)")
+        f8.addRow("Chiave:", self.e_web)
+        r8 = QHBoxLayout()
+        b_web = QPushButton("Salva e prova")
+        b_web.clicked.connect(self.prova_ricerca_web)
+        self.l_web = QLabel("")
+        self.l_web.setWordWrap(True)
+        r8.addWidget(b_web)
+        r8.addWidget(self.l_web, 1)
+        f8.addRow("", r8)
+        n8 = QLabel("Serve un account Ollama gratuito. Sul web esce solo il nome dell'azienda cercata: trascrizioni, "
+                    "partecipanti e documenti restano qui. La scheda la scrive il modello locale, solo dalle pagine "
+                    "trovate, con le regole di Client Intel Scout.")
+        n8.setWordWrap(True)
+        n8.setProperty("ruolo", "tenue")
+        f8.addRow("", n8)
+        lay.addWidget(g8)
+
         g5 = QGroupBox("Aspetto")
         f5 = QHBoxLayout(g5)
         f5.addWidget(QLabel("Tema:"))
@@ -1378,6 +1407,18 @@ class Finestra(QMainWindow):
         lav.sig_errore.connect(errore)
         self._lav_d365 = lav
         lav.start()
+
+    def prova_ricerca_web(self):
+        import ricerca_web
+        ricerca_web.salva_chiave(self.e_web.text())
+        self.l_web.setText("Provo…")
+        lav = attrezzi.Lavoro(lambda _l: ricerca_web.cerca("Argo AI Ollama", 1), self)
+        lav.sig_fine.connect(lambda r: self.l_web.setText("✅ Ricerca web attiva." if r is not None else "⚠️ Nessuna risposta."))
+        lav.sig_errore.connect(lambda e: self.l_web.setText(f"⚠️ {e}"))
+        self._lav_web = lav
+        lav.start()
+        if hasattr(self, "tab_clienti"):
+            self.tab_clienti._aggiorna_stato_servizi()
 
     def scollega_m365(self):
         m365.scollega()

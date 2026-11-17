@@ -246,3 +246,114 @@ def crea_attivita(entita, id_record, azione):
     }
     _, id_task = api("POST", "tasks", {k: v for k, v in corpo.items() if v is not None})
     return id_task
+
+
+# ---------------------------------------------------------------- pagina Clienti: account e contatti
+SELEZIONE_ACCOUNT = ("accountid,name,websiteurl,address1_city,address1_country,telephone1,emailaddress1,"
+                     "numberofemployees,revenue,description,_primarycontactid_value")
+
+
+def _nome_breve(azienda):
+    return re.sub(r"\b(s\.?r\.?l\.?s?|s\.?p\.?a\.?|s\.?n\.?c\.?|s\.?a\.?s\.?|s\.?c\.?a?\.?r\.?l\.?|gmbh|ag|ltd|inc|spa|srl)\b\.?",
+                  "", azienda or "", flags=re.I).strip(" .,-")
+
+
+def dominio_email(email):
+    d = (email or "").split("@")[-1].lower().strip()
+    pubblici = ("gmail.", "outlook.", "hotmail.", "yahoo.", "libero.it", "icloud.", "live.", "tiscali.", "virgilio.",
+                "alice.it", "me.com", "proton")
+    return "" if not d or "." not in d or d.startswith(pubblici) else d
+
+
+def cerca_account(testo, massimo=10):
+    """Account attivi per nome, sito o dominio. Ritorna [dict] con i campi di SELEZIONE_ACCOUNT."""
+    testo = (testo or "").strip()
+    if not testo:
+        return []
+    filtri = []
+    if "." in testo and " " not in testo:  # sembra un sito o un dominio
+        dom = testo.split("://")[-1].split("/")[0].removeprefix("www.")
+        filtri += [f"contains(websiteurl,'{_q(dom)}')", f"contains(emailaddress1,'{_q(dom)}')"]
+        breve = dom.split(".")[0]
+    else:
+        breve = _nome_breve(testo) or testo
+    filtri.append(f"contains(name,'{_q(breve)}')")
+    dati, _ = api("GET", f"accounts?$select={SELEZIONE_ACCOUNT}&$filter=({' or '.join(filtri)}) and statecode eq 0"
+                         f"&$orderby=name&$top={massimo}")
+    return dati.get("value", [])
+
+
+def account_per_dominio(dominio):
+    """Account legati a un dominio email: sito dell'account o email dei suoi contatti."""
+    if not dominio:
+        return []
+    trovati = {a["accountid"]: a for a in cerca_account(dominio)}
+    dati, _ = api("GET", "contacts?$select=_parentcustomerid_value"
+                         f"&$filter=endswith(emailaddress1,'@{_q(dominio)}') and statecode eq 0&$top=10")
+    for c in dati.get("value", []):
+        aid = c.get("_parentcustomerid_value")
+        if aid and aid not in trovati:
+            try:
+                a, _ = api("GET", f"accounts({aid})?$select={SELEZIONE_ACCOUNT}")
+                trovati[aid] = a
+            except ErroreCRM:
+                pass
+    return list(trovati.values())
+
+
+def contatti_account(account_id):
+    dati, _ = api("GET", "contacts?$select=contactid,fullname,jobtitle,emailaddress1,telephone1"
+                         f"&$filter=_parentcustomerid_value eq {account_id} and statecode eq 0&$orderby=fullname&$top=50")
+    return dati.get("value", [])
+
+
+def contatto_per_email(email):
+    if not email:
+        return None
+    dati, _ = api("GET", "contacts?$select=contactid,fullname,_parentcustomerid_value"
+                         f"&$filter=emailaddress1 eq '{_q(email)}' and statecode eq 0&$top=1")
+    v = dati.get("value", [])
+    return v[0] if v else None
+
+
+def crea_account(campi):
+    """Account da campi già confermati dall'utente. Ritorna l'id."""
+    corpo = {
+        "name": campi.get("ragione_sociale") or campi.get("name"),
+        "websiteurl": campi.get("sito") or None,
+        "address1_line1": campi.get("indirizzo") or None,
+        "address1_postalcode": campi.get("cap") or None,
+        "address1_city": campi.get("citta") or None,
+        "address1_stateorprovince": campi.get("provincia") or None,
+        "address1_country": campi.get("nazione") or None,
+        "telephone1": campi.get("telefono") or None,
+        "emailaddress1": campi.get("email") or None,
+        "description": campi.get("descrizione") or None,
+    }
+    if str(campi.get("dipendenti") or "").strip().isdigit():
+        corpo["numberofemployees"] = int(str(campi["dipendenti"]).strip())
+    if not corpo["name"]:
+        raise ErroreCRM("Manca la ragione sociale.")
+    _, id_account = api("POST", "accounts", {k: v for k, v in corpo.items() if v is not None})
+    if not id_account:
+        raise ErroreCRM("Dynamics non ha restituito l'id dell'account creato.")
+    return id_account
+
+
+def crea_contatto(persona, account_id=None):
+    """Contatto (nome, cognome, email, ruolo, telefono) legato all'account. Ritorna l'id."""
+    nome, cognome = (persona.get("nome") or "").strip(), (persona.get("cognome") or "").strip()
+    if not cognome and " " in nome:
+        nome, cognome = nome.rsplit(" ", 1)
+    corpo = {"firstname": nome or None, "lastname": cognome or nome or "Contatto",
+             "emailaddress1": persona.get("email") or None, "jobtitle": persona.get("ruolo") or None,
+             "telephone1": persona.get("telefono") or None}
+    if account_id:
+        corpo["parentcustomerid_account@odata.bind"] = f"/accounts({account_id})"
+    _, id_contatto = api("POST", "contacts", {k: v for k, v in corpo.items() if v is not None})
+    return id_contatto
+
+
+def account(account_id):
+    dati, _ = api("GET", f"accounts({account_id})?$select={SELEZIONE_ACCOUNT}")
+    return dati

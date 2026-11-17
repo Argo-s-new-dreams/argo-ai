@@ -2,6 +2,13 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.1254: nuova pagina Clienti (Dynamics 365 Sales)
+- **Clienti › Cliente**: cerca l'account in Dynamics (nome, sito o dominio) con i suoi contatti; se non c'è, **🌐 Scheda pubblica** con le regole di **Client Intel Scout** in locale (10 sezioni, fonte e data su ogni dato, `[DATO NON DISPONIBILE]`, stop sugli omonimi) e **➕ Crea account…** precompilato da confermare, con la scheda come nota.
+- Ricerca web con **Ollama Web Search** (account gratuito, chiave in *Impostazioni › Ricerca web*): esce solo il nome dell'azienda; il modello locale scrive **solo** dalle pagine scaricate, con URL e data.
+- **Clienti › Dalla call**: incontri dall'iPhone, **trascrizioni del computer** (Dal computer ▾) e **invitati dal calendario**; per ogni partecipante l'azienda proposta dal CRM (email, dominio, biglietto da visita), Interno per i colleghi; relazione, **contatti e note in Dynamics**, **task in Planner o attività di Dynamics**, scegliendo ogni volta.
+- Le trascrizioni del computer portate tra le call compaiono anche negli **Incontri**.
+- Guida: [docs/CLIENTI.md](docs/CLIENTI.md).
+
 ## 20261117.1216: Incontri → Dynamics 365 Sales
 - **☁️ Invia a Dynamics…** su un incontro con la relazione: per ogni contatto Argo cerca in Dynamics contatti, lead e account già presenti e **propone la destinazione** (contatto con la stessa email → lead aperto → nuovo lead). Tu scegli caso per caso, correggi i dati o salti il contatto.
 - Su ogni destinazione: **nota con la relazione** (la versione che hai rivisto), **foto allegate**; sulla prima anche le **azioni come attività**. I nuovi lead hanno argomento, dati del biglietto da visita, riassunto, prossimo passo, tempi e budget, origine «Fiera» per le fiere.
