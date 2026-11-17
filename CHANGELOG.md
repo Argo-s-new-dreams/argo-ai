@@ -2,6 +2,12 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.1200: la coda degli Incontri sopravvive alla chiusura
+- La coda delle relazioni viene **salvata a ogni modifica** (`incontri_coda.json`), come quella delle trascrizioni.
+- Alla riapertura: l'incontro che era in lavorazione risulta **«Interrotta - app chiusa durante l'elaborazione»**, gli altri restano **«In coda»** e ripartono con **▶ Riprendi coda (N)**.
+- **■ Ferma coda** ora mette in pausa senza svuotare la coda (come nelle trascrizioni); per togliere un incontro: tasto destro › Togli dalla coda. Gli incontri «Interrotta» o «Errore» si rimettono in coda con ✨ Scrivi relazione.
+- Chiudendo Argo durante una relazione compare una conferma; la chiusura non resta più appesa in attesa di Ollama.
+
 ## 20261117.1152: Incontri con la coda, come le trascrizioni
 - **Elenco a tabella**: incontro, data, **durata**, numero di foto e di persone, stato della relazione e avanzamento.
 - **Coda delle relazioni**: selezioni uno o più incontri e **✨ Scrivi relazione (N)** li mette in coda; Argo li elabora uno alla volta con **barra di avanzamento** e stato a colori («In coda», «In corso - foto 2 di 5…», «Pronta», «Errore»). **■ Ferma coda** interrompe; tasto destro: togli dalla coda, apri cartella, elimina incontro.

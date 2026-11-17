@@ -6,9 +6,10 @@ Ponte (abbinamento con QR, ricezione dei pacchetti), elenco degli incontri, rela
 import io
 import json
 import sys
+import threading
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Qt, QThread, QTimer, QUrl, Signal
+from PySide6.QtCore import QObject, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel, QMenu, QMessageBox,
@@ -23,6 +24,8 @@ import relazione_incontro as rel
 import tema
 import voci_core as core
 
+FILE_CODA = core.APP_HOME / "incontri_coda.json"
+
 SOLO_OCR = "Solo testo letto dall'iPhone"
 
 
@@ -31,8 +34,11 @@ def _durata(secondi):
     return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}" if s >= 3600 else f"{s // 60:02d}:{s % 60:02d}"
 
 
-class LavoroRelazione(QThread):
-    """Scrive la relazione di un incontro fuori dall'interfaccia, con stato e avanzamento."""
+class LavoroRelazione(QObject):
+    """Scrive la relazione di un incontro fuori dall'interfaccia, con stato e avanzamento.
+
+    Gira in un thread «daemon»: se Argo si chiude mentre Ollama sta ancora rispondendo, la chiusura non resta
+    appesa (l'incontro risulterà «Interrotta» alla riapertura, come nelle trascrizioni)."""
     sig_stato = Signal(str)
     sig_avanzamento = Signal(int)
     sig_fine = Signal()
@@ -42,9 +48,18 @@ class LavoroRelazione(QThread):
         super().__init__(parent)
         self.argomenti = (cartella, sessione, url, modello_testo, modello_vision)
         self._stop = False
+        self._thread = None
 
     def ferma(self):
         self._stop = True
+
+    def start(self):
+        self._thread = threading.Thread(target=self.run, name="argo-relazione", daemon=True)
+        self._thread.start()
+
+    def wait(self, millisecondi):
+        if self._thread:
+            self._thread.join(millisecondi / 1000)
 
     def run(self):
         cartella, sessione, url, testo, vision = self.argomenti
@@ -162,6 +177,11 @@ class SchedaIncontri(QWidget):
         self.b_ferma.setVisible(False)
         self.b_ferma.clicked.connect(self.ferma_coda)
         comandi.addWidget(self.b_ferma)
+        self.b_riprendi = QPushButton("▶ Riprendi coda")
+        self.b_riprendi.setVisible(False)
+        self.b_riprendi.setToolTip("Riprende gli incontri rimasti in coda (anche dopo la chiusura di Argo)")
+        self.b_riprendi.clicked.connect(self.riprendi_coda)
+        comandi.addWidget(self.b_riprendi)
         comandi.addSpacing(12)
         comandi.addWidget(QLabel("Foto:"))
         self.c_vision = QComboBox()
@@ -252,6 +272,8 @@ class SchedaIncontri(QWidget):
         self.coda = []
         self.stati = {}
         self.in_corso = None
+        self.in_pausa = False
+        self._carica_coda()
         self._lento = QTimer(self)
         self._lento.setInterval(2500)
         self._lento.timeout.connect(self._avanza_piano)
@@ -320,10 +342,16 @@ class SchedaIncontri(QWidget):
             self.aggiorna()
             self.finestra.statusBar().showMessage(f"📱 Incontro ricevuto dall'iPhone: {testo}", 8000)
 
+    def occupata(self):
+        return self.lavoro is not None
+
     def ferma(self):
-        self.ferma_coda()
+        """Chiusura di Argo: la coda resta salvata; l'incontro in corso risulterà «Interrotta»."""
+        self.in_pausa = True  # nessun nuovo incontro parte mentre Argo si chiude
+        self._salva_coda()
         if self.lavoro:
-            self.lavoro.wait(3000)
+            self.lavoro.ferma()
+            self.lavoro.wait(1500)
         self.ponte.ferma()
 
     # -- incontri
@@ -428,7 +456,38 @@ class SchedaIncontri(QWidget):
         n = len(self._selezionati())
         self.b_relazione.setEnabled(n > 0)
         self.b_relazione.setText("✨ Scrivi relazione" + (f" ({n})" if n > 1 else ""))
-        self.b_ferma.setVisible(bool(self.in_corso or self.coda))
+        self.b_ferma.setVisible(bool(self.lavoro))
+        self.b_riprendi.setVisible(bool(self.coda) and not self.lavoro)
+        self.b_riprendi.setText(f"▶ Riprendi coda ({len(self.coda)})")
+
+    # -- coda salvata su disco (come quella delle trascrizioni)
+    def _salva_coda(self):
+        stati = {i: {k: v for k, v in st.items() if k in ("stato", "nota")}
+                 for i, st in self.stati.items() if st.get("stato") in ("In coda", "Errore", "Interrotta")}
+        if self.in_corso:
+            stati[self.in_corso] = {"stato": "In corso", "nota": ""}
+        try:
+            core.APP_HOME.mkdir(parents=True, exist_ok=True)
+            FILE_CODA.write_text(json.dumps({"coda": ([self.in_corso] if self.in_corso else []) + self.coda,
+                                             "stati": stati}, indent=1, ensure_ascii=False), encoding="utf-8")
+        except Exception as e:
+            self.finestra.statusBar().showMessage(f"Impossibile salvare la coda degli incontri: {e}", 8000)
+
+    def _carica_coda(self):
+        try:
+            dati = json.loads(FILE_CODA.read_text(encoding="utf-8"))
+        except Exception:
+            return
+        esistenti = {c.name for c, _d in pt.elenco_incontri()}
+        for i, st in dati.get("stati", {}).items():
+            if i not in esistenti:
+                continue
+            if st.get("stato") == "In corso":
+                st = {"stato": "Interrotta", "nota": "app chiusa durante l'elaborazione"}
+            self.stati[i] = {"stato": st.get("stato", "In coda"), "progresso": 0, "nota": st.get("nota", "")}
+        # Chi era in corso torna in fondo? No: come nelle trascrizioni resta «Interrotta» e si rimette a mano.
+        self.coda = [i for i in dati.get("coda", []) if i in esistenti and self.stati.get(i, {}).get("stato") == "In coda"]
+        self.in_pausa = bool(self.coda)
 
     def _menu(self, pos):
         r = self.tabella.rowAt(pos.y())
@@ -541,7 +600,13 @@ class SchedaIncontri(QWidget):
             self.coda.append(cartella.name)
             self.stati[cartella.name] = {"stato": "In coda", "progresso": 0, "nota": ""}
             self._aggiorna_riga(self._riga_di(cartella.name))
+        self.in_pausa = False
+        self._salva_coda()
         self._aggiorna_comandi()
+        self._prossima()
+
+    def riprendi_coda(self):
+        self.in_pausa = False
         self._prossima()
 
     def togli_dalla_coda(self):
@@ -550,19 +615,22 @@ class SchedaIncontri(QWidget):
                 self.coda.remove(cartella.name)
                 self.stati.pop(cartella.name, None)
                 self._aggiorna_riga(self._riga_di(cartella.name))
+        self._salva_coda()
         self._aggiorna_comandi()
 
     def ferma_coda(self):
-        for id_incontro in self.coda:
-            self.stati.pop(id_incontro, None)
-            self._aggiorna_riga(self._riga_di(id_incontro))
-        self.coda.clear()
+        """Come «Ferma coda» delle trascrizioni: si ferma, gli altri restano in coda per «Riprendi»."""
+        self.in_pausa = True
         if self.lavoro:
             self.lavoro.ferma()
             self.l_lavoro.setText("Mi fermo appena finisce il passaggio in corso…")
+        self._salva_coda()
         self._aggiorna_comandi()
 
     def _prossima(self):
+        if self.in_pausa:
+            self._aggiorna_comandi()
+            return
         if self.lavoro or not self.coda:
             if not self.coda and not self.lavoro:
                 self.in_corso = None
@@ -585,6 +653,7 @@ class SchedaIncontri(QWidget):
         self.lavoro.sig_fine.connect(lambda i=id_incontro: self._fine(i, None))
         self.lavoro.sig_errore.connect(lambda e, i=id_incontro: self._fine(i, e))
         self._lento.start()
+        self._salva_coda()
         self._aggiorna_comandi()
         self.lavoro.start()
 
@@ -619,6 +688,7 @@ class SchedaIncontri(QWidget):
                                        "progresso": 0, "nota": "" if errore == "Interrotta" else errore}
         else:
             self.stati.pop(id_incontro, None)  # «Pronta» si legge dal file salvato
+        self._salva_coda()
         self.aggiorna()
         r = self._riga_di(id_incontro)
         corrente = self._corrente()[0]
@@ -642,6 +712,7 @@ class SchedaIncontri(QWidget):
                 self.coda.remove(cartella.name)
             self.stati.pop(cartella.name, None)
             shutil.rmtree(cartella, ignore_errors=True)
+        self._salva_coda()
         self.aggiorna()
 
     def salva_modifiche(self):

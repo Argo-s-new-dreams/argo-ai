@@ -30,7 +30,7 @@ import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261117.1152"
+VERSIONE = "20261117.1200"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -1482,6 +1482,11 @@ class Finestra(QMainWindow):
         self.statusBar().showMessage("Impostazioni salvate.", 5000)
 
     def closeEvent(self, e):
+        if self.tab_incontri.occupata() and QMessageBox.question(
+                self, "Uscire?", "Sto scrivendo la relazione di un incontro: verrà interrotta. La coda resta salvata "
+                "e la riprendi con «▶ Riprendi coda». Uscire comunque?") != QMessageBox.Yes:
+            e.ignore()
+            return
         self.tab_incontri.ferma()
         if self.tab_registra.occupata():
             if QMessageBox.question(self, "Uscire?", "C'è una registrazione in corso: verrà fermata. In modalità Live "
