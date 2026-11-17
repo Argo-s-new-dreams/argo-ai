@@ -113,8 +113,15 @@ PROMPT_FOTO = (
 )
 
 
-def descrivi_foto(cartella, sessione, url, modello, stato=lambda _t: None, stop=None):
-    """Descrive le foto non ancora descritte con quel modello. Ritorna {file: descrizione}."""
+def foto_da_descrivere(cartella, sessione, modello):
+    cache = carica(cartella).get("foto", {})
+    return [f for f in sessione.get("foto", [])
+            if (Path(cartella) / f.get("file", "")).exists() and (cache.get(f.get("file")) or {}).get("modello") != modello]
+
+
+def descrivi_foto(cartella, sessione, url, modello, stato=lambda _t: None, stop=None, fatta=lambda: None):
+    """Descrive le foto non ancora descritte con quel modello. Ritorna {file: descrizione}.
+    `fatta()` viene chiamata dopo ogni foto (per la barra di avanzamento)."""
     cartella = Path(cartella)
     dati = carica(cartella)
     cache = dati.setdefault("foto", {})
@@ -134,6 +141,7 @@ def descrivi_foto(cartella, sessione, url, modello, stato=lambda _t: None, stop=
                         contesto=8192, stop=stop)
         cache[nome] = {"modello": modello, "descrizione": testo}
         _salva(cartella, dati)
+        fatta()
     return {k: v["descrizione"] for k, v in cache.items()}
 
 
@@ -186,16 +194,30 @@ def _blocchi(testo, massimo):
     return blocchi
 
 
-def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None, stato=lambda _t: None, stop=None):
-    """Genera la relazione e la salva nell'incontro. Ritorna (dati_relazione, markdown)."""
+def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None, stato=lambda _t: None, stop=None,
+                     avanzamento=lambda _p: None):
+    """Genera la relazione e la salva nell'incontro. Ritorna (dati_relazione, markdown).
+    `avanzamento(percento)` riceve 0-100: foto e blocchi pesano 1 ciascuno, la relazione finale 3."""
     if not llm.e_locale(url):
         raise ErroreRelazione("L'indirizzo di Ollama non è locale: per gli incontri si usa solo un modello su questo computer.")
     if not modello_testo:
         raise ErroreRelazione("Scegli un modello per i testi in Impostazioni › Modelli.")
     cartella = Path(cartella)
+    # Stima del lavoro, per una barra che avanza in modo onesto
+    da_guardare = len(foto_da_descrivere(cartella, sessione, modello_vision)) if modello_vision else 0
+    testo_stimato = cronologia(cartella, sessione)
+    stima_blocchi = len(_blocchi(testo_stimato, CARATTERI_PER_BLOCCO)) if len(testo_stimato) > CARATTERI_PER_BLOCCO else 0
+    totale = da_guardare + stima_blocchi + 3
+    fatto = {"n": 0}
+
+    def passo(unita=1):
+        fatto["n"] += unita
+        avanzamento(min(99, int(fatto["n"] * 100 / max(totale, 1))))
+
+    avanzamento(1)
     descrizioni = {}
     if modello_vision and sessione.get("foto"):
-        descrizioni = descrivi_foto(cartella, sessione, url, modello_vision, stato, stop)
+        descrizioni = descrivi_foto(cartella, sessione, url, modello_vision, stato, stop, fatta=passo)
     testo = cronologia(cartella, sessione, descrizioni)
     if not testo.strip():
         raise ErroreRelazione("L'incontro non ha né trascrizione né foto.")
@@ -212,6 +234,7 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
                 {"role": "user", "content": "Scrivi appunti fedeli e sintetici di questa parte (chi è chi, aziende, "
                                             "prodotti, richieste, cifre, decisioni, azioni). Conserva nomi e recapiti "
                                             "delle righe FOTO.\n\n" + b}], stop=stop))
+            passo()
         testo = "\n\n".join(appunti)
         giro += 1
 
@@ -237,6 +260,7 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
     _salva(cartella, dati)
     md = in_markdown(relazione, sessione, dati)
     (cartella / FILE_TESTO).write_text(md, encoding="utf-8")
+    avanzamento(100)
     return relazione, md
 
 

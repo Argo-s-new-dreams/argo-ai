@@ -499,8 +499,8 @@ La pagina **Incontri** raccoglie ciò che registri con **Argo per iPhone** in fi
 Come è protetto il canale: [docs/PONTE.md](PONTE.md).
 
 **Relazione dell'incontro**
-1. Scegli l'incontro e, in **Foto:**, un modello vision di Ollama (es. `gemma3:12b`, `qwen2.5vl:7b`) oppure «Solo testo letto dall'iPhone».
-2. Premi **✨ Scrivi relazione**: Argo descrive le foto, incrocia parole e immagini e scrive titolo, riassunto, contatti, aziende, opportunità, punti chiave e azioni.
+1. Seleziona uno o più incontri nella tabella (con ⌘ o ⇧ per sceglierne più d'uno) e, in **Foto:**, un modello vision di Ollama (es. `gemma3:12b`, `qwen2.5vl:7b`) oppure «Solo testo letto dall'iPhone».
+2. Premi **✨ Scrivi relazione**: gli incontri vanno in **coda** e vengono elaborati uno alla volta, ognuno con la sua barra di avanzamento (**■ Ferma coda** per interrompere). Per ciascuno Argo descrive le foto, incrocia parole e immagini e scrive titolo, riassunto, contatti, aziende, opportunità, punti chiave e azioni.
 3. Correggi il testo se serve e premi **Salva modifiche**; **Salva ▾** la esporta in Word o Markdown.
 4. La scheda **Trascrizione e foto** mostra la cronologia completa, con la bozza fatta sull'iPhone.
 

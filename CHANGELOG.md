@@ -2,6 +2,11 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.1152: Incontri con la coda, come le trascrizioni
+- **Elenco a tabella**: incontro, data, **durata**, numero di foto e di persone, stato della relazione e avanzamento.
+- **Coda delle relazioni**: selezioni uno o più incontri e **✨ Scrivi relazione (N)** li mette in coda; Argo li elabora uno alla volta con **barra di avanzamento** e stato a colori («In coda», «In corso - foto 2 di 5…», «Pronta», «Errore»). **■ Ferma coda** interrompe; tasto destro: togli dalla coda, apri cartella, elimina incontro.
+- La barra segue i passi reali (foto, blocchi, relazione finale) e avanza piano durante le chiamate lunghe al modello.
+
 ## 20261117.1144: relazione degli incontri, anche guardando le foto
 - **Incontri › ✨ Scrivi relazione**: Ollama in locale legge la trascrizione con i nomi e le foto, e scrive una relazione strutturata con **contatti** (dai biglietti da visita), **aziende**, **interessi**, **opportunità** (prodotti, budget, tempi, decisori, prossimo passo), punti chiave e **azioni**. Nessun dato inventato: i campi sconosciuti restano vuoti.
 - **Foto con un modello vision** (menu «Foto:»): se in Ollama c'è un modello che vede le immagini (es. gemma3, qwen2.5vl) Argo descrive ogni foto e ne estrae i dati leggibili; altrimenti usa il testo letto dall'iPhone. Le descrizioni restano in cache nell'incontro.
