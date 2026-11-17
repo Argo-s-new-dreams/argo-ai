@@ -30,7 +30,7 @@ import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261117.1205"
+VERSIONE = "20261117.1216"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -1205,6 +1205,27 @@ class Finestra(QMainWindow):
         f6.addRow("", n6)
         lay.addWidget(g6)
 
+        g7 = QGroupBox("Dynamics 365 Sales (facoltativo) · per gli Incontri")
+        f7 = QFormLayout(g7)
+        self.e_d365 = QLineEdit(imp.get("d365_url", ""))
+        self.e_d365.setPlaceholderText("https://nome-ambiente.crm4.dynamics.com")
+        f7.addRow("Ambiente:", self.e_d365)
+        r7 = QHBoxLayout()
+        self.b_d365 = QPushButton("Collega")
+        self.b_d365.clicked.connect(self.collega_d365)
+        self.l_d365 = QLabel("Usa Client ID e Tenant ID di Microsoft 365 qui sopra.")
+        self.l_d365.setWordWrap(True)
+        r7.addWidget(self.b_d365)
+        r7.addWidget(self.l_d365, 1)
+        f7.addRow("", r7)
+        n7 = QLabel("Nell'app Entra di Argo serve in più il permesso delegato «Dynamics CRM · user_impersonation» "
+                    "(API permissions › Add › Dynamics CRM, poi «Grant admin consent»). Su Dynamics vanno solo i dati "
+                    "che confermi nella finestra «Invia a Dynamics» di un incontro.")
+        n7.setWordWrap(True)
+        n7.setProperty("ruolo", "tenue")
+        f7.addRow("", n7)
+        lay.addWidget(g7)
+
         g5 = QGroupBox("Aspetto")
         f5 = QHBoxLayout(g5)
         f5.addWidget(QLabel("Tema:"))
@@ -1326,6 +1347,36 @@ class Finestra(QMainWindow):
         lav.sig_fine.connect(fine)
         lav.sig_errore.connect(errore)
         self._lav_m365 = lav
+        lav.start()
+
+    def collega_d365(self):
+        import crm_dynamics
+        imp = core.carica_impostazioni()
+        imp["m365_client_id"] = self.e_m365_client.text().strip()
+        imp["m365_tenant_id"] = self.e_m365_tenant.text().strip()
+        imp["d365_url"] = self.e_d365.text().strip()
+        core.salva_impostazioni(imp)
+        if not crm_dynamics.configurato():
+            QMessageBox.warning(self, "Dynamics 365", "Inserisci Client ID e Tenant ID (Microsoft 365) e l'indirizzo "
+                                "dell'ambiente Dynamics.")
+            return
+        self.l_d365.setText("Si è aperto il browser: accedi e accetta il permesso per Dynamics (hai 5 minuti)…")
+        self.b_d365.setEnabled(False)
+        lav = attrezzi.Lavoro(lambda _l: crm_dynamics.accedi(), self)
+
+        def fine(utente):
+            self.b_d365.setEnabled(True)
+            self.l_d365.setText(f"✅ Collegato a {crm_dynamics.ambiente()} come {utente}")
+            self.raise_()
+            self.activateWindow()
+
+        def errore(e):
+            self.b_d365.setEnabled(True)
+            self.l_d365.setText(f"⚠️ {e}")
+
+        lav.sig_fine.connect(fine)
+        lav.sig_errore.connect(errore)
+        self._lav_d365 = lav
         lav.start()
 
     def scollega_m365(self):

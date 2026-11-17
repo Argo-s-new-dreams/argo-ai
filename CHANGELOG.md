@@ -2,6 +2,13 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.1216: Incontri → Dynamics 365 Sales
+- **☁️ Invia a Dynamics…** su un incontro con la relazione: per ogni contatto Argo cerca in Dynamics contatti, lead e account già presenti e **propone la destinazione** (contatto con la stessa email → lead aperto → nuovo lead). Tu scegli caso per caso, correggi i dati o salti il contatto.
+- Su ogni destinazione: **nota con la relazione** (la versione che hai rivisto), **foto allegate**; sulla prima anche le **azioni come attività**. I nuovi lead hanno argomento, dati del biglietto da visita, riassunto, prossimo passo, tempi e budget, origine «Fiera» per le fiere.
+- Nella tabella degli Incontri la colonna **CRM** mostra ☁️ per gli incontri inviati (con i link ai record); un reinvio chiede conferma e tiene lo storico.
+- **Impostazioni › Dynamics 365 Sales**: indirizzo dell'ambiente e **Collega** (stessa app Entra di Microsoft 365, con in più il permesso *Dynamics CRM · user_impersonation*). Guida: [docs/DYNAMICS.md](docs/DYNAMICS.md).
+- Su Dynamics non vanno mai audio né impronte vocali.
+
 ## 20261117.1205: relazione impaginata
 - **Incontri › Relazione** ora mostra il testo **impaginato** (titoli, elenchi, grassetti, link) invece del Markdown grezzo.
 - **✏️ Modifica** passa al testo da correggere, **👁 Anteprima** torna alla vista impaginata; **Salva modifiche** come prima.

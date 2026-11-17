@@ -18,6 +18,8 @@ from PySide6.QtWidgets import (
     QTabWidget, QTextBrowser, QToolButton, QVBoxLayout, QWidget,
 )
 
+import crm_dynamics as crm
+import crm_incontri
 import esporta_word
 import llm_locale as llm
 import ponte as pt
@@ -131,8 +133,8 @@ class DialogoAbbina(QDialog):
 
 
 class SchedaIncontri(QWidget):
-    COLONNE = ["Incontro", "Data", "Durata", "Foto", "Persone", "Stato", "Avanzamento"]
-    COL_TITOLO, COL_DATA, COL_DURATA, COL_FOTO, COL_PERSONE, COL_STATO, COL_AVANZ = range(7)
+    COLONNE = ["Incontro", "Data", "Durata", "Foto", "Persone", "CRM", "Stato", "Avanzamento"]
+    COL_TITOLO, COL_DATA, COL_DURATA, COL_FOTO, COL_PERSONE, COL_CRM, COL_STATO, COL_AVANZ = range(8)
 
     def __init__(self, finestra, versione):
         super().__init__()
@@ -200,7 +202,7 @@ class SchedaIncontri(QWidget):
         h = self.tabella.horizontalHeader()
         h.setSectionResizeMode(self.COL_TITOLO, QHeaderView.Stretch)
         for col, larghezza in ((self.COL_DATA, 130), (self.COL_DURATA, 70), (self.COL_FOTO, 50),
-                               (self.COL_PERSONE, 70), (self.COL_STATO, 190), (self.COL_AVANZ, 110)):
+                               (self.COL_PERSONE, 70), (self.COL_CRM, 50), (self.COL_STATO, 190), (self.COL_AVANZ, 110)):
             self.tabella.setColumnWidth(col, larghezza)
         self.tabella.verticalHeader().setVisible(False)
         self.tabella.verticalHeader().setDefaultSectionSize(36)
@@ -248,6 +250,11 @@ class SchedaIncontri(QWidget):
         self.b_salva_mod.setEnabled(False)
         self.b_salva_mod.clicked.connect(self.salva_modifiche)
         salva.addWidget(self.b_salva_mod)
+        self.b_crm = QPushButton("☁️ Invia a Dynamics…")
+        self.b_crm.setToolTip("Dynamics 365 Sales: nuovo lead o aggancio a contatti/account esistenti, con relazione, "
+                              "foto e azioni. Scegli tu caso per caso.")
+        self.b_crm.clicked.connect(self.invia_crm)
+        salva.addWidget(self.b_crm)
         self.b_salva = QToolButton()
         self.b_salva.setText("Salva ▾")
         self.b_salva.setPopupMode(QToolButton.InstantPopup)
@@ -397,6 +404,13 @@ class SchedaIncontri(QWidget):
                 cella = QTableWidgetItem(valore)
                 cella.setTextAlignment(Qt.AlignCenter)
                 t.setItem(r, col, cella)
+            inviato = crm_incontri.esito(cartella)
+            cella = QTableWidgetItem("☁️" if inviato else "–")
+            cella.setTextAlignment(Qt.AlignCenter)
+            if inviato:
+                cella.setToolTip(f"Inviato a Dynamics il {inviato.get('inviato', '')}: "
+                                 + ", ".join(f"{r.get('nome', '')} ({r.get('tipo', '')})" for r in inviato.get("record", [])))
+            t.setItem(r, self.COL_CRM, cella)
             box = QWidget()
             bl = QVBoxLayout(box)
             bl.setContentsMargins(8, 0, 10, 0)
@@ -568,6 +582,10 @@ class SchedaIncontri(QWidget):
                                             if (cartella / "relazione.md").exists() else ""))
         self._caricato = True
         self.b_salva_mod.setEnabled(False)
+        self.b_crm.setEnabled((cartella / rel.FILE_TESTO).exists() and cartella.name != self.in_corso)
+        inviato = crm_incontri.esito(cartella)
+        if inviato:
+            self.l_lavoro.setText(self.l_lavoro.text() + f" · ☁️ in Dynamics dal {inviato.get('inviato', '')}")
         self._aggiorna_vista()
 
     # -- relazione
@@ -744,6 +762,23 @@ class SchedaIncontri(QWidget):
             self._aggiorna_vista()
         self.pila.setCurrentWidget(self.testo if attiva else self.vista)
         self.b_modifica.setText("👁 Anteprima" if attiva else "✏️ Modifica")
+
+    def invia_crm(self):
+        cartella, d = self._corrente()
+        if not cartella:
+            return
+        if not crm.configurato():
+            QMessageBox.information(self, "Dynamics 365", "Prima collega Dynamics in Impostazioni › Dynamics 365 Sales "
+                                    "(indirizzo dell'ambiente e accesso).")
+            return
+        if self.b_salva_mod.isEnabled():
+            self.salva_modifiche()  # su Dynamics va la versione corretta a mano
+        if crm_incontri.esito(cartella) and QMessageBox.question(
+                self, "Già inviato", "Questo incontro è già stato inviato a Dynamics. Inviarlo di nuovo? "
+                "(Controlla le destinazioni per non creare doppioni.)") != QMessageBox.Yes:
+            return
+        if crm_incontri.DialogoCRM(cartella, d, self).exec():
+            self.aggiorna()
 
     def salva_modifiche(self):
         cartella, _d = self._corrente()

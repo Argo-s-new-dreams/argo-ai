@@ -504,6 +504,11 @@ Come è protetto il canale: [docs/PONTE.md](PONTE.md).
 3. Correggi il testo se serve e premi **Salva modifiche**; **Salva ▾** la esporta in Word o Markdown.
 4. La scheda **Trascrizione e foto** mostra la cronologia completa, con la bozza fatta sull'iPhone.
 
+**Invio a Dynamics 365 Sales**
+1. Una volta sola: Impostazioni › **Dynamics 365 Sales**, indirizzo dell'ambiente e **Collega** (prima va aggiunto il permesso nell'app Entra: [docs/DYNAMICS.md](DYNAMICS.md)).
+2. Su un incontro con la relazione premi **☁️ Invia a Dynamics…**: per ogni contatto Argo propone dove registrarlo (contatto o lead già presenti, oppure nuovo lead); cambia la scelta se serve, correggi i dati, scegli cosa allegare.
+3. **Invia a Dynamics**: alla fine compaiono i link ai record; nella tabella la colonna **CRM** mostra ☁️.
+
 ## 7. Verbale
 
 Trasforma una trascrizione con i nomi in un testo pronto da usare. Richiede un modello per i testi in Ollama.
