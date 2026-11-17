@@ -272,7 +272,7 @@ def in_markdown(r, sessione, meta=None):
     meta = meta or {}
     out = [f"# {r.get('titolo') or sessione.get('titolo', 'Incontro')}", ""]
     quando = (sessione.get("creata") or "")[:16].replace("T", " ")
-    out += [f"_{_riga(r.get('tipo', '').capitalize(), quando, 'durata ' + _durata(sessione.get('durata')))}_", ""]
+    out += [f"*{_riga(r.get('tipo', '').capitalize(), quando, 'durata ' + _durata(sessione.get('durata')))}*", ""]
     if r.get("riassunto"):
         out += ["## Riassunto", "", r["riassunto"], ""]
     if r.get("contatti"):
@@ -282,7 +282,7 @@ def in_markdown(r, sessione, meta=None):
             out.append(f"- **{nome}** — " + _riga(c.get("ruolo"), c.get("azienda"), c.get("email"),
                                                    c.get("telefono"), c.get("cellulare"), c.get("sito")))
             if c.get("note"):
-                out.append(f"  {c['note']}")
+                out.append(f"    - {c['note']}")
         out.append("")
     if r.get("aziende"):
         out += ["## Aziende", ""] + [f"- **{a.get('nome')}** — " + _riga(a.get("settore"), a.get("citta"), a.get("sito"), a.get("note"))
@@ -305,5 +305,5 @@ def in_markdown(r, sessione, meta=None):
         out += ["## Azioni", ""] + [f"- [ ] {_riga(a.get('descrizione'), a.get('responsabile'), ('entro ' + a['scadenza']) if a.get('scadenza') else '')}"
                                     for a in r["azioni"]] + [""]
     modelli = _riga(meta.get("modello_testo"), ("foto: " + meta["modello_vision"]) if meta.get("modello_vision") else "")
-    out += ["---", f"_Relazione generata con Argo · AI locale ({modelli}). Va riletta prima di usarla._"]
+    out += ["---", f"*Relazione generata con Argo · AI locale ({modelli}). Va riletta prima di usarla.*"]
     return "\n".join(out)

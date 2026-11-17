@@ -2,6 +2,11 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.1205: relazione impaginata
+- **Incontri › Relazione** ora mostra il testo **impaginato** (titoli, elenchi, grassetti, link) invece del Markdown grezzo.
+- **✏️ Modifica** passa al testo da correggere, **👁 Anteprima** torna alla vista impaginata; **Salva modifiche** come prima.
+- Corsivi e note dei contatti resi correttamente (anche nelle relazioni già scritte).
+
 ## 20261117.1200: la coda degli Incontri sopravvive alla chiusura
 - La coda delle relazioni viene **salvata a ogni modifica** (`incontri_coda.json`), come quella delle trascrizioni.
 - Alla riapertura: l'incontro che era in lavorazione risulta **«Interrotta - app chiusa durante l'elaborazione»**, gli altri restano **«In coda»** e ripartono con **▶ Riprendi coda (N)**.

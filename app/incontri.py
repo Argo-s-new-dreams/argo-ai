@@ -4,6 +4,7 @@ Ponte (abbinamento con QR, ricezione dei pacchetti), elenco degli incontri, rela
 (trascrizione + foto, anche con un modello vision). Prossima tappa: Dynamics 365 Sales.
 """
 import io
+import re
 import json
 import sys
 import threading
@@ -13,8 +14,8 @@ from PySide6.QtCore import QObject, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel, QMenu, QMessageBox,
-    QPlainTextEdit, QProgressBar, QPushButton, QScrollArea, QSplitter, QTableWidget, QTableWidgetItem, QTabWidget,
-    QToolButton, QVBoxLayout, QWidget,
+    QPlainTextEdit, QProgressBar, QPushButton, QScrollArea, QSplitter, QStackedWidget, QTableWidget, QTableWidgetItem,
+    QTabWidget, QTextBrowser, QToolButton, QVBoxLayout, QWidget,
 )
 
 import esporta_word
@@ -238,6 +239,11 @@ class SchedaIncontri(QWidget):
         self.l_lavoro.setProperty("ruolo", "tenue")
         self.l_lavoro.setWordWrap(True)
         salva.addWidget(self.l_lavoro, 1)
+        self.b_modifica = QPushButton("✏️ Modifica")
+        self.b_modifica.setCheckable(True)
+        self.b_modifica.setToolTip("Passa dal testo impaginato al Markdown da correggere, e ritorno")
+        self.b_modifica.toggled.connect(self._modalita_modifica)
+        salva.addWidget(self.b_modifica)
         self.b_salva_mod = QPushButton("Salva modifiche")
         self.b_salva_mod.setEnabled(False)
         self.b_salva_mod.clicked.connect(self.salva_modifiche)
@@ -253,10 +259,16 @@ class SchedaIncontri(QWidget):
         dl.addLayout(salva)
 
         self.schede = QTabWidget()
+        # Relazione: vista impaginata (Markdown) e, con «Modifica», il testo da correggere
+        self.vista = QTextBrowser()
+        self.vista.setOpenExternalLinks(True)
         self.testo = QPlainTextEdit()
         self.testo.setPlaceholderText("Nessuna relazione ancora: premi «✨ Scrivi relazione».")
         self.testo.textChanged.connect(lambda: self.b_salva_mod.setEnabled(self._caricato))
-        self.schede.addTab(self.testo, "Relazione")
+        self.pila = QStackedWidget()
+        self.pila.addWidget(self.vista)
+        self.pila.addWidget(self.testo)
+        self.schede.addTab(self.pila, "Relazione")
         self.t_trascrizione = QPlainTextEdit()
         self.t_trascrizione.setReadOnly(True)
         self.schede.addTab(self.t_trascrizione, "Trascrizione e foto")
@@ -556,6 +568,7 @@ class SchedaIncontri(QWidget):
                                             if (cartella / "relazione.md").exists() else ""))
         self._caricato = True
         self.b_salva_mod.setEnabled(False)
+        self._aggiorna_vista()
 
     # -- relazione
     def _carica_modelli_vision(self):
@@ -715,11 +728,29 @@ class SchedaIncontri(QWidget):
         self._salva_coda()
         self.aggiorna()
 
+    def _aggiorna_vista(self):
+        md = self.testo.toPlainText().strip()
+        if md:
+            # Qt mostra _testo_ come sottolineato: le righe in corsivo delle prime relazioni diventano *testo*
+            self.vista.setMarkdown(re.sub(r"(?m)^_(.+)_$", r"*\1*", md))
+        else:
+            self.vista.setMarkdown("_Nessuna relazione ancora: seleziona l'incontro e premi «✨ Scrivi relazione»._")
+        self.b_modifica.setEnabled(bool(md))
+        if not md and self.b_modifica.isChecked():
+            self.b_modifica.setChecked(False)
+
+    def _modalita_modifica(self, attiva):
+        if not attiva:
+            self._aggiorna_vista()
+        self.pila.setCurrentWidget(self.testo if attiva else self.vista)
+        self.b_modifica.setText("👁 Anteprima" if attiva else "✏️ Modifica")
+
     def salva_modifiche(self):
         cartella, _d = self._corrente()
         if cartella:
             (cartella / rel.FILE_TESTO).write_text(self.testo.toPlainText(), encoding="utf-8")
             self.b_salva_mod.setEnabled(False)
+            self._aggiorna_vista()
             self.finestra.statusBar().showMessage("Modifiche salvate.", 4000)
 
     def esporta(self, formato):
