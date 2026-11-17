@@ -474,6 +474,18 @@ Comincia da 0,50 e regola in base a quello che vedi nella revisione: la colonna 
 
 ---
 
+### Portare le voci sull'iPhone
+
+Argo per iPhone riconosce le stesse persone dell'anagrafe: le impronte dei due motori sono compatibili (pyannote community-1 sul Mac, FluidAudio sull'iPhone; verificato con il kit `prova-impronte` del repo argo-ios).
+
+1. Premi **📱 Per iPhone…**.
+2. Spunta solo le persone che ti servono in giro (Argo ricorda la scelta per la volta successiva) e conferma che hanno dato il **consenso**.
+3. Salva il file `anagrafe.argovoci` (proposto sulla Scrivania): il Finder lo mostra selezionato.
+4. Tasto destro › **Condividi › AirDrop** › il tuo iPhone, poi **Apri con Argo**. Una nuova esportazione sostituisce quella precedente sull'iPhone.
+5. Cancella il file dal Mac: contiene dati biometrici.
+
+Da riga di comando: `python voci_core.py esporta-iphone anagrafe.argovoci [NOME ...]` (senza nomi esporta tutte le voci).
+
 ## 7. Verbale
 
 Trasforma una trascrizione con i nomi in un testo pronto da usare. Richiede un modello per i testi in Ollama.

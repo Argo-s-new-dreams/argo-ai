@@ -4,6 +4,7 @@ Usato dall'interfaccia grafica e da riga di comando:
   python voci_core.py iscrivi NOME file_audio
   python voci_core.py identifica trascrizione.json
   python voci_core.py elenco
+  python voci_core.py esporta-iphone anagrafe.argovoci [NOME ...]
 """
 import json
 import os
@@ -172,6 +173,48 @@ def iscrivi(nome, file_audio, device="cpu"):
     print(f"OK - Impronta di {nome} salvata (campione n. {n}).", flush=True)
 
 
+# ---------------------------------------------------------------- anagrafe per Argo per iPhone
+FORMATO_IPHONE = "argo.voci"
+ESTENSIONE_IPHONE = ".argovoci"
+
+
+def esporta_per_iphone(percorso, nomi=None):
+    """Scrive l'anagrafe (o le sole voci in `nomi`) nel formato letto da Argo per iPhone.
+
+    Ogni voce porta l'impronta media normalizzata, come la usa `abbina`. Il test di compatibilità
+    (argo-ios, strumenti/prova-impronte) ha mostrato che FluidAudio sull'iPhone produce impronte nello
+    stesso spazio di pyannote community-1 (somiglianza 0,94 sullo stesso audio), quindi si usano così.
+    Sono dati biometrici: il file va trattato come tale (AirDrop diretto, poi cancellarlo dal Mac).
+    """
+    from datetime import datetime, timezone
+
+    tutte = carica_voci()
+    conteggi = dict(elenco_voci())
+    scelte = [n for n in sorted(tutte, key=str.lower) if nomi is None or n in nomi]
+    if not scelte:
+        raise ValueError("Nessuna voce da esportare.")
+    dati = {
+        "formato": FORMATO_IPHONE,
+        "versioneFormato": 1,
+        "motore": DIARIZE_MODEL,
+        "creata": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "soglia": float(carica_impostazioni().get("soglia", 0.5)),
+        "voci": [
+            {"nome": n, "impronta": [round(float(x), 6) for x in tutte[n]], "campioni": int(conteggi.get(n, 0))}
+            for n in scelte
+        ],
+    }
+    p = Path(percorso)
+    if p.suffix != ESTENSIONE_IPHONE:
+        p = p.with_suffix(ESTENSIONE_IPHONE)
+    p.write_text(json.dumps(dati, ensure_ascii=False), encoding="utf-8")
+    try:
+        os.chmod(p, 0o600)  # solo l'utente: contiene dati biometrici
+    except OSError:
+        pass
+    return p, len(scelte)
+
+
 # ---------------------------------------------------------------- identificazione
 def abbina(emb_parlanti, voci, soglia):
     """Ritorna (mappa SPEAKER->nome, migliori SPEAKER->(nome, somiglianza), coppie)."""
@@ -335,6 +378,9 @@ if __name__ == "__main__":
             print(f"OK - Trascrizione con i nomi: {out}")
         elif len(a) >= 4 and a[1] == "ridiarizza":
             ridiarizza(a[2], a[3], int(a[4]) if len(a) > 4 else 0, a[5] if len(a) > 5 else "cpu")
+        elif len(a) >= 3 and a[1] == "esporta-iphone":
+            p, n = esporta_per_iphone(a[2], a[3:] or None)
+            print(f"OK - {n} voci esportate in {p}")
         elif len(a) == 2 and a[1] == "elenco":
             print("Voci registrate: " + (", ".join(f"{n} ({c})" for n, c in elenco_voci()) or "nessuna"))
         else:

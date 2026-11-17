@@ -30,7 +30,7 @@ import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 
-VERSIONE = "20261116.1818"
+VERSIONE = "20261117.1108"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -888,6 +888,9 @@ class Finestra(QMainWindow):
         self.b_marca = m.addAction("🎧  Segnando dove parla in una registrazione")
         self.b_nuova_voce.setMenu(m)
         bar.addWidget(self.b_nuova_voce)
+        self.b_iphone = QPushButton("📱 Per iPhone…")
+        self.b_iphone.setToolTip("Esporta le voci scelte per Argo per iPhone (file .argovoci da passare con AirDrop)")
+        bar.addWidget(self.b_iphone)
         bar.addStretch()
         self.b_camp = QPushButton("Aggiungi campione…")
         self.b_camp.setToolTip("Un altro audio della stessa persona: più campioni, riconoscimento migliore")
@@ -920,6 +923,7 @@ class Finestra(QMainWindow):
         self.b_camp.clicked.connect(lambda: self.iscrivi_voce(self._voce_selezionata()))
         self.b_ren.clicked.connect(self.rinomina_voce)
         self.b_del.clicked.connect(self.elimina_voce)
+        self.b_iphone.clicked.connect(self.esporta_voci_iphone)
         self._azioni_voce()
         return w
 
@@ -928,6 +932,7 @@ class Finestra(QMainWindow):
         for b in (self.b_camp, self.b_ren, self.b_del):
             b.setVisible(scelta)
         vuota = self.tab_voci.rowCount() == 0
+        self.b_iphone.setVisible(not vuota)
         self.tab_voci.setVisible(not vuota)
         self.vuoto_voci.setVisible(vuota)
 
@@ -1051,6 +1056,38 @@ class Finestra(QMainWindow):
         if n and QMessageBox.question(self, "Elimina", f"Eliminare la voce di {n} e tutti i suoi campioni?") == QMessageBox.Yes:
             core.elimina_voce(n)
             self._aggiorna_voci()
+
+    def esporta_voci_iphone(self):
+        """Anagrafe → Argo per iPhone: scelta delle persone, conferma del consenso, file .argovoci."""
+        voci = [n for n, _ in core.elenco_voci()]
+        if not voci:
+            return
+        imp = core.carica_impostazioni()
+        dlg = voci_strumenti.EsportaIphoneDialog(voci, imp.get("voci_iphone"), self)
+        if not dlg.exec() or not dlg.scelte:
+            return
+        predefinito = str(Path.home() / "Desktop" / ("anagrafe" + core.ESTENSIONE_IPHONE))
+        f, _ = QFileDialog.getSaveFileName(self, "Salva l'anagrafe per iPhone", predefinito,
+                                           f"Anagrafe voci per iPhone (*{core.ESTENSIONE_IPHONE})")
+        if not f:
+            return
+        try:
+            percorso, n = core.esporta_per_iphone(f, dlg.scelte)
+        except Exception as e:
+            QMessageBox.warning(self, "Esportazione non riuscita", str(e))
+            return
+        imp["voci_iphone"] = dlg.scelte
+        core.salva_impostazioni(imp)
+        if sys.platform == "darwin":
+            subprocess.run(["open", "-R", str(percorso)], check=False)
+        else:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(percorso.parent)))
+        self.stato_voci.setText(f"{n} voci esportate in {percorso.name}.")
+        QMessageBox.information(
+            self, "Anagrafe per iPhone pronta",
+            f"Ho salvato {n} voci in «{percorso.name}».\n\n"
+            "Sul Mac: tasto destro sul file › Condividi › AirDrop › il tuo iPhone, poi «Apri con Argo».\n\n"
+            "Contiene impronte vocali (dati biometrici): dopo il trasferimento cancellalo dal Mac.")
 
     # ------------------------------------------------------------ tab impostazioni
     def _tab_impostazioni(self):

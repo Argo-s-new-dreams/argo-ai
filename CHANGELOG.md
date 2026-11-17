@@ -2,6 +2,12 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261117.1108: le voci dell'anagrafe anche sull'iPhone
+- **Voci › 📱 Per iPhone…**: esporta le persone scelte in un file `anagrafe.argovoci` da passare con AirDrop ad **Argo per iPhone**, che le riconosce negli incontri (registrati in fiera o in riunione direttamente dal telefono).
+- Prima di esportare: spunte sulle persone da portare (la scelta viene ricordata) e **conferma del consenso** obbligatoria, perché le impronte vocali sono dati biometrici. Il file è leggibile solo dal tuo utente; dopo il trasferimento va cancellato dal Mac.
+- Nessun ricalcolo: si usano le impronte già presenti. Il test di compatibilità tra pyannote (Mac) e FluidAudio (iPhone) ha dato somiglianza 0,94 sullo stesso audio e 0,85–0,88 tra registrazioni diverse della stessa persona.
+- Nuovo comando: `python voci_core.py esporta-iphone FILE [NOME ...]`.
+
 ## 20261116.1818: più facile da usare, ogni pagina allo stesso modo
 - **Menu in due gruppi**, nell'ordine del lavoro: **Riunioni** (Agenda → Registra → Trascrivi → Verbale → Incarichi) e **Attrezzi** (Posta, Documenti, Dettatura, Traduci); Voci e Impostazioni in fondo. Il nome nel menu è lo stesso del titolo della pagina.
 - **Barra dei comandi uguale ovunque:** l'azione principale (pulsante terracotta) è sempre la prima a sinistra, poi le scelte e i file da aprire; a destra Copia e Salva. Un solo pulsante principale per pagina.

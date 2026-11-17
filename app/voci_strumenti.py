@@ -18,8 +18,8 @@ import numpy as np
 from PySide6.QtCore import QRectF, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import (
-    QAbstractItemView, QCheckBox, QComboBox, QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel,
-    QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QSplitter, QTableWidget, QTableWidgetItem, QVBoxLayout,
+    QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QHBoxLayout, QHeaderView,
+    QLabel, QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QSplitter, QTableWidget, QTableWidgetItem, QVBoxLayout,
     QWidget,
 )
 
@@ -903,3 +903,53 @@ class MarcaVociDialog(QDialog):
         self.lettore.chiudi()
         self.timer.stop()
         super().closeEvent(e)
+
+
+class EsportaIphoneDialog(QDialog):
+    """Sceglie quali voci portare su Argo per iPhone e fa confermare il consenso. Al termine: self.scelte."""
+
+    def __init__(self, voci, precedenti=None, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Voci per Argo per iPhone")
+        self.setMinimumWidth(460)
+        self.scelte = []
+        lay = QVBoxLayout(self)
+        intro = QLabel("Scegli le persone che l'iPhone deve riconoscere negli incontri. "
+                       "Porta solo quelle che ti servono davvero: il telefono viaggia con te.")
+        intro.setWordWrap(True)
+        lay.addWidget(intro)
+        self.lista = QListWidget()
+        for n in voci:
+            it = QListWidgetItem(n)
+            it.setFlags(it.flags() | Qt.ItemIsUserCheckable)
+            spunta = n in precedenti if precedenti else len(voci) == 1
+            it.setCheckState(Qt.Checked if spunta else Qt.Unchecked)
+            self.lista.addItem(it)
+        lay.addWidget(self.lista, 1)
+        self.cb_consenso = QCheckBox("Le persone scelte sanno che la loro impronta vocale sarà usata anche "
+                                     "sul mio iPhone e hanno dato il consenso esplicito")
+        self.cb_consenso.setStyleSheet("QCheckBox { spacing: 8px; }")
+        lay.addWidget(self.cb_consenso)
+        nota = QLabel("Sull'iPhone le impronte restano cifrate dal sistema e non finiscono mai nei pacchetti "
+                      "esportati. Una nuova esportazione sostituisce quella precedente.")
+        nota.setWordWrap(True)
+        nota.setProperty("ruolo", "tenue")
+        lay.addWidget(nota)
+        bottoni = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bottoni.button(QDialogButtonBox.Ok).setText("Esporta…")
+        bottoni.accepted.connect(self._conferma)
+        bottoni.rejected.connect(self.reject)
+        lay.addWidget(bottoni)
+
+    def _conferma(self):
+        scelte = [self.lista.item(i).text() for i in range(self.lista.count())
+                  if self.lista.item(i).checkState() == Qt.Checked]
+        if not scelte:
+            QMessageBox.information(self, "Nessuna voce", "Spunta almeno una persona.")
+            return
+        if not self.cb_consenso.isChecked():
+            QMessageBox.warning(self, "Consenso", "Le impronte vocali sono dati biometrici: "
+                                "conferma il consenso delle persone scelte.")
+            return
+        self.scelte = scelte
+        self.accept()
