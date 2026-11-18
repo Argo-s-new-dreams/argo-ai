@@ -29,8 +29,11 @@ import criteri  # noqa: E402
 import tema  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
+import risorse  # noqa: E402
+import modelli_ollama  # noqa: E402
+import cloud  # noqa: E402
 
-VERSIONE = "20261117.2025"
+VERSIONE = "20261118.1957"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -83,7 +86,18 @@ class ProcessWorker(QThread):
         self.interrotto = False
 
     def run(self):
+        # profilo Leggero: un lavoro pesante alla volta, e la RAM di Ollama liberata prima di trascrivere
+        with risorse.turno(on_attesa=self.riga.emit):
+            if self.interrotto:  # «Ferma» premuto mentre aspettava il turno
+                self.finito.emit(-1)
+                return
+            if risorse.profilo() == "leggero":
+                risorse.libera_ollama()
+            self._esegui()
+
+    def _esegui(self):
         flags = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW su Windows
+        flags |= risorse.flag_windows()  # priorità sotto il normale: il PC resta reattivo
         try:
             self.proc = subprocess.Popen(
                 self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
@@ -94,6 +108,8 @@ class ProcessWorker(QThread):
             self.riga.emit(f"ERRORE avvio processo: {e}")
             self.finito.emit(-1)
             return
+        if os.name != "nt":
+            risorse.abbassa_priorita(self.proc.pid)
         if self.interrotto:  # «Ferma» premuto prima che il processo partisse
             self._uccidi()
         buf = b""
@@ -300,7 +316,7 @@ class Finestra(QMainWindow):
             ("posta", "Posta AI", "Posta", self.tab_posta),
             ("documenti", "Documenti riservati", "Documenti", self._pagina(
                 self.tab_documenti, "Documenti riservati",
-                "Domande su contratti, NDA e capitolati, con le fonti: i documenti restano su questo computer.")),
+                "Domande su contratti, NDA e capitolati, con le fonti: documenti e indice restano su questo computer.")),
             ("dettatura", "Dettatura", "Dettatura", self._pagina(
                 self.tab_dettatura, "Dettatura",
                 "Parli, Argo scrive: per note e mail tue. Per le riunioni usa Registra.")),
@@ -890,7 +906,12 @@ class Finestra(QMainWindow):
 
     def _aggiorna_badge(self):
         url = core.carica_impostazioni().get("ollama_url", "")
-        if llm_locale.e_locale(url) and m365.account():
+        nel_cloud = [cloud.NOMI_ATTREZZI[a] for a in cloud.NOMI_ATTREZZI if cloud.e_cloud(a)]
+        if nel_cloud:  # almeno un attrezzo usa un modello cloud: il badge non può dire «100% locale»
+            self.badge.setText("☁️ Audio e trascrizioni in locale · modello cloud per: " + ", ".join(nel_cloud))
+            self.badge.setToolTip("Scelto in Impostazioni › Modelli cloud")
+            self.badge.setStyleSheet(f"color: {tema.colori()['warn']}; font-weight: 600; padding-right: 8px;")
+        elif llm_locale.e_locale(url) and m365.account():
             self.badge.setText("🔒 Locale · Microsoft 365 collegato: solo i risultati che confermi vanno su M365")
             self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
         elif llm_locale.e_locale(url):
@@ -1183,6 +1204,19 @@ class Finestra(QMainWindow):
         f2.addRow("Lingua:", self.c_lingua)
         f2.addRow("Calcolo su:", self.c_device)
         f2.addRow("Parole chiave:", self.e_hot)
+        self.c_risorse = QComboBox()
+        for k, testo in risorse.PROFILI:
+            self.c_risorse.addItem(testo, k)
+        self.c_risorse.setCurrentIndex(max(0, self.c_risorse.findData(imp.get("risorse", "auto"))))
+        self.c_risorse.setToolTip("Quanta CPU e memoria può usare Argo per trascrivere e per i riassunti.\n"
+                                  "Se il PC si blocca durante le elaborazioni, scegli Leggero.")
+        self.l_risorse = QLabel()
+        self.l_risorse.setWordWrap(True)
+        self.c_risorse.currentIndexChanged.connect(
+            lambda _i: self.l_risorse.setText(risorse.descrizione(self.c_risorse.currentData())))
+        self.l_risorse.setText(risorse.descrizione(self.c_risorse.currentData()))
+        f2.addRow("Uso del computer:", self.c_risorse)
+        f2.addRow("", self.l_risorse)
         lay.addWidget(g2)
 
         g3 = QGroupBox("Riconoscimento voci")
@@ -1199,7 +1233,11 @@ class Finestra(QMainWindow):
 
         self.pannello_ollama = attrezzi.PannelloOllama()
         self.pannello_ollama.cambiato.connect(lambda: self._aggiorna_badge() if hasattr(self, "badge") else None)
+        self.pannello_ollama.chiedi_consigliati.connect(lambda: self.prepara_ollama(forzato=True))
         lay.addWidget(self.pannello_ollama)
+        self.pannello_cloud = attrezzi.PannelloCloud()
+        self.pannello_cloud.cambiato.connect(lambda: self._aggiorna_badge() if hasattr(self, "badge") else None)
+        lay.addWidget(self.pannello_cloud)
 
         g6 = QGroupBox("Microsoft 365 (facoltativo) · per Agenda, Posta e Incarichi")
         f6 = QFormLayout(g6)
@@ -1220,7 +1258,8 @@ class Finestra(QMainWindow):
         r6.addWidget(self.b_m365_off)
         r6.addWidget(self.l_m365, 1)
         f6.addRow("", r6)
-        self.cb_posta = QCheckBox("Leggi la posta per «Posta AI» (le mail vengono elaborate solo su questo computer)")
+        self.cb_posta = QCheckBox("Leggi la posta per «Posta AI» (le mail vengono elaborate su questo computer, "
+                                  "salvo un modello cloud scelto per Posta)")
         self.cb_posta.setChecked(bool(imp.get("m365_leggi_posta")))
         self.cb_posta.toggled.connect(self._pref_posta)
         f6.addRow("", self.cb_posta)
@@ -1351,10 +1390,11 @@ class Finestra(QMainWindow):
         lay.addWidget(QLabel(f"Dati in: {core.APP_HOME}  ·  L'audio non lascia mai questo computer."))
 
         # Indice in cima: la pagina è lunga, ogni voce porta al suo riquadro (link, non pulsanti)
-        self._sezioni_imp = {"hf": g1, "trascrizione": g2, "voci": g3, "ollama": self.pannello_ollama, "m365": g6,
+        self._sezioni_imp = {"hf": g1, "trascrizione": g2, "voci": g3, "ollama": self.pannello_ollama,
+                             "cloud": self.pannello_cloud, "m365": g6,
                              "dynamics": g7, "web": g8, "aspetto": g5, "aggiornamenti": g4}
         voci = (("hf", "Hugging Face"), ("trascrizione", "Trascrizione"), ("voci", "Voci"), ("ollama", "Ollama"),
-                ("m365", "Microsoft 365"), ("dynamics", "Dynamics"), ("web", "Ricerca web"),
+                ("cloud", "Modelli cloud"), ("m365", "Microsoft 365"), ("dynamics", "Dynamics"), ("web", "Ricerca web"),
                 ("aspetto", "Aspetto"), ("aggiornamenti", "Aggiornamenti"))
         indice = QLabel("Vai a: " + "  ·  ".join(f"<a href='{k}'>{t}</a>" for k, t in voci))
         indice.setTextFormat(Qt.RichText)
@@ -1485,6 +1525,131 @@ class Finestra(QMainWindow):
     def _canale(self):
         return aggiornamenti.canale_effettivo(core.carica_impostazioni(), criteri.carica())
 
+    # ------------------------------------------------------------ Ollama pronto all'avvio
+    def prepara_ollama(self, forzato=False):
+        """Accende Ollama se serve, sceglie i modelli installati e propone quelli consigliati che mancano."""
+        if getattr(self, "_lav_modelli", None):
+            return
+        url = core.carica_impostazioni().get("ollama_url") or llm_locale.DEFAULT_URL
+
+        def lavoro(lav):
+            r = modelli_ollama.controlla(url, lav.stato, stop=lav.fermato)
+            r["vision"] = self._vision_installati(url) if r["esito"] == "ok" else []
+            return r
+
+        lav = attrezzi.Lavoro(lavoro, self)
+        lav.sig_stato.connect(lambda m: self.statusBar().showMessage(m, 10000))
+        lav.sig_fine.connect(lambda r: self._esito_ollama(r, url, forzato))
+        lav.sig_errore.connect(lambda e: (setattr(self, "_lav_modelli", None),
+                                          self.statusBar().showMessage(f"Ollama: {e}", 10000)))
+        self._lav_modelli = lav
+        lav.start()
+
+    @staticmethod
+    def _vision_installati(url):
+        import relazione_incontro
+        try:
+            return relazione_incontro.modelli_vision(url)
+        except Exception:
+            return []
+
+    def _scegli_modelli(self, r):
+        """Sceglie i modelli mancanti tra quelli installati (anche quello per le foto, la prima volta)."""
+        s = core.carica_impostazioni()
+        scelti = attrezzi.completa_modelli(s, r["chat"], r["emb"])
+        if s.get("modello_vision") is None and r.get("vision"):  # mai scelto: il modello dei testi, se vede le foto
+            s["modello_vision"] = s["modello_chat"] if s.get("modello_chat") in r["vision"] else r["vision"][0]
+            core.salva_impostazioni(s)
+            scelti.append(f"foto: {s['modello_vision']}")
+        attrezzi.segnale_modelli.cambiato.emit()  # aggiorna gli elenchi delle Impostazioni
+        return scelti
+
+    def _esito_ollama(self, r, url, forzato):
+        self._lav_modelli = None
+        if r["esito"] == "assente":
+            msg = "Ollama non è installato: per Verbale, Documenti, Dettatura, Traduzione e Incontri scaricalo da ollama.com."
+            if forzato:
+                QMessageBox.information(self, "Ollama non installato", msg)
+            self.statusBar().showMessage(msg, 15000)
+            return
+        if r["esito"] != "ok":
+            msg = f"Ollama non risponde su {url}: avvialo e riprova da Impostazioni › Ollama."
+            if forzato:
+                QMessageBox.warning(self, "Ollama spento", msg)
+            self.statusBar().showMessage(msg, 15000)
+            return
+        scelti = self._scegli_modelli(r)
+        if scelti:
+            self.statusBar().showMessage("Modelli scelti in automatico: " + ", ".join(scelti)
+                                         + ". Puoi cambiarli in Impostazioni › Ollama.", 15000)
+        da_scaricare = modelli_ollama.mancanti(r["chat"], r["emb"])
+        if not da_scaricare:
+            if forzato:
+                QMessageBox.information(self, "Modelli già presenti",
+                                        "Ollama ha già un modello per i testi e uno per i documenti.\n"
+                                        "Per aggiungerne altri usa «Scarica un modello».")
+            return
+        s = core.carica_impostazioni()
+        if not forzato and s.get("modelli_consigliati_rifiutati"):
+            return
+        self._proponi_modelli(da_scaricare, url, forzato)
+
+    def _proponi_modelli(self, nomi, url, forzato):
+        ruoli = {modelli_ollama.EMBED_CONSIGLIATO: "per cercare nei documenti"}
+        righe = [f"•  {n} (circa {modelli_ollama.DIMENSIONI_GB.get(n, 0):.1f} GB) - "
+                 + ruoli.get(n, "per verbali, riassunti, traduzioni e relazioni, anche dalle foto") for n in nomi]
+        box = QMessageBox(self)
+        box.setWindowTitle("Modelli per l'AI locale")
+        box.setIcon(QMessageBox.Question)
+        box.setText("Per gli attrezzi AI di Argo servono questi modelli, che in Ollama mancano:\n\n"
+                    + "\n".join(righe)
+                    + f"\n\nTotale circa {modelli_ollama.peso(nomi):.1f} GB, una volta sola. Restano su questo "
+                    "computer: nessun testo esce. Li scarico adesso? Poi li scelgo io, e tu potrai cambiarli "
+                    "in Impostazioni › Ollama.")
+        si = box.addButton("Scarica ora", QMessageBox.AcceptRole)
+        box.addButton("Non ora", QMessageBox.RejectRole)
+        box.setDefaultButton(si)
+        box.exec()
+        if box.clickedButton() is not si:
+            if not forzato:
+                s = core.carica_impostazioni()
+                s["modelli_consigliati_rifiutati"] = True
+                core.salva_impostazioni(s)
+            self.statusBar().showMessage("Puoi scaricarli quando vuoi: Impostazioni › Ollama › "
+                                         "«Scarica modelli consigliati».", 15000)
+            return
+
+        def lavoro(lav):
+            fatti = modelli_ollama.scarica(nomi, url, lav.stato, lav.fermato)
+            chat, emb = llm_locale.elenco_modelli(url)
+            return {"esito": "ok", "chat": chat, "emb": emb, "vision": self._vision_installati(url), "fatti": fatti}
+
+        lav = attrezzi.Lavoro(lavoro, self)
+        lav.sig_stato.connect(self._stato_download)
+        lav.sig_fine.connect(self._download_finito)
+        lav.sig_errore.connect(lambda e: (setattr(self, "_lav_modelli", None),
+                                          self._stato_download(f"❌ Download non riuscito: {e}", 0)))
+        self._lav_modelli = lav
+        lav.start()
+
+    def _stato_download(self, testo, durata=0):
+        self.statusBar().showMessage(testo, durata)
+        if hasattr(self, "pannello_ollama"):
+            self.pannello_ollama.l_stato.setText(testo)
+
+    def _download_finito(self, r):
+        self._lav_modelli = None
+        if not r.get("fatti"):
+            self._stato_download("Download interrotto.", 10000)
+            return
+        s = core.carica_impostazioni()
+        s.pop("modelli_consigliati_rifiutati", None)
+        core.salva_impostazioni(s)
+        scelti = self._scegli_modelli(r)
+        self._stato_download("✅ Modelli pronti: " + ", ".join(r["fatti"])
+                             + (". Scelti: " + ", ".join(scelti) if scelti else "")
+                             + ". Puoi cambiarli in Impostazioni › Ollama.", 20000)
+
     def controlla_aggiornamenti(self, manuale=False):
         if getattr(self, "_lav_agg", None):
             return
@@ -1602,7 +1767,7 @@ class Finestra(QMainWindow):
         imp = core.carica_impostazioni()
         imp.update(model=self.c_modello.currentData(), language=self.c_lingua.currentData(),
                    device=self.c_device.currentData(), soglia=round(self.s_soglia.value(), 2),
-                   hotwords=self.e_hot.text().strip())
+                   hotwords=self.e_hot.text().strip(), risorse=self.c_risorse.currentData())
         core.salva_impostazioni(imp)
         if self.e_token.text().strip():
             core.salva_token(self.e_token.text().strip())
@@ -1630,6 +1795,9 @@ class Finestra(QMainWindow):
                 if w:
                     w.ferma()
                     w.wait(5000)
+        if getattr(self, "_lav_modelli", None):  # download dei modelli: si ferma, Ollama riprende da dove era
+            self._lav_modelli.ferma()
+            self._lav_modelli.wait(5000)
         self._salva_coda()
         e.accept()
 
@@ -1643,6 +1811,7 @@ def main():
         app.setWindowIcon(QIcon(str(icona)))
     f = Finestra()
     f.show()
+    QTimer.singleShot(1500, f.prepara_ollama)  # Ollama acceso e modelli scelti (o proposti) già all'avvio
     if (core.carica_impostazioni().get("controlla_aggiornamenti", True)
             and criteri.carica().get("aggiornamenti_dall_app") is not False):
         from PySide6.QtCore import QTimer

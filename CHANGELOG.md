@@ -2,6 +2,30 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261118.1957: modelli cloud facoltativi, attrezzo per attrezzo
+Di base Argo resta tutto in locale. Ora, se vuoi, puoi usare un modello cloud per alcuni attrezzi.
+- **Nuovo riquadro *Impostazioni › Modelli cloud***: collega **Claude** (chiave API Anthropic), **GitHub Models** (token GitHub con permesso *Models: read*) e **Ollama Cloud** (chiave di ollama.com, anche quella della Ricerca web). **Collega e verifica** controlla la chiave e legge i modelli.
+- **Scelta per attrezzo**: Verbale, Documenti, Dettatura, Traduzione, Agenda, Posta, Incarichi, Incontri (relazione e foto, separati) e Clienti. Ogni riga è **🖥 Locale** oppure un modello **☁️**; a ogni scelta cloud Argo chiede conferma e dice quali dati usciranno.
+- **Sempre visibile**: lo stato della pagina scrive ☁️ fornitore e modello quando i dati vanno nel cloud; il badge in alto elenca gli attrezzi nel cloud invece di «100% locale»; le relazioni degli incontri riportano il modello ☁️.
+- **Restano sempre in locale**: audio, trascrizione WhisperX, impronte vocali, indice dei documenti.
+- **Criteri aziendali**: nuova chiave `"modelli_cloud"` in `criteri.json`, cioè `"vietati"` oppure l'elenco dei fornitori ammessi (vedi docs/PRO.md).
+- Le chiavi stanno in `.chiavi_cloud.json`, leggibile solo dal tuo utente.
+
+## 20261118.1710: Ollama pronto al primo avvio
+- **Ollama acceso da Argo**: all'avvio, se Ollama è installato ma spento, Argo lo avvia (sul Mac l'app con l'icona del lama, su Windows l'icona nella barra) e aspetta che risponda.
+- **Modelli consigliati**: se mancano un modello per i testi o per i documenti, Argo propone di scaricarli, con nomi e pesi: `gemma3:4b` (circa 3,3 GB) sui PC leggeri o con meno di 16 GB di RAM, altrimenti `gemma3:12b` (circa 8,1 GB), più `bge-m3` (circa 1,2 GB). L'avanzamento compare in basso nella finestra.
+- **Già scelti**: dopo il download (o all'avvio, se i modelli c'erano già) Argo sceglie i modelli per testi, documenti e **foto degli Incontri**; si cambiano in *Impostazioni › Ollama*.
+- Con «Non ora» Argo non lo richiede più all'avvio; nuovo pulsante **Scarica modelli consigliati** in *Impostazioni › Ollama*.
+
+## 20261118.1645: Argo non blocca più i PC meno potenti
+Su computer con CPU modeste, trascrizioni e riassunti prendevano tutti i core e la memoria, e il PC smetteva di rispondere. Ora Argo si regola da solo.
+- **Nuova impostazione «Uso del computer»** (*Impostazioni › Trascrizione*): **Automatico** (predefinito), **Leggero**, **Bilanciato**, **Massima velocità**. Sotto la scelta, Argo dice cosa ha trovato (core e RAM) e cosa farà.
+- **Automatico** sceglie *Leggero* sui computer con 4 core logici o meno, oppure con 8 GB di RAM o meno; altrimenti *Bilanciato*.
+- **Core limitati**: WhisperX (trascrizione, allineamento, parlanti), dettatura e traduzione, modalità Live e Ollama usano solo una parte dei core (es. 8 core: 2 in Leggero, 4 in Bilanciato, 7 in Massima velocità).
+- **Priorità bassa** per i calcoli (tranne in Massima velocità): mouse, Teams e Office hanno sempre la precedenza.
+- **Profilo Leggero**: un lavoro pesante alla volta (una trascrizione e un riassunto non partono più insieme: il secondo aspetta e lo dice); prima di trascrivere Argo toglie dalla memoria il modello di Ollama; Ollama lo rilascia dopo 1 minuto invece di 5; WhisperX lavora a lotti più piccoli (meno RAM).
+- Su GPU NVIDIA la trascrizione resta com'era.
+
 ## 20261117.2025: manutenzione UX (Stile Argo)
 Revisione di tutte le pagine con le regole dello Stile Argo; nessuna funzione cambia.
 - **Stati vuoti uguali ovunque**: Agenda, Posta, Incontri, Clienti e Voci mostrano logo in filigrana, motto e cosa fare; Agenda e Posta tengono titolo e sottotitolo anche prima di collegare Microsoft 365.

@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261117.2025 · riferita all'app versione 20261117.2025*
+*Versione del manuale: 20261118.1957 · riferita all'app versione 20261118.1957*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -137,7 +137,7 @@ ollama pull gemma3:12b   # testi, circa 8 GB: adatto a 16 GB di RAM
 ollama pull bge-m3       # embedding multilingue per i documenti
 ```
 
-I modelli si possono scaricare anche dall'app (vedi [§11.4](#114-modello-linguistico-locale-ollama)).
+Più semplice: al primo avvio Argo **accende Ollama** (se è installato ma spento) e, se mancano, **propone di scaricare i modelli consigliati** e li sceglie da solo. Vedi [§11.4](#114-modello-linguistico-locale-ollama).
 
 Senza Ollama il Trascrittore e l'Anagrafe voci funzionano lo stesso. La Dettatura in modalità *Solo trascrizione* non ha bisogno di Ollama.
 
@@ -661,6 +661,7 @@ Contiene il token, il pulsante **Mostra** e **Salva e verifica**, più i link al
 | Lingua | Italiano, Inglese, Tedesco, Francese, Spagnolo, Rilevamento automatico | Indica la lingua se la conosci: è più affidabile |
 | Calcolo su | CPU, GPU NVIDIA (CUDA) | Scegli GPU solo se hai una scheda NVIDIA con CUDA |
 | Parole chiave | Testo libero | Nomi propri, sigle, termini di settore |
+| Uso del computer | Automatico, Leggero, Bilanciato, Massima velocità | **Automatico**. Se il PC si blocca durante trascrizioni o riassunti, scegli **Leggero**: Argo usa meno core, priorità bassa, un lavoro pesante alla volta e libera la memoria di Ollama prima di trascrivere. È più lento, ma il computer resta utilizzabile |
 
 ### 11.3 Riconoscimento voci
 
@@ -679,13 +680,53 @@ Contiene il token, il pulsante **Mostra** e **Salva e verifica**, più i link al
 - **Trascrizione rapida:** il modello faster-whisper usato da Dettatura e Traduzione da audio (predefinito `large-v3-turbo`).
 - **Scarica un modello:** scrivi il nome di un modello (es. `bge-m3`), premi **Scarica** e Argo lo scarica tramite Ollama, mostrando l'avanzamento.
 - **Salva modelli:** memorizza le scelte.
+- **Scarica modelli consigliati:** accende Ollama se serve e scarica i modelli che mancano (vedi sotto).
 
 **Scelta automatica.** Se non hai ancora scelto un modello, o quello scelto non è più installato, Argo ne sceglie uno da solo fra quelli presenti in Ollama e te lo segnala. Per i testi preferisce `gemma3`, poi `qwen3`, `llama3`, `mistral`, `phi`; per i documenti preferisce `bge-m3`. Puoi sempre cambiare la scelta qui.
+
+**All'avvio.** Ogni volta che parte, Argo controlla Ollama: se è installato ma spento lo **accende** (sul Mac l'app con l'icona del lama, su Windows l'icona nella barra) e aspetta fino a 30 secondi. Poi sceglie i modelli come sopra, compreso quello per le **foto degli Incontri** (la prima volta, il modello dei testi se sa guardare le immagini).
+
+**Modelli consigliati.** Se in Ollama manca un modello per i testi o per i documenti, Argo propone di scaricare:
+
+| Ruolo | Modello | Peso circa |
+| --- | --- | --- |
+| Testi e foto | `gemma3:4b` sui PC in profilo *Leggero* o con meno di 16 GB di RAM; altrimenti `gemma3:12b` | 3,3 GB / 8,1 GB |
+| Documenti | `bge-m3` | 1,2 GB |
+
+Con **Scarica ora** l'avanzamento compare in basso nella finestra; alla fine i modelli sono già scelti e li cambi qui quando vuoi. Con **Non ora** Argo non lo richiede più all'avvio: usa **Scarica modelli consigliati**. Se chiudi Argo durante il download, alla ripresa Ollama riparte da dove era arrivato.
 
 Se il modello "ragiona" ad alta voce (per esempio `qwen3`), Argo nasconde automaticamente le parti `<think>…</think>`.
 
 Per salvare tutto premi **Salva impostazioni**. **Apri cartella dati** apre la cartella descritta qui sotto.
 
+
+### 11.4bis Modelli cloud (facoltativi)
+
+Di base **tutto resta su questo computer**. Qui puoi collegare uno o più fornitori cloud e scegliere, **attrezzo per attrezzo**, se usarli al posto di Ollama locale.
+
+| Fornitore | Cosa serve |
+| --- | --- |
+| **Claude (Anthropic)** | Una chiave API da [console.anthropic.com](https://console.anthropic.com) (si paga a consumo sull'account Anthropic) |
+| **GitHub Models** | Un token personale GitHub (fine-grained) con permesso **Models: read**, da [github.com/settings/tokens](https://github.com/settings/tokens). Modelli come `openai/gpt-4.1`, con i limiti del tuo account GitHub |
+| **Ollama Cloud** | Una chiave da [ollama.com/settings/keys](https://ollama.com/settings/keys). Se la lasci vuota, Argo usa quella di *Ricerca web* |
+
+1. Incolla la chiave e premi **Collega e verifica**: Argo controlla la chiave e legge i modelli disponibili.
+2. In **Quale modello per ogni attrezzo** scegli, riga per riga, **🖥 Locale** oppure un modello **☁️**. Argo chiede conferma e dice quali dati usciranno (es. *Verbale: la trascrizione della riunione*). La scelta si salva subito.
+
+| Attrezzo | Cosa esce se scegli il cloud |
+| --- | --- |
+| Verbale | la trascrizione della riunione |
+| Documenti riservati | la domanda e gli estratti trovati (l'indice resta in locale) |
+| Dettatura · Traduzione | il testo dettato o da tradurre |
+| Agenda · Posta · Incarichi | i dati dell'evento, il testo della mail, la trascrizione o la mail da cui estrarre i compiti |
+| Incontri · relazione / foto | la trascrizione dell'incontro / le foto (biglietti da visita, documenti) |
+| Clienti | le pagine web trovate e, per «Dalla call», la trascrizione |
+
+**Restano sempre in locale**, qualunque scelta: audio, trascrizione (WhisperX), impronte vocali, indice dei documenti (embedding), file e cartelle.
+
+**Come te ne accorgi.** Quando un attrezzo usa il cloud, lo stato della pagina lo scrive (☁️ *fornitore · modello: dati inviati nel cloud…*), la relazione di un incontro riporta il modello ☁️ e il badge in alto non dice più «100% locale» ma elenca gli attrezzi nel cloud.
+
+Le chiavi stanno in `.chiavi_cloud.json`, leggibile solo dal tuo utente. L'IT può vietare il cloud o limitare i fornitori con `criteri.json` (`"modelli_cloud"`, vedi [PRO.md](PRO.md)): in quel caso il riquadro lo dice e Argo usa solo Ollama.
 
 ### 11.5 Microsoft 365 (facoltativo)
 
@@ -733,6 +774,7 @@ Puoi spostarla impostando la variabile d'ambiente `TRASCRITTORE_HOME`.
 | `app/` | Il programma |
 | `voci/<Nome>/campione_N.npy` | Impronte vocali (dati biometrici) |
 | `.hf_token` | Il token Hugging Face |
+| `.chiavi_cloud.json` | Chiavi dei modelli cloud (solo se ne hai collegato uno), leggibile solo dal tuo utente |
 | `trascrittore_impostazioni.json` | Impostazioni |
 | `trascrittore_coda.json` | La coda delle trascrizioni |
 | `documenti_indice.json` + `.npy` | Indice dei Documenti riservati, con gli estratti dei testi |

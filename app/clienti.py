@@ -787,7 +787,8 @@ class SchedaClienti(QWidget):
         def fn(lav):
             return rel.scrivi_relazione(cartella, d, s.get("ollama_url", llm.DEFAULT_URL), s.get("modello_chat"),
                                         s.get("modello_vision") or None, stato=lav.sig_stato.emit,
-                                        stop=lav.fermato, avanzamento=lav.sig_avanzamento.emit)
+                                        stop=lav.fermato, avanzamento=lav.sig_avanzamento.emit,
+                                        attrezzo="clienti")
 
         def fine(_r):
             self._call_scelta()

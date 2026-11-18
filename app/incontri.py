@@ -172,7 +172,7 @@ class SchedaIncontri(QWidget):
         comandi = QHBoxLayout()
         self.b_relazione = QPushButton("✨ Scrivi relazione")
         self.b_relazione.setProperty("primario", True)
-        self.b_relazione.setToolTip("Mette in coda gli incontri selezionati: Ollama in locale scrive per ciascuno la "
+        self.b_relazione.setToolTip("Mette in coda gli incontri selezionati: Ollama in locale (o il modello cloud scelto) scrive per ciascuno la "
                                     "relazione (trascrizione con i nomi + foto) con contatti, aziende, opportunità e azioni")
         self.b_relazione.clicked.connect(self.scrivi_relazione)
         comandi.addWidget(self.b_relazione)

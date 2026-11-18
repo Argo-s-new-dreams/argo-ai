@@ -104,6 +104,8 @@ class SchedaM365(QWidget):
 
 # =============================================================== Agenda
 class SchedaAgenda(SchedaM365):
+    ATTREZZO = "agenda"
+
     TITOLO = "Agenda"
     SOTTO = "Le tue riunioni da Microsoft 365. Prepara, registra e poi trasforma la call in un incarico."
 
@@ -242,7 +244,9 @@ class SchedaAgenda(SchedaM365):
         prev = html.escape(ev.get("anteprima") or "").strip()
         self.out.setHtml(f"<p style='color:{c['tenue']}'>Agenda / invito:</p><p>{prev or '—'}</p>"
                          f"<p style='color:{c['tenue']}'>Premi <b>Prepara</b> per un briefing con i verbali precedenti "
-                         "e le azioni aperte con queste persone (tutto in locale).</p>")
+                         "e le azioni aperte con queste persone ("
+                         + ("modello cloud scelto per Agenda" if attrezzi.cloud.e_cloud("agenda") else "tutto in locale")
+                         + ").</p>")
 
     def _apri(self, chiave):
         ev = self.evento()
@@ -334,6 +338,8 @@ class SchedaAgenda(SchedaM365):
 
 # =============================================================== Posta AI
 class SchedaPosta(SchedaM365):
+    ATTREZZO = "posta"
+
     TITOLO = "Posta AI"
     SOTTO = ("Riassunti, richieste e bozze di risposta con il modello locale. Le mail non vanno a nessun servizio AI "
              "esterno; le risposte restano bozze in Outlook.")
@@ -445,7 +451,7 @@ class SchedaPosta(SchedaM365):
             return m
         if not m365.lettura_posta_attiva():
             return ("La lettura della posta è disattivata.\nAttivala in Impostazioni → Microsoft 365 → «Leggi la posta "
-                    "per Posta AI». Le mail vengono elaborate solo su questo computer.")
+                    "per Posta AI». Le mail vengono elaborate su questo computer, salvo un modello cloud scelto per Posta.")
         return None
 
     def showEvent(self, e):
@@ -550,7 +556,9 @@ class SchedaPosta(SchedaM365):
         lav = attrezzi.Lavoro(fn, self)
         lav.sig_token.connect(lambda t: self.uscita.insertPlainText(t))
         lav.sig_fine.connect(lambda r: (self.uscita.setPlainText(attrezzi.visibile(r).strip()), self._abilita(True),
-                                        self.l_stato.setText("Fatto, in locale. Rileggi prima di usarlo.")))
+                                        self.l_stato.setText(
+                                            "Fatto" + (", " + attrezzi.cloud.avviso("posta") if attrezzi.cloud.e_cloud("posta")
+                                                       else ", in locale.") + " Rileggi prima di usarlo.")))
         lav.sig_errore.connect(lambda e: (self.l_stato.setText(f"Errore: {e}"), self._abilita(True)))
         self.lavoro = lav
         lav.start()

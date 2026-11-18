@@ -42,6 +42,7 @@ DEFAULT_SETTINGS = {
     "registra_sistema": "auto",  # Registra: audio del computer, auto | nessuna | nativo | dev:<nome>
     "registra_volume_mic": 100,  # Registra: volume in %, 0-200
     "registra_volume_sistema": 100,
+    "risorse": "auto",  # Uso del computer: auto | leggero | bilanciato | massimo (vedi risorse.py)
     "cartella_registrazioni": "",  # Agenda: dove salvare le registrazioni (vuoto = ~/Documents/Argo)  # all'avvio legge da GitHub solo il numero di versione
 }
 
@@ -336,6 +337,9 @@ def comando_whisperx(file_audio, n_parlanti, impostazioni, token):
         "--output_dir", str(Path(file_audio).parent),
         "--print_progress", "True",
     ]
+    if device != "cuda":  # su CPU: core e memoria secondo il profilo «Uso del computer»
+        import risorse
+        cmd += ["--threads", str(risorse.thread_lavoro()), "--batch_size", str(risorse.batch_whisper())]
     if s.get("language"):
         cmd += ["--language", s["language"]]
     if n_parlanti and n_parlanti > 0:
@@ -351,7 +355,8 @@ def json_atteso(file_audio):
 
 
 def env_processo():
-    env = dict(os.environ)
+    import risorse
+    env = risorse.env_limiti()  # thread delle librerie numeriche secondo il profilo «Uso del computer»
     env.update({
         "PYANNOTE_METRICS_ENABLED": "0",
         "HF_HUB_DISABLE_SYMLINKS_WARNING": "1",

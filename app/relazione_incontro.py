@@ -15,7 +15,9 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+import cloud
 import llm_locale as llm
+import risorse
 
 FILE_DATI = "argo-relazione.json"
 FILE_TESTO = "relazione-argo.md"
@@ -30,15 +32,25 @@ class ErroreRelazione(RuntimeError):
 
 
 # ---------------------------------------------------------------- Ollama
-def _chiama(url, modello, messaggi, formato=None, contesto=16384, stop=None):
+def _chiama(url, modello, messaggi, formato=None, contesto=16384, stop=None, motore=None):
+    """Una richiesta al modello. `motore` = (fornitore, modello) cloud; None o ("locale", _) = Ollama locale."""
+    if motore and motore[0] != cloud.LOCALE:
+        if stop and stop():
+            raise ErroreRelazione("Interrotto.")
+        try:
+            return cloud.chat(motore[0], motore[1], messaggi, temperatura=0.2, stop=stop, formato=formato)
+        except cloud.ErroreCloud as e:
+            raise ErroreRelazione(str(e)) from None
     payload = {"model": modello, "messages": messaggi, "stream": False,
-               "options": {"temperature": 0.2, "num_ctx": contesto}}
+               "options": risorse.opzioni_ollama({"temperature": 0.2, "num_ctx": contesto}),
+               "keep_alive": risorse.keep_alive()}
     if formato:
         payload["format"] = formato
-    if stop and stop():
-        raise ErroreRelazione("Interrotto.")
-    with llm._req(url, "/api/chat", payload, timeout=1800) as r:
-        dati = json.load(r)
+    with risorse.turno():  # profilo Leggero: aspetta che finisca un'eventuale trascrizione
+        if stop and stop():
+            raise ErroreRelazione("Interrotto.")
+        with llm._req(url, "/api/chat", payload, timeout=1800) as r:
+            dati = json.load(r)
     if dati.get("error"):
         raise ErroreRelazione(dati["error"])
     testo = dati.get("message", {}).get("content", "")
@@ -119,7 +131,8 @@ def foto_da_descrivere(cartella, sessione, modello):
             if (Path(cartella) / f.get("file", "")).exists() and (cache.get(f.get("file")) or {}).get("modello") != modello]
 
 
-def descrivi_foto(cartella, sessione, url, modello, stato=lambda _t: None, stop=None, fatta=lambda: None):
+def descrivi_foto(cartella, sessione, url, modello, stato=lambda _t: None, stop=None, fatta=lambda: None,
+                  motore=None):
     """Descrive le foto non ancora descritte con quel modello. Ritorna {file: descrizione}.
     `fatta()` viene chiamata dopo ogni foto (per la barra di avanzamento)."""
     cartella = Path(cartella)
@@ -138,7 +151,7 @@ def descrivi_foto(cartella, sessione, url, modello, stato=lambda _t: None, stop=
         immagine = base64.b64encode(percorso.read_bytes()).decode("ascii")
         aiuto = f" Il telefono vi ha già letto questo testo: {f['testo']}" if f.get("testo") else ""
         testo = _chiama(url, modello, [{"role": "user", "content": PROMPT_FOTO + aiuto, "images": [immagine]}],
-                        contesto=8192, stop=stop)
+                        contesto=8192, stop=stop, motore=motore)
         cache[nome] = {"modello": modello, "descrizione": testo}
         _salva(cartella, dati)
         fatta()
@@ -195,10 +208,19 @@ def _blocchi(testo, massimo):
 
 
 def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None, stato=lambda _t: None, stop=None,
-                     avanzamento=lambda _p: None):
+                     avanzamento=lambda _p: None, attrezzo="incontri"):
     """Genera la relazione e la salva nell'incontro. Ritorna (dati_relazione, markdown).
-    `avanzamento(percento)` riceve 0-100: foto e blocchi pesano 1 ciascuno, la relazione finale 3."""
-    if not llm.e_locale(url):
+    `avanzamento(percento)` riceve 0-100: foto e blocchi pesano 1 ciascuno, la relazione finale 3.
+    `attrezzo` decide, dalle Impostazioni › Modelli cloud, se testo e foto vanno a un modello cloud."""
+    m_testo = cloud.motore(attrezzo)
+    m_foto = cloud.motore(attrezzo + "_foto") if attrezzo == "incontri" else m_testo
+    if m_testo[0] != cloud.LOCALE:
+        modello_testo = cloud.etichetta(*m_testo)
+        stato(cloud.avviso(attrezzo))
+    if m_foto[0] != cloud.LOCALE and (modello_vision or attrezzo == "incontri"):  # foto al cloud scelto
+        modello_vision = cloud.etichetta(*m_foto)
+        stato(cloud.avviso(attrezzo + "_foto") if attrezzo == "incontri" else cloud.avviso(attrezzo))
+    if (m_testo[0] == cloud.LOCALE or (modello_vision and m_foto[0] == cloud.LOCALE)) and not llm.e_locale(url):
         raise ErroreRelazione("L'indirizzo di Ollama non è locale: per gli incontri si usa solo un modello su questo computer.")
     if not modello_testo:
         raise ErroreRelazione("Scegli un modello per i testi in Impostazioni › Modelli.")
@@ -217,7 +239,7 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
     avanzamento(1)
     descrizioni = {}
     if modello_vision and sessione.get("foto"):
-        descrizioni = descrivi_foto(cartella, sessione, url, modello_vision, stato, stop, fatta=passo)
+        descrizioni = descrivi_foto(cartella, sessione, url, modello_vision, stato, stop, fatta=passo, motore=m_foto)
     testo = cronologia(cartella, sessione, descrizioni)
     if not testo.strip():
         raise ErroreRelazione("L'incontro non ha né trascrizione né foto.")
@@ -233,7 +255,7 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
                 {"role": "system", "content": ISTRUZIONI},
                 {"role": "user", "content": "Scrivi appunti fedeli e sintetici di questa parte (chi è chi, aziende, "
                                             "prodotti, richieste, cifre, decisioni, azioni). Conserva nomi e recapiti "
-                                            "delle righe FOTO.\n\n" + b}], stop=stop))
+                                            "delle righe FOTO.\n\n" + b}], stop=stop, motore=m_testo))
             passo()
         testo = "\n\n".join(appunti)
         giro += 1
@@ -244,7 +266,7 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
                     f"Partecipanti: {', '.join(p.get('nome', p['id']) for p in sessione.get('partecipanti', [])) or 'non indicati'}\n\n")
     risposta = _chiama(url, modello_testo, [
         {"role": "system", "content": ISTRUZIONI},
-        {"role": "user", "content": intestazione + testo}], formato=SCHEMA, stop=stop)
+        {"role": "user", "content": intestazione + testo}], formato=SCHEMA, stop=stop, motore=m_testo)
     try:
         relazione = json.loads(risposta)
     except json.JSONDecodeError:

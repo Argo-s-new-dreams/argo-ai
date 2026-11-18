@@ -9,6 +9,8 @@ import urllib.request
 
 import numpy as np
 
+import risorse
+
 DEFAULT_URL = "http://localhost:11434"
 
 
@@ -44,12 +46,24 @@ def elenco_modelli(url=DEFAULT_URL):
     return chat, emb
 
 
-def chat(messaggi, modello, url=DEFAULT_URL, temperatura=0.3, on_token=None, stop=None, contesto=None):
-    """Chat in streaming. on_token(testo) riceve i pezzi; stop() -> True interrompe. Ritorna il testo completo."""
+def chat(messaggi, modello, url=DEFAULT_URL, temperatura=0.3, on_token=None, stop=None, contesto=None,
+         on_attesa=None):
+    """Chat in streaming. on_token(testo) riceve i pezzi; stop() -> True interrompe. Ritorna il testo completo.
+
+    on_attesa(testo) viene chiamata se, nel profilo Leggero, bisogna aspettare che finisca un'altra elaborazione.
+    """
     opzioni = {"temperature": temperatura}
     if contesto:
         opzioni["num_ctx"] = contesto
-    payload = {"model": modello, "messages": messaggi, "stream": True, "options": opzioni}
+    payload = {"model": modello, "messages": messaggi, "stream": True,
+               "options": risorse.opzioni_ollama(opzioni), "keep_alive": risorse.keep_alive()}
+    with risorse.turno(on_attesa=on_attesa):
+        if stop and stop():
+            return ""
+        return _chat_stream(url, payload, on_token, stop)
+
+
+def _chat_stream(url, payload, on_token, stop):
     out = []
     with _req(url, "/api/chat", payload) as r:
         for riga in r:
@@ -77,7 +91,9 @@ def embed(testi, modello, url=DEFAULT_URL):
     """Vettori normalizzati per una lista di testi."""
     vettori = []
     for i in range(0, len(testi), 16):
-        with _req(url, "/api/embed", {"model": modello, "input": testi[i:i + 16]}) as r:
+        richiesta = {"model": modello, "input": testi[i:i + 16], "options": risorse.opzioni_ollama(),
+                     "keep_alive": risorse.keep_alive()}
+        with risorse.turno(), _req(url, "/api/embed", richiesta) as r:
             dati = json.load(r)
         vettori.extend(dati.get("embeddings", []))
     if len(vettori) != len(testi):

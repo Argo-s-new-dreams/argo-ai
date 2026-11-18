@@ -15,6 +15,7 @@ from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
+import cloud
 import llm_locale as llm
 import relazione_incontro as rel
 import ricerca_web as web
@@ -180,7 +181,7 @@ def livello(url, sito_ufficiale=""):
 
 def _chiama(modello, url, sistema, utente, formato=None, stop=None):
     return rel._chiama(url, modello, [{"role": "system", "content": sistema}, {"role": "user", "content": utente}],
-                       formato=formato, contesto=32768, stop=stop)
+                       formato=formato, contesto=32768, stop=stop, motore=cloud.motore("clienti"))
 
 
 def ricerca(nome, extra="", url_ollama=None, modello=None, stato=lambda _t: None, avanzamento=lambda _p: None,
@@ -190,7 +191,10 @@ def ricerca(nome, extra="", url_ollama=None, modello=None, stato=lambda _t: None
     s = core.carica_impostazioni()
     url_ollama = url_ollama or s.get("ollama_url", llm.DEFAULT_URL)
     modello = modello or s.get("modello_chat")
-    if not llm.e_locale(url_ollama):
+    if cloud.e_cloud("clienti"):  # modello cloud scelto in Impostazioni › Modelli cloud
+        modello = cloud.etichetta(*cloud.motore("clienti"))
+        stato(cloud.avviso("clienti"))
+    elif not llm.e_locale(url_ollama):
         raise ErroreScheda("L'indirizzo di Ollama non è locale: la scheda si scrive solo con un modello su questo computer.")
     if not modello:
         raise ErroreScheda("Scegli un modello per i testi in Impostazioni › Modelli.")

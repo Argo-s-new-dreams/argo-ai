@@ -172,6 +172,8 @@ class Passo(QFrame):
 
 
 class SchedaIncarichi(QWidget):
+    ATTREZZO = "incarichi"
+
     PASSI = ["Trascrizione con i parlanti", "Nomi dei parlanti", "Verbale", "Verbale in Word", "Mail di recap",
              "Task dalle azioni", "Bozza in Outlook", "Task in Planner"]
 

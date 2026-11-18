@@ -15,13 +15,16 @@ Chiavi riconosciute (tutte facoltative):
     "registrazione": "completa" | "solo_live" | "nessuna"
                                              pagina Registra: entrambe le modalità (predefinito), solo Live
                                              (l'audio non viene mai conservato) oppure nessuna registrazione
+    "modelli_cloud": "consentiti" | "vietati" | ["claude", "github", "ollama_cloud"]
+                                             modelli linguistici nel cloud: consentiti (predefinito), vietati
+                                             (Argo usa solo Ollama locale) oppure solo i fornitori elencati
 """
 import json
 import os
 import sys
 from pathlib import Path
 
-CHIAVI = {"canale_aggiornamenti", "aggiornamenti_dall_app", "registrazione"}
+CHIAVI = {"canale_aggiornamenti", "aggiornamenti_dall_app", "registrazione", "modelli_cloud"}
 
 
 def percorso():
@@ -47,6 +50,10 @@ def carica():
         criteri.pop("canale_aggiornamenti")
     if criteri.get("registrazione") not in (None, "completa", "solo_live", "nessuna"):
         criteri.pop("registrazione")
+    regola = criteri.get("modelli_cloud")
+    if regola is not None and regola not in ("consentiti", "vietati") and not (
+            isinstance(regola, list) and all(isinstance(x, str) for x in regola)):
+        criteri.pop("modelli_cloud")
     if "aggiornamenti_dall_app" in criteri and not isinstance(criteri["aggiornamenti_dall_app"], bool):
         criteri.pop("aggiornamenti_dall_app")
     return criteri

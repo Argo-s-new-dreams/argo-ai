@@ -22,7 +22,9 @@ from PySide6.QtWidgets import (
 )
 
 import esporta_word as word
+import cloud
 import llm_locale as llm
+import risorse
 import tema
 import voci_core as core
 
@@ -76,7 +78,10 @@ def completa_modelli(s, chat, emb):
 
 
 def pronto_llm(parent, serve_embed=False):
-    """Controlla che Ollama risponda e che ci siano i modelli; se manca solo la scelta, la fa da solo."""
+    """Controlla che Ollama risponda e che ci siano i modelli; se manca solo la scelta, la fa da solo.
+    Se l'attrezzo usa un modello cloud, Ollama serve solo per l'indice dei documenti (serve_embed)."""
+    if cloud.e_cloud(getattr(parent, "ATTREZZO", None)) and not serve_embed:
+        return True
     s = imp()
     url = s.get("ollama_url") or llm.DEFAULT_URL
     try:
@@ -119,6 +124,7 @@ class Lavoro(QThread):
         super().__init__(parent)
         self.fn = fn
         self._stop = False
+        self.attrezzo = getattr(parent, "ATTREZZO", None)  # per scegliere modello locale o cloud
 
     def token(self, t):
         self.sig_token.emit(t)
@@ -133,6 +139,7 @@ class Lavoro(QThread):
         self._stop = True
 
     def run(self):
+        cloud.imposta_attrezzo(self.attrezzo)
         try:
             self.sig_fine.emit(self.fn(self))
         except Exception as e:
@@ -156,8 +163,14 @@ def chat_llm(lav, messaggi, temperatura=0.3, mostra=True):
             lav.token(vis[stato["mostrato"]:])
             stato["mostrato"] = len(vis)
 
+    fornitore, modello = cloud.motore()
+    if fornitore != cloud.LOCALE:  # attrezzo impostato su un modello cloud: lo si dice sempre
+        lav.stato(cloud.avviso())
+        return cloud.chat(fornitore, modello, messaggi, temperatura, on_token=on_token if mostra else None,
+                          stop=lav.fermato)
     return llm.chat(messaggi, s["modello_chat"], s["ollama_url"], temperatura,
-                    on_token=on_token if mostra else None, stop=lav.fermato, contesto=8192)
+                    on_token=on_token if mostra else None, stop=lav.fermato, contesto=8192,
+                    on_attesa=lav.stato)
 
 
 # =============================================================== trascrizione rapida (faster-whisper)
@@ -169,15 +182,18 @@ def trascrivi_file(percorso, lingua="it", lav=None):
     from faster_whisper import WhisperModel
 
     nome = imp().get("modello_dettatura") or "large-v3-turbo"
-    if nome not in _WHISPER:
+    n_core = risorse.thread_lavoro()  # core secondo il profilo «Uso del computer»: gira dentro l'app
+    chiave = f"{nome}|{n_core}"
+    if chiave not in _WHISPER:
         if lav:
             lav.stato(f"Carico il modello di trascrizione {nome} (la prima volta può scaricarlo)…")
         _WHISPER.clear()
-        _WHISPER[nome] = WhisperModel(nome, device="cpu", compute_type="int8")
-    if lav:
-        lav.stato("Trascrivo…")
-    segmenti, _ = _WHISPER[nome].transcribe(str(percorso), language=lingua or None, vad_filter=True)
-    return " ".join(s.text.strip() for s in segmenti).strip()
+        _WHISPER[chiave] = WhisperModel(nome, device="cpu", compute_type="int8", cpu_threads=n_core)
+    with risorse.turno(on_attesa=lav.stato if lav else None):
+        if lav:
+            lav.stato("Trascrivo…")
+        segmenti, _ = _WHISPER[chiave].transcribe(str(percorso), language=lingua or None, vad_filter=True)
+        return " ".join(s.text.strip() for s in segmenti).strip()
 
 
 # =============================================================== base comune per le schede
@@ -203,7 +219,8 @@ class SchedaBase(QWidget):
             self.lavoro = None
             if pulsante:
                 pulsante.setText(self._testo_pulsante)
-            self.stato.setText(f"Fatto in {time.time() - self.t0:.0f} s, tutto in locale.")
+            dove = cloud.avviso(getattr(self, "ATTREZZO", None)) or "tutto in locale."
+            self.stato.setText(f"Fatto in {time.time() - self.t0:.0f} s, {dove}")
             if fine:
                 fine(r)
 
@@ -307,6 +324,8 @@ SISTEMA_VERBALE = (
 
 
 class SchedaVerbale(SchedaBase):
+    ATTREZZO = "verbale"
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.sorgente = None
@@ -429,6 +448,8 @@ def estrai_testo(percorso):
 
 
 class SchedaDocumenti(SchedaBase):
+    ATTREZZO = "documenti"
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.meta, self.vett = self.carica_indice()
@@ -625,6 +646,8 @@ STILI_DETTATURA = {
 
 
 class SchedaDettatura(SchedaBase):
+    ATTREZZO = "dettatura"
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.flusso = None
@@ -736,6 +759,8 @@ class SchedaDettatura(SchedaBase):
 
 # =============================================================== 4. Traduzione con glossario
 class SchedaTraduzione(SchedaBase):
+    ATTREZZO = "traduzione"
+
     def __init__(self, parent=None):
         super().__init__(parent)
         lay = QVBoxLayout(self)
@@ -907,6 +932,7 @@ segnale_modelli = _SegnaleModelli()
 class PannelloOllama(QGroupBox):
     """Riquadro per la scheda Impostazioni: server Ollama e modelli."""
     cambiato = Signal()
+    chiedi_consigliati = Signal()
 
     def __init__(self, parent=None):
         super().__init__("Modello linguistico locale (Ollama) - per gli attrezzi Verbale, Documenti, Dettatura e Traduzione", parent)
@@ -938,7 +964,14 @@ class PannelloOllama(QGroupBox):
         self.l_stato.setWordWrap(True)
         f.addRow("", self.l_stato)
         b_salva = QPushButton("Salva modelli")
-        f.addRow("", b_salva)
+        b_consigliati = QPushButton("Scarica modelli consigliati")
+        b_consigliati.setToolTip("Accende Ollama se serve e scarica i modelli che mancano per testi, foto e documenti")
+        r3 = QHBoxLayout()
+        r3.addWidget(b_salva)
+        r3.addWidget(b_consigliati)
+        r3.addStretch(1)
+        f.addRow("", r3)
+        b_consigliati.clicked.connect(self.chiedi_consigliati.emit)
         b_ver.clicked.connect(self.verifica)
         b_salva.clicked.connect(self.salva)
         b_pull.clicked.connect(self.scarica)
@@ -990,3 +1023,146 @@ class PannelloOllama(QGroupBox):
         self.lavoro.sig_fine.connect(lambda _: (setattr(self, "lavoro", None), self.verifica()))
         self.lavoro.sig_errore.connect(lambda e: (setattr(self, "lavoro", None), self.l_stato.setText("❌ " + e)))
         self.lavoro.start()
+
+
+# =============================================================== impostazioni modelli cloud
+class PannelloCloud(QGroupBox):
+    """Riquadro per la scheda Impostazioni: fornitori cloud (facoltativi) e modello scelto per ogni attrezzo."""
+    cambiato = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__("Modelli cloud (facoltativi) · Claude, GitHub Models, Ollama Cloud", parent)
+        self.lavori = {}
+        lay = QVBoxLayout(self)
+        if cloud.vietati_da_criteri():
+            nota = QLabel("🔒 I criteri aziendali non consentono modelli cloud: Argo usa solo Ollama su questo computer.")
+            nota.setWordWrap(True)
+            lay.addWidget(nota)
+            self.combo = {}
+            return
+        intro = QLabel("Di base tutto resta su questo computer. Qui puoi collegare un fornitore cloud e scegliere, "
+                       "attrezzo per attrezzo, se usarlo: il testo di quell'attrezzo uscirà dal computer e Argo lo "
+                       "scrive ogni volta (☁️). Audio, trascrizione, impronte vocali e indice dei documenti restano "
+                       "sempre in locale.")
+        intro.setWordWrap(True)
+        lay.addWidget(intro)
+
+        f = QFormLayout()
+        self.chiavi, self.esiti = {}, {}
+        for fid in cloud.ammessi():
+            info = cloud.FORNITORI[fid]
+            e = QLineEdit(cloud._leggi_chiavi().get(fid, ""))
+            e.setEchoMode(QLineEdit.Password)
+            e.setPlaceholderText(info["aiuto"])
+            e.setToolTip(info["aiuto"])
+            b = QPushButton("Collega e verifica")
+            b.clicked.connect(lambda _c=False, x=fid: self.verifica(x))
+            esito = QLabel(self._testo_esito(fid))
+            esito.setWordWrap(True)
+            r = QHBoxLayout()
+            r.addWidget(e, 1)
+            r.addWidget(b)
+            f.addRow(info["nome"] + ":", r)
+            f.addRow("", esito)
+            self.chiavi[fid], self.esiti[fid] = e, esito
+        lay.addLayout(f)
+
+        titolo = QLabel("<b>Quale modello per ogni attrezzo</b>")
+        lay.addWidget(titolo)
+        g = QFormLayout()
+        self.combo = {}
+        for chiave_a, nome, _esce in cloud.ATTREZZI:
+            c = QComboBox()
+            c.setMinimumContentsLength(28)
+            c.currentIndexChanged.connect(lambda _i, a=chiave_a: self.cambia(a))
+            g.addRow(nome + ":", c)
+            self.combo[chiave_a] = c
+        lay.addLayout(g)
+        self.l_stato = QLabel("")
+        self.l_stato.setWordWrap(True)
+        lay.addWidget(self.l_stato)
+        self.riempi()
+
+    @staticmethod
+    def _testo_esito(fid):
+        modelli = (imp().get("modelli_cloud") or {}).get(fid) or []
+        if cloud.chiave(fid) and modelli:
+            return f"✅ Collegato · {len(modelli)} modelli disponibili."
+        if cloud.chiave(fid):
+            return "Chiave salvata: premi «Collega e verifica» per leggere i modelli."
+        return "Non collegato."
+
+    def riempi(self):
+        """Ricostruisce le scelte per attrezzo con i modelli dei fornitori collegati."""
+        s = imp()
+        motori = s.get("motori") or {}
+        elenchi = s.get("modelli_cloud") or {}
+        self._riempendo = True
+        for chiave_a, c in self.combo.items():
+            c.clear()
+            c.addItem("🖥 Locale (Ollama su questo computer)", cloud.LOCALE)
+            for fid in cloud.ammessi():
+                if not cloud.chiave(fid):
+                    continue
+                for m in elenchi.get(fid) or []:
+                    c.addItem(cloud.etichetta(fid, m), f"{fid}:{m}")
+            scelta = motori.get(chiave_a, cloud.LOCALE)
+            i = c.findData(scelta)
+            if i < 0 and scelta != cloud.LOCALE:  # modello salvato ma non più in elenco: lo si mostra comunque
+                fid, m = scelta.split(":", 1)
+                if fid in cloud.FORNITORI:
+                    c.addItem(cloud.etichetta(fid, m), scelta)
+                    i = c.count() - 1
+            c.setCurrentIndex(max(0, i))
+            c.setProperty("precedente", c.currentData())
+        self._riempendo = False
+
+    def verifica(self, fid):
+        if self.lavori.get(fid):
+            return
+        cloud.salva_chiave(fid, self.chiavi[fid].text())
+        if not cloud.chiave(fid):
+            self.esiti[fid].setText("Non collegato.")
+            s = imp()
+            (s.setdefault("modelli_cloud", {})).pop(fid, None)
+            core.salva_impostazioni(s)
+            self.riempi()
+            return
+        self.esiti[fid].setText("Verifico…")
+        lav = Lavoro(lambda _l: cloud.elenco_modelli(fid), self)
+        lav.sig_fine.connect(lambda modelli, x=fid: self._verificato(x, modelli))
+        lav.sig_errore.connect(lambda e, x=fid: (self.lavori.pop(x, None), self.esiti[x].setText("❌ " + e)))
+        self.lavori[fid] = lav
+        lav.start()
+
+    def _verificato(self, fid, modelli):
+        self.lavori.pop(fid, None)
+        s = imp()
+        s.setdefault("modelli_cloud", {})[fid] = modelli
+        core.salva_impostazioni(s)
+        self.esiti[fid].setText(f"✅ Collegato · {len(modelli)} modelli disponibili.")
+        self.riempi()
+
+    def cambia(self, chiave_a):
+        if getattr(self, "_riempendo", False):
+            return
+        c = self.combo[chiave_a]
+        scelta = c.currentData()
+        if scelta and scelta != cloud.LOCALE:
+            fid, m = scelta.split(":", 1)
+            risposta = QMessageBox.question(
+                self, "Usare un modello cloud?",
+                f"Con questa scelta «{cloud.NOMI_ATTREZZI[chiave_a]}» invia a {cloud.FORNITORI[fid]['nome']} "
+                f"({m}):\n\n•  {cloud.ESCE[chiave_a]}\n\nQuesti dati escono dal computer e valgono le condizioni "
+                "del fornitore e del tuo account. Continuare?")
+            if risposta != QMessageBox.Yes:
+                self._riempendo = True
+                c.setCurrentIndex(max(0, c.findData(c.property("precedente"))))
+                self._riempendo = False
+                return
+        s = imp()
+        s.setdefault("motori", {})[chiave_a] = scelta or cloud.LOCALE
+        core.salva_impostazioni(s)
+        c.setProperty("precedente", scelta)
+        self.cambiato.emit()
+        self.l_stato.setText(f"Salvato: {cloud.NOMI_ATTREZZI[chiave_a]} → {c.currentText()}.")

@@ -30,6 +30,13 @@ def manda(**kw):
 
 
 def main():
+    import risorse
+    # prima di caricare PyTorch: core e priorità secondo il profilo «Uso del computer»
+    n_core = risorse.limita_questo_processo()
+    batch = risorse.batch_whisper()
+    if risorse.profilo() == "leggero":
+        risorse.libera_ollama()  # la RAM serve ai modelli di trascrizione
+
     import cattura_audio as ca
     import whisperx
     from whisperx.diarize import DiarizationPipeline, assign_word_speakers
@@ -46,7 +53,7 @@ def main():
     manda(tipo="stato", msg=f"Carico il modello di trascrizione {modello}…")
     opzioni = {"hotwords": s["hotwords"].strip()} if s.get("hotwords", "").strip() else None
     asr = whisperx.load_model(modello, device, compute_type="float16" if device == "cuda" else "int8",
-                              language=lingua, asr_options=opzioni)
+                              language=lingua, asr_options=opzioni, threads=n_core)
     manda(tipo="stato", msg="Carico il modello di allineamento delle parole…")
     try:
         allinea, meta_allinea = whisperx.load_align_model(language_code=lingua, device=device)
@@ -71,7 +78,7 @@ def main():
         t0 = time.time()
         try:
             audio = ca.leggi_wav(blocco)
-            ris = asr.transcribe(audio, batch_size=8, language=lingua)
+            ris = asr.transcribe(audio, batch_size=batch, language=lingua)
             segmenti = ris.get("segments", [])
             if segmenti and allinea is not None:
                 ris = whisperx.align(segmenti, allinea, meta_allinea, audio, device)
