@@ -33,7 +33,7 @@ import risorse  # noqa: E402
 import modelli_ollama  # noqa: E402
 import cloud  # noqa: E402
 
-VERSIONE = "20261118.1957"
+VERSIONE = "20261118.2030"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -1814,7 +1814,6 @@ def main():
     QTimer.singleShot(1500, f.prepara_ollama)  # Ollama acceso e modelli scelti (o proposti) già all'avvio
     if (core.carica_impostazioni().get("controlla_aggiornamenti", True)
             and criteri.carica().get("aggiornamenti_dall_app") is not False):
-        from PySide6.QtCore import QTimer
         QTimer.singleShot(3000, f.controlla_aggiornamenti)
     sys.exit(app.exec())
 

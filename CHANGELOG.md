@@ -2,6 +2,9 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261118.2030: correzione · Argo non partiva dopo l'aggiornamento
+- La 20261118.1957 si fermava all'avvio (errore `UnboundLocalError: QTimer` in `main()`), prima ancora di aprire la finestra. Corretto. Chi è rimasto bloccato deve sostituire a mano `app/trascrittore.py`: l'aggiornamento automatico parte solo dall'app aperta.
+
 ## 20261118.1957: modelli cloud facoltativi, attrezzo per attrezzo
 Di base Argo resta tutto in locale. Ora, se vuoi, puoi usare un modello cloud per alcuni attrezzi.
 - **Nuovo riquadro *Impostazioni › Modelli cloud***: collega **Claude** (chiave API Anthropic), **GitHub Models** (token GitHub con permesso *Models: read*) e **Ollama Cloud** (chiave di ollama.com, anche quella della Ricerca web). **Collega e verifica** controlla la chiave e legge i modelli.
