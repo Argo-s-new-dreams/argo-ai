@@ -18,6 +18,7 @@ from pathlib import Path
 import cloud
 import llm_locale as llm
 import risorse
+import template_relazione as tpl
 
 FILE_DATI = "argo-relazione.json"
 FILE_TESTO = "relazione-argo.md"
@@ -162,7 +163,7 @@ def descrivi_foto(cartella, sessione, url, modello, stato=lambda _t: None, stop=
 
 
 # ---------------------------------------------------------------- 2-3 · relazione strutturata
-ISTRUZIONI = """Sei l'assistente commerciale che scrive la relazione di un incontro di lavoro (fiera o visita a un cliente).
+ISTRUZIONI = """Sei l'assistente che scrive la relazione di un incontro di lavoro (fiera, visita a un cliente, riunione, intervista).
 Il testo ha righe «[minuto] Nome: frase». Le righe «📷 FOTO» sono foto scattate in quel momento, con il testo letto
 e una descrizione: usale per identificare persone, aziende, recapiti e prodotti, e collegale a ciò che si dice.
 Le righe «📎 ALLEGATO» sono documenti aggiunti all'incontro (offerte, listini, presentazioni): usali come fonte
@@ -194,9 +195,17 @@ SCHEMA = {
         "azioni": {"type": "array", "items": {"type": "object", "properties": {
             "descrizione": {"type": "string"}, "responsabile": {"type": "string"}, "scadenza": {"type": "string"}},
             "required": ["descrizione"]}},
+        # sezioni usate dai template (vedi template_relazione.py)
+        "esigenze": {"type": "array", "items": {"type": "string"}},
+        "temi": {"type": "array", "items": {"type": "object", "properties": {
+            "tema": {"type": "string"}, "sintesi": {"type": "string"}, "citazione": {"type": "string"}},
+            "required": ["tema", "sintesi"]}},
+        "decisioni": {"type": "array", "items": {"type": "string"}},
+        "punti_aperti": {"type": "array", "items": {"type": "string"}},
+        "rischi": {"type": "array", "items": {"type": "string"}},
     },
     "required": ["titolo", "tipo", "riassunto", "contatti", "aziende", "interessi", "opportunita",
-                 "punti_chiave", "azioni"],
+                 "punti_chiave", "azioni", "esigenze", "temi", "decisioni", "punti_aperti", "rischi"],
 }
 
 
@@ -213,8 +222,9 @@ def _blocchi(testo, massimo):
 
 
 def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None, stato=lambda _t: None, stop=None,
-                     avanzamento=lambda _p: None, attrezzo="incontri"):
+                     avanzamento=lambda _p: None, attrezzo="incontri", template=None):
     """Genera la relazione e la salva nell'incontro. Ritorna (dati_relazione, markdown).
+    `template`: id o dizionario di template_relazione (None = il predefinito delle Impostazioni).
     `avanzamento(percento)` riceve 0-100: foto e blocchi pesano 1 ciascuno, la relazione finale 3.
     `attrezzo` decide, dalle Impostazioni › Modelli cloud, se testo e foto vanno a un modello cloud."""
     m_testo = cloud.motore(attrezzo)
@@ -229,6 +239,10 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
         raise ErroreRelazione("L'indirizzo di Ollama non è locale: per gli incontri si usa solo un modello su questo computer.")
     if not modello_testo:
         raise ErroreRelazione("Scegli un modello per i testi in Impostazioni › Modelli.")
+    if isinstance(template, str):
+        template = tpl.trova(template)
+    template = template or tpl.predefinito()
+    istruzioni = ISTRUZIONI + "\n\n" + tpl.guida(template)
     cartella = Path(cartella)
     # Stima del lavoro, per una barra che avanza in modo onesto
     da_guardare = len(foto_da_descrivere(cartella, sessione, modello_vision)) if modello_vision else 0
@@ -257,7 +271,7 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
         for i, b in enumerate(blocchi, 1):
             stato(f"Prendo appunti · parte {i} di {len(blocchi)}…")
             appunti.append(_chiama(url, modello_testo, [
-                {"role": "system", "content": ISTRUZIONI},
+                {"role": "system", "content": istruzioni},
                 {"role": "user", "content": "Scrivi appunti fedeli e sintetici di questa parte (chi è chi, aziende, "
                                             "prodotti, richieste, cifre, decisioni, azioni). Conserva nomi e recapiti "
                                             "delle righe FOTO.\n\n" + b}], stop=stop, motore=m_testo))
@@ -265,12 +279,12 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
         testo = "\n\n".join(appunti)
         giro += 1
 
-    stato(f"Scrivo la relazione con {modello_testo}…")
+    stato(f"Scrivo la relazione «{template['nome']}» con {modello_testo}…")
     intestazione = (f"Titolo provvisorio: {sessione.get('titolo', '')}\n"
                     f"Data: {(sessione.get('creata') or '')[:16].replace('T', ' ')} · durata {_durata(sessione.get('durata'))}\n"
                     f"Partecipanti: {', '.join(p.get('nome', p['id']) for p in sessione.get('partecipanti', [])) or 'non indicati'}\n\n")
     risposta = _chiama(url, modello_testo, [
-        {"role": "system", "content": ISTRUZIONI},
+        {"role": "system", "content": istruzioni},
         {"role": "user", "content": intestazione + testo}], formato=SCHEMA, stop=stop, motore=m_testo)
     try:
         relazione = json.loads(risposta)
@@ -283,6 +297,7 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
         "modello_testo": modello_testo,
         "modello_vision": modello_vision or None,
         "generata": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "template": {"id": template["id"], "nome": template["nome"], "sezioni": template["sezioni"]},
     })
     _salva(cartella, dati)
     md = in_markdown(relazione, sessione, dati)
@@ -295,43 +310,78 @@ def _riga(*parti):
     return " · ".join(p for p in parti if p)
 
 
+def _contatti(r):
+    out = []
+    for c in r.get("contatti") or []:
+        nome = _riga(" ".join(x for x in (c.get("nome"), c.get("cognome")) if x))
+        out.append(f"- **{nome}** — " + _riga(c.get("ruolo"), c.get("azienda"), c.get("email"),
+                                               c.get("telefono"), c.get("cellulare"), c.get("sito")))
+        if c.get("note"):
+            out.append(f"    - {c['note']}")
+    return out
+
+
+def _opportunita(r):
+    o = r.get("opportunita") or {}
+    if not any(o.get(k) for k in ("descrizione", "prodotti", "budget", "tempistica", "prossimo_passo")):
+        return []
+    out = []
+    for etichetta, chiave in (("Descrizione", "descrizione"), ("Budget", "budget"), ("Tempistica", "tempistica"),
+                              ("Decisori", "decisori"), ("Concorrenti", "concorrenti"), ("Prossimo passo", "prossimo_passo")):
+        if o.get(chiave):
+            out.append(f"- **{etichetta}:** {o[chiave]}")
+    if o.get("prodotti"):
+        out.append("- **Prodotti/servizi:** " + ", ".join(o["prodotti"]))
+    return out
+
+
+def _temi(r):
+    out = []
+    for x in r.get("temi") or []:
+        out += [f"### {x.get('tema', '')}", "", x.get("sintesi", "")]
+        if x.get("citazione"):
+            out += ["", f"> «{x['citazione']}»"]
+        out.append("")
+    return out[:-1] if out else out
+
+
+def _elenco(chiave):
+    return lambda r: [f"- {v}" for v in r.get(chiave) or [] if v]
+
+
+SCRITTORI = {
+    "riassunto": lambda r: [r["riassunto"]] if r.get("riassunto") else [],
+    "contatti": _contatti,
+    "aziende": lambda r: [f"- **{a.get('nome')}** — " + _riga(a.get("settore"), a.get("citta"), a.get("sito"), a.get("note"))
+                          for a in r.get("aziende") or []],
+    "esigenze": _elenco("esigenze"),
+    "interessi": _elenco("interessi"),
+    "opportunita": _opportunita,
+    "temi": _temi,
+    "punti_chiave": _elenco("punti_chiave"),
+    "decisioni": _elenco("decisioni"),
+    "punti_aperti": _elenco("punti_aperti"),
+    "rischi": _elenco("rischi"),
+    "azioni": lambda r: [f"- [ ] {_riga(a.get('descrizione'), a.get('responsabile'), ('entro ' + a['scadenza']) if a.get('scadenza') else '')}"
+                         for a in r.get("azioni") or []],
+}
+ORDINE_CLASSICO = ["riassunto", "contatti", "aziende", "opportunita", "interessi", "punti_chiave", "azioni"]
+
+
 def in_markdown(r, sessione, meta=None):
+    """Relazione impaginata: sezioni e ordine del template usato (le relazioni di prima: ordine classico)."""
     meta = meta or {}
+    usato = meta.get("template") or {}
+    sezioni = [k for k in usato.get("sezioni") or ORDINE_CLASSICO if k in SCRITTORI]
     out = [f"# {r.get('titolo') or sessione.get('titolo', 'Incontro')}", ""]
     quando = (sessione.get("creata") or "")[:16].replace("T", " ")
     out += [f"*{_riga(r.get('tipo', '').capitalize(), quando, 'durata ' + _durata(sessione.get('durata')))}*", ""]
-    if r.get("riassunto"):
-        out += ["## Riassunto", "", r["riassunto"], ""]
-    if r.get("contatti"):
-        out += ["## Contatti", ""]
-        for c in r["contatti"]:
-            nome = _riga(" ".join(x for x in (c.get("nome"), c.get("cognome")) if x))
-            out.append(f"- **{nome}** — " + _riga(c.get("ruolo"), c.get("azienda"), c.get("email"),
-                                                   c.get("telefono"), c.get("cellulare"), c.get("sito")))
-            if c.get("note"):
-                out.append(f"    - {c['note']}")
-        out.append("")
-    if r.get("aziende"):
-        out += ["## Aziende", ""] + [f"- **{a.get('nome')}** — " + _riga(a.get("settore"), a.get("citta"), a.get("sito"), a.get("note"))
-                                     for a in r["aziende"]] + [""]
-    o = r.get("opportunita") or {}
-    if any(o.get(k) for k in ("descrizione", "prodotti", "budget", "tempistica", "prossimo_passo")):
-        out += ["## Opportunità", ""]
-        for etichetta, chiave in (("Descrizione", "descrizione"), ("Budget", "budget"), ("Tempistica", "tempistica"),
-                                  ("Decisori", "decisori"), ("Concorrenti", "concorrenti"), ("Prossimo passo", "prossimo_passo")):
-            if o.get(chiave):
-                out.append(f"- **{etichetta}:** {o[chiave]}")
-        if o.get("prodotti"):
-            out.append("- **Prodotti/servizi:** " + ", ".join(o["prodotti"]))
-        out.append("")
-    if r.get("interessi"):
-        out += ["## Interessi", ""] + [f"- {i}" for i in r["interessi"]] + [""]
-    if r.get("punti_chiave"):
-        out += ["## Punti chiave", ""] + [f"- {p}" for p in r["punti_chiave"]] + [""]
-    if r.get("azioni"):
-        out += ["## Azioni", ""] + [f"- [ ] {_riga(a.get('descrizione'), a.get('responsabile'), ('entro ' + a['scadenza']) if a.get('scadenza') else '')}"
-                                    for a in r["azioni"]] + [""]
+    for k in sezioni:
+        corpo = SCRITTORI[k](r)
+        if corpo:
+            out += [f"## {tpl.SEZIONI[k][0]}", ""] + corpo + [""]
     modelli = _riga(meta.get("modello_testo"), ("foto: " + meta["modello_vision"]) if meta.get("modello_vision") else "")
     dove = "modello cloud" if "☁️" in modelli else "AI locale"
-    out += ["---", f"*Relazione generata con Argo · {dove} ({modelli}). Va riletta prima di usarla.*"]
+    quale = f" · template «{usato['nome']}»" if usato.get("nome") else ""
+    out += ["---", f"*Relazione generata con Argo · {dove} ({modelli}){quale}. Va riletta prima di usarla.*"]
     return "\n".join(out)

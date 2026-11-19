@@ -2,6 +2,14 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261119.0801: template delle relazioni e Impostazioni per argomento
+- **Template delle relazioni**, nel nuovo argomento *Impostazioni › 📝 Relazioni*: sezioni da spuntare e riordinare trascinandole, lunghezza (breve, media, dettagliata) e **«Come la voglio»**, le tue indicazioni in parole tue.
+- **Cinque template standard**: *Fiera · primo contatto* (★ predefinito, come le relazioni di prima), *Visita cliente*, *Riunione interna · verbale*, *Intervista · assessment* (temi, risposte e citazioni fedeli), *Nota rapida · CRM o mail*. Gli standard si duplicano; i tuoi si creano, modificano ed eliminano, e uno diventa il ★ predefinito.
+- **Nuove sezioni**: Esigenze del cliente, Temi e risposte, Decisioni, Punti aperti, Rischi e criticità.
+- **In Incontri**, tendina **Template:** accanto a «✨ Scrivi relazione»: ogni incontro in coda tiene il suo template, anche se chiudi Argo. *Clienti › Dalla call* usa il predefinito. Il piè della relazione dice quale template è stato usato.
+- Contatti, aziende e azioni si estraggono sempre, anche quando il template non li mostra: Dynamics e Clienti non perdono nulla.
+- **Impostazioni per argomento**: colonna a sinistra con *Trascrizione e voci*, *Modelli AI*, *Relazioni*, *Collegamenti*, *Aspetto e aggiornamenti*; a destra solo l'argomento scelto. «Salva impostazioni» resta sempre in vista; i «Collega…» delle altre pagine aprono l'argomento e il riquadro giusti.
+
 ## 20261119.0746: Incontri da audio e video, e file aggiunti agli incontri
 - **🎙 Nuovo da audio/video…** nella pagina *Incontri*: ogni registrazione o video (MP3, M4A, WAV, MP4, MOV, MKV…) diventa un incontro come quelli dell'iPhone. Trascrizione WhisperX, parlanti e voci note sul computer, rispettando «Uso del computer»; avanzamento sotto i pulsanti, **■ Ferma** per interrompere. Nome e data dal file.
 - **L'audio non resta**: copia di lavoro e JSON con le impronte vocali si cancellano alla fine; il file originale non viene toccato.

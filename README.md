@@ -140,6 +140,7 @@ Queste note sono informative e non costituiscono consulenza legale.
 | `app/voci_strumenti.py` | Registrazione delle voci dal microfono e marcatura delle voci su forma d'onda |
 | `app/esporta_word.py` | Esportazione in Word (.docx) dei testi prodotti dagli attrezzi |
 | `app/llm_locale.py` | Client minimale per Ollama: chat in streaming, embedding, download modelli |
+| `app/template_relazione.py` | Template delle relazioni degli incontri: cinque standard e quelli dell'utente (sezioni, lunghezza, «come la voglio») |
 | `app/incontri_file.py` | Incontri creati sul computer da audio o video (WhisperX + voci note) e file aggiunti a un incontro (foto, documenti, altri audio) |
 | `app/cloud.py` | Modelli cloud facoltativi (Claude, GitHub Models, Ollama Cloud), scelti attrezzo per attrezzo e limitabili dai criteri aziendali |
 | `app/modelli_ollama.py` | All'avvio: accende Ollama se serve, propone i modelli consigliati (gemma3, bge-m3) e li sceglie |

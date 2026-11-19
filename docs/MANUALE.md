@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261119.0746 · riferita all'app versione 20261119.0746*
+*Versione del manuale: 20261119.0801 · riferita all'app versione 20261119.0801*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -522,7 +522,7 @@ Foto e documenti vengono legati alla fine dell'incontro. Dopo aver aggiunto file
 
 **Relazione dell'incontro**
 
-1. Seleziona uno o più incontri nella tabella (con ⌘ o ⇧ per sceglierne più d'uno) e, in **Foto:**, un modello vision di Ollama (es. `gemma3:12b`, `qwen2.5vl:7b`) oppure «Solo testo letto dall'iPhone».
+1. Seleziona uno o più incontri nella tabella (con ⌘ o ⇧ per sceglierne più d'uno), il **Template:** della relazione (vedi [§11.4ter](#114ter-relazioni--template)) e, in **Foto:**, un modello vision di Ollama (es. `gemma3:12b`, `qwen2.5vl:7b`) oppure «Solo testo letto dall'iPhone». Ogni incontro in coda tiene il template scelto quando l'hai messo in coda.
 2. Premi **✨ Scrivi relazione**: gli incontri vanno in **coda** e vengono elaborati uno alla volta, ognuno con la sua barra di avanzamento (**■ Ferma coda** per interrompere). Per ciascuno Argo descrive le foto, incrocia parole e immagini e scrive titolo, riassunto, contatti, aziende, opportunità, punti chiave e azioni.
 3. Correggi il testo se serve e premi **Salva modifiche**; **Salva ▾** la esporta in Word o Markdown.
 4. La scheda **Trascrizione e foto** mostra la cronologia completa, con la bozza fatta sull'iPhone.
@@ -666,9 +666,17 @@ ordine di acquisto;purchase order;Bestellung
 
 ## 11. Impostazioni nel dettaglio
 
-In cima alla pagina, **Vai a:** porta direttamente a ogni riquadro (Hugging Face, Trascrizione, Voci, Ollama, Microsoft 365, Dynamics, Ricerca web, Aspetto, Aggiornamenti). Anche i pulsanti «Collega…» delle altre pagine (Agenda, Posta, Clienti) aprono le Impostazioni sul riquadro giusto. Dopo le modifiche premi **Salva impostazioni**, il pulsante principale in fondo.
+Le Impostazioni sono divise **per argomento**: a sinistra la colonna degli argomenti, a destra solo quello scelto, senza dover scorrere una pagina lunghissima.
 
-La scheda è scorrevole ed è divisa in riquadri, uno per argomento.
+| Argomento | Cosa contiene |
+| --- | --- |
+| 🎙 **Trascrizione e voci** | Token Hugging Face, modello e lingua della trascrizione, uso del computer, riconoscimento delle voci (§11.1-11.3) |
+| 🧠 **Modelli AI** | Ollama su questo computer e modelli cloud facoltativi (§11.4, 11.4bis) |
+| 📝 **Relazioni** | Template delle relazioni degli incontri (§11.4ter) |
+| 🔗 **Collegamenti** | Microsoft 365, Dynamics 365 Sales, ricerca web: tutti facoltativi (§11.5 e seguenti) |
+| ⚙️ **Aspetto e aggiornamenti** | Tema chiaro o scuro, canale e aggiornamenti (§11.3bis, §14) |
+
+I pulsanti «Collega…» delle altre pagine (Agenda, Posta, Clienti) aprono le Impostazioni già sull'argomento e sul riquadro giusti. **Salva impostazioni** resta sempre in vista in basso: salva token, trascrizione, voci, collegamenti e aggiornamenti. Modelli, modelli cloud e template si salvano già nei loro riquadri.
 
 ### 11.1 Hugging Face
 
@@ -748,6 +756,29 @@ Di base **tutto resta su questo computer**. Qui puoi collegare uno o più fornit
 **Come te ne accorgi.** Quando un attrezzo usa il cloud, lo stato della pagina lo scrive (☁️ *fornitore · modello: dati inviati nel cloud…*), la relazione di un incontro riporta il modello ☁️ e il badge in alto non dice più «100% locale» ma elenca gli attrezzi nel cloud.
 
 Le chiavi stanno in `.chiavi_cloud.json`, leggibile solo dal tuo utente. L'IT può vietare il cloud o limitare i fornitori con `criteri.json` (`"modelli_cloud"`, vedi [PRO.md](PRO.md)): in quel caso il riquadro lo dice e Argo usa solo Ollama.
+
+### 11.4ter Relazioni · template
+
+Un **template** dice come scrivere la relazione di un incontro: quali sezioni e in che ordine, quanto lunga, e le tue indicazioni in parole tue («come la voglio»: a chi è rivolta, tono, cosa mettere in evidenza). Si sceglie nella pagina **Incontri**, nella tendina **Template:** accanto a «✨ Scrivi relazione». Il template con la **★** è il predefinito: è quello proposto in Incontri e usato da *Clienti › Dalla call*.
+
+**I cinque template standard:**
+
+| Template | Per cosa | Sezioni | Lunghezza |
+| --- | --- | --- | --- |
+| **Fiera · primo contatto** ★ | Incontri allo stand: chi era, interesse, potenziale, come richiamarlo | Riassunto, Contatti, Aziende, Interessi, Opportunità, Azioni | Media |
+| **Visita cliente** | Riunione con un cliente o prospect | Riassunto, Esigenze, Opportunità, Decisioni, Rischi, Azioni, Contatti | Media |
+| **Riunione interna · verbale** | Riunioni di progetto o di team, tono neutro | Riassunto, Punti chiave, Decisioni, Punti aperti, Azioni | Media |
+| **Intervista · assessment** | Interviste a clienti o colleghi (assessment, analisi dei processi) | Riassunto, Temi e risposte (con citazioni fedeli), Esigenze, Rischi, Punti aperti, Azioni | Dettagliata |
+| **Nota rapida · CRM o mail** | Poche righe da incollare in un'attività o in una mail | Riassunto, Azioni | Breve |
+
+**Crearne uno tuo.** I template standard non si modificano: selezionane uno e premi **Duplica**, oppure **Nuovo**. Poi:
+1. dai un **nome** e una **descrizione** (quando usarlo);
+2. scegli la **lunghezza** (breve, media, dettagliata);
+3. **spunta le sezioni** e **trascinale** nell'ordine che vuoi;
+4. in **Come la voglio** scrivi le tue indicazioni, per esempio «Scrivi per il direttore commerciale: prima il valore economico», «Evidenzia concorrenti e obiezioni sul prezzo», «Frasi brevi, niente aggettivi»;
+5. premi **Salva template**, e se vuoi **★ Usa come predefinito**.
+
+Le tue indicazioni guidano stile e taglio, mai le regole di fedeltà: la relazione continua a usare solo ciò che è stato detto, fotografato o allegato. **Contatti, aziende e azioni vengono sempre estratti**, anche se il template non li mostra, perché servono all'invio a Dynamics e alla pagina Clienti. Il piè della relazione riporta il template usato.
 
 ### 11.5 Microsoft 365 (facoltativo)
 
@@ -846,7 +877,7 @@ Con *Aggiorna ora* Argo:
 
 Voci, token, impostazioni, glossario e documenti indicizzati non vengono toccati.
 
-In *Impostazioni → Aggiornamenti* trovi:
+In *Impostazioni → Aspetto e aggiornamenti* trovi:
 
 - la versione installata;
 - **Controlla ora**;
@@ -897,7 +928,7 @@ Il controllo legge da GitHub solo il numero di versione e le novità: nessun dat
 | Registra: frasi ripetute due volte nella trascrizione | Senza cuffie il microfono riprende anche gli altoparlanti | Usa le cuffie |
 | Live: «Blocchi da trascrivere» che crescono | Il computer è più lento del parlato | Lascia finire dopo **Ferma**; su NVIDIA usa CUDA |
 | Agenda: «Impossibile registrare» | Permesso del microfono negato | *Impostazioni di Sistema → Privacy e sicurezza → Microfono → Argo AI* |
-| "Controllo non riuscito" negli aggiornamenti | Nessuna connessione, oppure un firewall blocca GitHub | Riprova più tardi o aggiorna a mano dal pacchetto; puoi disattivare il controllo in *Impostazioni → Aggiornamenti* |
+| "Controllo non riuscito" negli aggiornamenti | Nessuna connessione, oppure un firewall blocca GitHub | Riprova più tardi o aggiorna a mano dal pacchetto; puoi disattivare il controllo in *Impostazioni → Aspetto e aggiornamenti* |
 | "Homebrew non trovato" (versioni fino alla 1830) | L'installer vecchio richiedeva Homebrew | Usa l'installer dalla versione 1845 in poi: Homebrew non serve più |
 
 Se un file va in **Errore**, il registro tecnico sotto la coda di *Trascrivi* (compare appena c'è qualcosa da leggere) riporta il messaggio: è il primo posto dove guardare, e il testo da allegare a una segnalazione su GitHub.
@@ -906,7 +937,7 @@ Se un file va in **Errore**, il registro tecnico sotto la coda di *Trascrivi* (c
 
 ## 16. Privacy, GDPR e AI Act
 
-- **Tutto locale.** Audio e documenti non lasciano il computer. La telemetria anonima di pyannote è disattivata dall'app. L'unica connessione che Argo fa da sé è il controllo degli aggiornamenti su GitHub, che legge solo numero di versione e novità e si può disattivare in *Impostazioni → Aggiornamenti*.
+- **Tutto locale, di base.** Audio e documenti non lasciano il computer. Fa eccezione solo il testo degli attrezzi per cui scegli tu un modello cloud (§11.4bis): Argo lo segnala ogni volta, e l'IT può vietarlo. La telemetria anonima di pyannote è disattivata dall'app. L'unica connessione che Argo fa da sé è il controllo degli aggiornamenti su GitHub, che legge solo numero di versione e novità e si può disattivare in *Impostazioni → Aspetto e aggiornamenti*.
 - **Microsoft 365 è facoltativo:** se lo colleghi, Argo legge il calendario e scrive su Microsoft 365 solo la bozza della mail e i task che confermi, nel tuo tenant. Audio, trascrizioni e documenti non vengono inviati.
 - **Informa sempre** i partecipanti che la riunione viene registrata e trascritta. La pagina *Registra* chiede la conferma prima di ogni registrazione e prepara l'avviso da incollare in chat.
 - **Modalità Live = minimizzazione dei dati** (art. 5, par. 1, lett. c GDPR): l'audio esiste solo per il tempo necessario a trascriverlo. È la scelta consigliata per le riunioni di lavoro. Tieni comunque attiva la cifratura del disco (FileVault, BitLocker): sugli SSD la sovrascrittura di un file cancellato non garantisce che il dato sparisca fisicamente.

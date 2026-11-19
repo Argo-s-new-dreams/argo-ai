@@ -10,13 +10,14 @@ import time
 import uuid
 from pathlib import Path
 
-from PySide6.QtCore import QPoint, Qt, QThread, QTimer, QUrl, Signal
+from PySide6.QtCore import QPoint, QSize, Qt, QThread, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
-    QDoubleSpinBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView, QInputDialog,
-    QLabel, QLineEdit, QMainWindow, QMenu, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QScrollArea,
-    QSpinBox, QSplitter, QTableWidget, QTableWidgetItem, QTabWidget, QToolButton, QVBoxLayout, QWidget,
+    QDoubleSpinBox, QFileDialog, QFormLayout, QFrame, QGroupBox, QHBoxLayout, QHeaderView, QInputDialog,
+    QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox, QPlainTextEdit, QProgressBar,
+    QPushButton, QScrollArea, QSpinBox, QSplitter, QStackedWidget, QTableWidget, QTableWidgetItem, QTabWidget,
+    QToolButton, QVBoxLayout, QWidget,
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -33,7 +34,7 @@ import risorse  # noqa: E402
 import modelli_ollama  # noqa: E402
 import cloud  # noqa: E402
 
-VERSIONE = "20261119.0746"
+VERSIONE = "20261119.0801"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -288,9 +289,8 @@ class Finestra(QMainWindow):
         self.tab_documenti = attrezzi.SchedaDocumenti()
         self.tab_dettatura = attrezzi.SchedaDettatura()
         self.tab_traduzione = attrezzi.SchedaTraduzione()
-        self.tab_imp = QScrollArea()
-        self.tab_imp.setWidgetResizable(True)
-        self.tab_imp.setWidget(self._pagina(self._tab_impostazioni(), "Impostazioni", f"Argo versione {VERSIONE}"))
+        self.tab_imp = self._pagina(self._tab_impostazioni(), "Impostazioni",
+                                    f"Argo versione {VERSIONE} · scegli un argomento a sinistra")
         self.pag_voci = self._pagina(self._tab_voci(), "Voci", "Anagrafe delle impronte vocali, solo con il consenso delle persone")
         # Menu in tre gruppi, nell'ordine del lavoro (Stile Argo · Organizzazione): il flusso delle riunioni,
         # gli attrezzi indipendenti, la configurazione. Le pagine nel QTabWidget seguono lo stesso ordine.
@@ -384,9 +384,13 @@ class Finestra(QMainWindow):
         self.tabs.setCurrentWidget(self.tab_imp)
         gruppo = getattr(self, "_sezioni_imp", {}).get(sezione)
         if gruppo is not None:
+            n = self._pagina_di_sezione[sezione]
+            self.nav_imp.setCurrentRow(n)
+            scorri_area = self._scorri_imp[n]
+
             def scorri():
-                y = gruppo.mapTo(self.tab_imp.widget(), QPoint(0, 0)).y()
-                self.tab_imp.verticalScrollBar().setValue(max(0, y - 12))
+                y = gruppo.mapTo(scorri_area.widget(), QPoint(0, 0)).y()
+                scorri_area.verticalScrollBar().setValue(max(0, y - 12))
             QTimer.singleShot(0, scorri)
 
     # ------------------------------------------------------------ tab coda
@@ -1376,33 +1380,89 @@ class Finestra(QMainWindow):
             f4.addWidget(nota_it)
         lay.addWidget(g4)
 
+        # Relazioni: i template (editor in incontri.py)
+        import incontri
+        g_rel = QGroupBox("Template della relazione degli incontri")
+        lr = QVBoxLayout(g_rel)
+        spiega = QLabel("Un template dice come scrivere la relazione: quali sezioni e in che ordine, quanto lunga, "
+                        "e le tue indicazioni («come la voglio»). Si sceglie in Incontri accanto a «✨ Scrivi relazione»; "
+                        "il ★ predefinito vale anche per Clienti › Dalla call.")
+        spiega.setWordWrap(True)
+        spiega.setProperty("ruolo", "tenue")
+        lr.addWidget(spiega)
+        self.editor_template = incontri.EditorTemplate()
+        self.editor_template.cambiato.connect(
+            lambda: self.tab_incontri.carica_template() if hasattr(self, "tab_incontri") else None)
+        lr.addWidget(self.editor_template)
+
+        # Pagina a argomenti (Stile Argo): colonna a sinistra, a destra solo l'argomento scelto
+        self._categorie_imp = [
+            ("🎙  Trascrizione e voci", "Token, modelli di trascrizione, uso del computer, riconoscimento delle voci",
+             [("hf", g1), ("trascrizione", g2), ("voci", g3)]),
+            ("🧠  Modelli AI", "Ollama su questo computer e, se vuoi, modelli cloud attrezzo per attrezzo",
+             [("ollama", self.pannello_ollama), ("cloud", self.pannello_cloud)]),
+            ("📝  Relazioni", "Template delle relazioni: sezioni, lunghezza, come le vuoi",
+             [("relazioni", g_rel)]),
+            ("🔗  Collegamenti", "Microsoft 365, Dynamics 365 Sales e ricerca web: tutti facoltativi",
+             [("m365", g6), ("dynamics", g7), ("web", g8)]),
+            ("⚙️  Aspetto e aggiornamenti", "Tema chiaro o scuro, canale e aggiornamenti di Argo",
+             [("aspetto", g5), ("aggiornamenti", g4)]),
+        ]
+        radice = QWidget()
+        rl = QVBoxLayout(radice)
+        corpo = QHBoxLayout()
+        self.nav_imp = QListWidget()
+        self.nav_imp.setFixedWidth(230)
+        self.nav_imp.setSpacing(2)
+        self.pile_imp = QStackedWidget()
+        self._sezioni_imp, self._pagina_di_sezione, self._scorri_imp = {}, {}, []
+        for n, (titolo, descrizione, gruppi) in enumerate(self._categorie_imp):
+            voce = QListWidgetItem(titolo)
+            voce.setToolTip(descrizione)
+            voce.setSizeHint(QSize(0, 38))
+            self.nav_imp.addItem(voce)
+            contenuto = QWidget()
+            cl = QVBoxLayout(contenuto)
+            cl.setContentsMargins(4, 0, 12, 12)
+            t_cat = QLabel(titolo.replace("  ", " "))
+            t_cat.setProperty("ruolo", "sezione")
+            cl.addWidget(t_cat)
+            d_cat = QLabel(descrizione)
+            d_cat.setProperty("ruolo", "tenue")
+            d_cat.setWordWrap(True)
+            cl.addWidget(d_cat)
+            for chiave, gruppo in gruppi:
+                cl.addWidget(gruppo)
+                self._sezioni_imp[chiave] = gruppo
+                self._pagina_di_sezione[chiave] = n
+            cl.addStretch()
+            scorri = QScrollArea()
+            scorri.setWidgetResizable(True)
+            scorri.setFrameShape(QFrame.NoFrame)
+            scorri.setWidget(contenuto)
+            self._scorri_imp.append(scorri)
+            self.pile_imp.addWidget(scorri)
+        self.nav_imp.currentRowChanged.connect(self.pile_imp.setCurrentIndex)
+        self.nav_imp.setCurrentRow(0)
+        corpo.addWidget(self.nav_imp)
+        corpo.addWidget(self.pile_imp, 1)
+        rl.addLayout(corpo, 1)
+
         riga2 = QHBoxLayout()
         b_salva = QPushButton("Salva impostazioni")
-        b_salva.setProperty("primario", True)  # pagina-modulo: il primario chiude il modulo, in fondo
+        b_salva.setProperty("primario", True)  # sempre in vista, qualunque argomento sia aperto
+        b_salva.setToolTip("Salva token, trascrizione, voci, collegamenti e aggiornamenti. "
+                           "Modelli, modelli cloud e template si salvano già nei loro riquadri.")
         b_salva.clicked.connect(self.salva_impostazioni)
         b_dati = QPushButton("Apri cartella dati")
         b_dati.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(core.APP_HOME))))
         riga2.addWidget(b_salva)
         riga2.addWidget(b_dati)
-        riga2.addStretch()
-        lay.addLayout(riga2)
-        lay.addStretch()
-        lay.addWidget(QLabel(f"Dati in: {core.APP_HOME}  ·  L'audio non lascia mai questo computer."))
-
-        # Indice in cima: la pagina è lunga, ogni voce porta al suo riquadro (link, non pulsanti)
-        self._sezioni_imp = {"hf": g1, "trascrizione": g2, "voci": g3, "ollama": self.pannello_ollama,
-                             "cloud": self.pannello_cloud, "m365": g6,
-                             "dynamics": g7, "web": g8, "aspetto": g5, "aggiornamenti": g4}
-        voci = (("hf", "Hugging Face"), ("trascrizione", "Trascrizione"), ("voci", "Voci"), ("ollama", "Ollama"),
-                ("cloud", "Modelli cloud"), ("m365", "Microsoft 365"), ("dynamics", "Dynamics"), ("web", "Ricerca web"),
-                ("aspetto", "Aspetto"), ("aggiornamenti", "Aggiornamenti"))
-        indice = QLabel("Vai a: " + "  ·  ".join(f"<a href='{k}'>{t}</a>" for k, t in voci))
-        indice.setTextFormat(Qt.RichText)
-        indice.setProperty("ruolo", "tenue")
-        indice.setWordWrap(True)
-        indice.linkActivated.connect(self.vai_a_impostazioni)
-        lay.insertWidget(0, indice)
-        return w
+        info = QLabel(f"Dati in: {core.APP_HOME}  ·  L'audio non lascia mai questo computer.")
+        info.setProperty("ruolo", "tenue")
+        riga2.addWidget(info, 1)
+        rl.addLayout(riga2)
+        return radice
 
     def _stato_m365(self):
         acc = m365.account()

@@ -13,9 +13,10 @@ from pathlib import Path
 from PySide6.QtCore import QObject, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (
-    QAbstractItemView, QComboBox, QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel, QMenu, QMessageBox,
-    QPlainTextEdit, QProgressBar, QPushButton, QScrollArea, QSplitter, QStackedWidget, QTableWidget, QTableWidgetItem,
-    QTabWidget, QTextBrowser, QToolButton, QVBoxLayout, QWidget,
+    QAbstractItemView, QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit,
+    QListWidget, QListWidgetItem, QMenu, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QScrollArea,
+    QSplitter, QStackedWidget, QTableWidget, QTableWidgetItem, QTabWidget, QTextBrowser, QToolButton, QVBoxLayout,
+    QWidget,
 )
 
 import crm_dynamics as crm
@@ -26,6 +27,7 @@ import llm_locale as llm
 import ponte as pt
 import relazione_incontro as rel
 import tema
+import template_relazione as tpl
 import voci_core as core
 
 FILE_CODA = core.APP_HOME / "incontri_coda.json"
@@ -48,9 +50,10 @@ class LavoroRelazione(QObject):
     sig_fine = Signal()
     sig_errore = Signal(str)
 
-    def __init__(self, cartella, sessione, url, modello_testo, modello_vision, parent=None):
+    def __init__(self, cartella, sessione, url, modello_testo, modello_vision, parent=None, template=None):
         super().__init__(parent)
         self.argomenti = (cartella, sessione, url, modello_testo, modello_vision)
+        self.template = template
         self._stop = False
         self._thread = None
 
@@ -69,7 +72,8 @@ class LavoroRelazione(QObject):
         cartella, sessione, url, testo, vision = self.argomenti
         try:
             rel.scrivi_relazione(cartella, sessione, url, testo, vision, stato=self.sig_stato.emit,
-                                 stop=lambda: self._stop, avanzamento=self.sig_avanzamento.emit)
+                                 stop=lambda: self._stop, avanzamento=self.sig_avanzamento.emit,
+                                 template=self.template)
             self.sig_fine.emit()
         except Exception as e:
             self.sig_errore.emit("Interrotta" if self._stop else str(e))
@@ -135,6 +139,190 @@ class LavoroFile(QObject):
                 nome = Path(op[1]).name if op[0] == "nuovo" else "incontro"
                 self.sig_errore.emit(nome, "Interrotto" if self._stop else str(e))
         self.sig_fine.emit()
+
+
+class EditorTemplate(QWidget):
+    """Impostazioni › Relazioni: i template della relazione (standard da duplicare e personali da modificare)."""
+    cambiato = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+
+        sx = QVBoxLayout()
+        self.elenco = QListWidget()
+        self.elenco.setMinimumWidth(230)
+        self.elenco.currentRowChanged.connect(self._mostra)
+        sx.addWidget(self.elenco, 1)
+        bott = QHBoxLayout()
+        for testo, azione, aiuto in (("Nuovo", self.nuovo, "Un template vuoto da riempire"),
+                                     ("Duplica", self.duplica, "Copia il template selezionato per modificarlo"),
+                                     ("Elimina", self.elimina, "Elimina il template personale selezionato")):
+            b = QPushButton(testo)
+            b.setToolTip(aiuto)
+            b.clicked.connect(azione)
+            bott.addWidget(b)
+            setattr(self, "b_" + testo.lower(), b)
+        sx.addLayout(bott)
+        self.b_predefinito = QPushButton("★ Usa come predefinito")
+        self.b_predefinito.setToolTip("Il template proposto in Incontri e usato da Clienti › Dalla call")
+        self.b_predefinito.clicked.connect(self.rendi_predefinito)
+        sx.addWidget(self.b_predefinito)
+        lay.addLayout(sx)
+
+        dx = QVBoxLayout()
+        self.l_nota = QLabel("")
+        self.l_nota.setWordWrap(True)
+        self.l_nota.setProperty("ruolo", "tenue")
+        dx.addWidget(self.l_nota)
+        f = QFormLayout()
+        self.e_nome = QLineEdit()
+        f.addRow("Nome:", self.e_nome)
+        self.e_descrizione = QLineEdit()
+        self.e_descrizione.setPlaceholderText("Quando usarlo, in una riga")
+        f.addRow("Descrizione:", self.e_descrizione)
+        self.c_lunghezza = QComboBox()
+        for k, (nome, _guida) in tpl.LUNGHEZZE.items():
+            self.c_lunghezza.addItem(nome, k)
+        f.addRow("Lunghezza:", self.c_lunghezza)
+        self.l_sezioni = QListWidget()
+        self.l_sezioni.setDragDropMode(QAbstractItemView.InternalMove)
+        self.l_sezioni.setToolTip("Spunta le sezioni da mostrare e trascinale per cambiare l'ordine")
+        self.l_sezioni.setMinimumHeight(250)
+        f.addRow("Sezioni:", self.l_sezioni)
+        nota_sez = QLabel("Spunta le sezioni e trascinale nell'ordine che vuoi. Contatti, aziende e azioni vengono "
+                          "comunque estratti per Dynamics e Clienti, anche se non li mostri.")
+        nota_sez.setWordWrap(True)
+        nota_sez.setProperty("ruolo", "tenue")
+        f.addRow("", nota_sez)
+        self.e_istruzioni = QPlainTextEdit()
+        self.e_istruzioni.setPlaceholderText(
+            "Come la vuoi, in parole tue. Per esempio:\n"
+            "• Scrivi per il direttore commerciale: prima il valore economico, poi il resto.\n"
+            "• Tono diretto, frasi brevi, niente aggettivi.\n"
+            "• Evidenzia sempre i concorrenti citati e le obiezioni sul prezzo.\n"
+            "• Le azioni al futuro, con il nome di chi le fa.")
+        self.e_istruzioni.setMinimumHeight(140)
+        f.addRow("Come la voglio:", self.e_istruzioni)
+        dx.addLayout(f)
+        riga = QHBoxLayout()
+        self.b_salva = QPushButton("Salva template")
+        self.b_salva.setProperty("primario", True)
+        self.b_salva.clicked.connect(self.salva)
+        riga.addWidget(self.b_salva)
+        self.l_esito = QLabel("")
+        self.l_esito.setProperty("ruolo", "tenue")
+        riga.addWidget(self.l_esito, 1)
+        dx.addLayout(riga)
+        lay.addLayout(dx, 1)
+        self.ricarica()
+
+    def ricarica(self, seleziona=None):
+        corrente = seleziona or (self._id_corrente() if self.elenco.count() else None)
+        predefinito = tpl.predefinito()["id"]
+        self.elenco.blockSignals(True)
+        self.elenco.clear()
+        for t in tpl.tutti():
+            testo = ("★ " if t["id"] == predefinito else "") + t["nome"] + ("  · standard" if t.get("standard") else "")
+            it = QListWidgetItem(testo)
+            it.setData(Qt.UserRole, t["id"])
+            it.setToolTip(t.get("descrizione", ""))
+            self.elenco.addItem(it)
+        self.elenco.blockSignals(False)
+        ids = [self.elenco.item(i).data(Qt.UserRole) for i in range(self.elenco.count())]
+        self.elenco.setCurrentRow(ids.index(corrente) if corrente in ids else 0)
+        self._mostra(self.elenco.currentRow())
+
+    def _id_corrente(self):
+        it = self.elenco.currentItem()
+        return it.data(Qt.UserRole) if it else None
+
+    def _mostra(self, _riga):
+        t = tpl.trova(self._id_corrente())
+        if not t:
+            return
+        standard = bool(t.get("standard"))
+        self.e_nome.setText(t["nome"])
+        self.e_descrizione.setText(t.get("descrizione", ""))
+        self.c_lunghezza.setCurrentIndex(max(0, self.c_lunghezza.findData(t.get("lunghezza", "media"))))
+        self.l_sezioni.clear()
+        ordine = t["sezioni"] + [k for k in tpl.SEZIONI if k not in t["sezioni"]]
+        for k in ordine:
+            titolo, guida = tpl.SEZIONI[k]
+            it = QListWidgetItem(titolo)
+            it.setData(Qt.UserRole, k)
+            it.setToolTip(guida)
+            flag = Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            if not standard:
+                flag |= Qt.ItemIsDragEnabled
+            it.setFlags(flag)
+            it.setCheckState(Qt.Checked if k in t["sezioni"] else Qt.Unchecked)
+            self.l_sezioni.addItem(it)
+        self.e_istruzioni.setPlainText(t.get("istruzioni", ""))
+        for w in (self.e_nome, self.e_descrizione, self.e_istruzioni):
+            w.setReadOnly(standard)
+        self.c_lunghezza.setEnabled(not standard)
+        self.l_sezioni.setEnabled(True)
+        self.l_sezioni.setDragDropMode(QAbstractItemView.NoDragDrop if standard else QAbstractItemView.InternalMove)
+        if standard:  # le spunte di un template standard non si cambiano
+            for i in range(self.l_sezioni.count()):
+                it = self.l_sezioni.item(i)
+                it.setFlags(it.flags() & ~Qt.ItemIsUserCheckable)
+        self.b_salva.setEnabled(not standard)
+        self.b_elimina.setEnabled(not standard)
+        self.b_predefinito.setEnabled(t["id"] != tpl.predefinito()["id"])
+        self.l_nota.setText("🔒 Template standard di Argo: per cambiarlo premi «Duplica» e modifica la copia."
+                            if standard else "✎ Template tuo: modificalo e premi «Salva template».")
+        self.l_esito.setText("")
+
+    def _dal_modulo(self):
+        sezioni = [self.l_sezioni.item(i).data(Qt.UserRole) for i in range(self.l_sezioni.count())
+                   if self.l_sezioni.item(i).checkState() == Qt.Checked]
+        return {"id": self._id_corrente(), "nome": self.e_nome.text(), "descrizione": self.e_descrizione.text(),
+                "lunghezza": self.c_lunghezza.currentData(), "sezioni": sezioni,
+                "istruzioni": self.e_istruzioni.toPlainText()}
+
+    def salva(self):
+        dati = self._dal_modulo()
+        if not dati["sezioni"]:
+            QMessageBox.information(self, "Nessuna sezione", "Spunta almeno una sezione.")
+            return
+        t = tpl.salva(dati)
+        self.ricarica(t["id"])
+        self.l_esito.setText(f"Salvato «{t['nome']}».")
+        self.cambiato.emit()
+
+    def nuovo(self):
+        t = tpl.salva({"nome": "Nuovo template", "sezioni": ["riassunto", "punti_chiave", "azioni"],
+                       "lunghezza": "media", "descrizione": "", "istruzioni": ""})
+        self.ricarica(t["id"])
+        self.e_nome.setFocus()
+        self.e_nome.selectAll()
+        self.cambiato.emit()
+
+    def duplica(self):
+        t = tpl.duplica(self._id_corrente())
+        self.ricarica(t["id"])
+        self.e_nome.setFocus()
+        self.e_nome.selectAll()
+        self.cambiato.emit()
+
+    def elimina(self):
+        t = tpl.trova(self._id_corrente())
+        if not t or t.get("standard"):
+            return
+        if QMessageBox.question(self, "Elimina template", f"Eliminare il template «{t['nome']}»? "
+                                "Le relazioni già scritte non cambiano.") != QMessageBox.Yes:
+            return
+        tpl.elimina(t["id"])
+        self.ricarica()
+        self.cambiato.emit()
+
+    def rendi_predefinito(self):
+        tpl.imposta_predefinito(self._id_corrente())
+        self.ricarica(self._id_corrente())
+        self.cambiato.emit()
 
 
 class _Avvisi(QObject):
@@ -273,6 +461,15 @@ class SchedaIncontri(QWidget):
         self.b_riprendi.setToolTip("Riprende gli incontri rimasti in coda (anche dopo la chiusura di Argo)")
         self.b_riprendi.clicked.connect(self.riprendi_coda)
         comandi.addWidget(self.b_riprendi)
+        comandi.addSpacing(12)
+        self.l_template = QLabel("Template:")
+        comandi.addWidget(self.l_template)
+        self.c_template = QComboBox()
+        self.c_template.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        self.c_template.setToolTip("Come scrivere la relazione: sezioni, lunghezza e indicazioni. "
+                                   "Si creano e si modificano in Impostazioni › Relazioni.")
+        comandi.addWidget(self.c_template)
+        self.carica_template()
         comandi.addSpacing(12)
         self.l_foto = QLabel("Foto:")
         comandi.addWidget(self.l_foto)
@@ -470,6 +667,24 @@ class SchedaIncontri(QWidget):
             self.lavoro_file.wait(1500)
         self.ponte.ferma()
 
+    def carica_template(self):
+        """Riempie la tendina dei template (anche dopo una modifica nelle Impostazioni), sul predefinito."""
+        scelto = self.c_template.currentData() if self.c_template.count() else None
+        predefinito = tpl.predefinito()["id"]
+        if predefinito != getattr(self, "_predefinito_visto", predefinito):
+            scelto = predefinito  # cambiato il ★ nelle Impostazioni: la tendina lo segue
+        self._predefinito_visto = predefinito
+        self.c_template.blockSignals(True)
+        self.c_template.clear()
+        for t in tpl.tutti():
+            self.c_template.addItem(("" if t.get("standard") else "✎ ") + t["nome"], t["id"])
+            self.c_template.setItemData(self.c_template.count() - 1, t.get("descrizione", ""), Qt.ToolTipRole)
+        i = self.c_template.findData(scelto) if scelto else -1
+        if i < 0:
+            i = self.c_template.findData(tpl.predefinito()["id"])
+        self.c_template.setCurrentIndex(max(0, i))
+        self.c_template.blockSignals(False)
+
     # -- incontri da file audio/video e file aggiunti
     def nuovo_da_media(self):
         file, _ = QFileDialog.getOpenFileNames(self, "Registrazioni o video da trasformare in incontri",
@@ -618,7 +833,7 @@ class SchedaIncontri(QWidget):
         self.div.setVisible(not vuota)
         # Stile Argo: senza incontri le azioni sugli incontri si nascondono e il primario diventa «Collega iPhone»
         self.b_cartella.setVisible(not vuota)
-        for w in (self.b_relazione, self.l_foto, self.c_vision):
+        for w in (self.b_relazione, self.l_foto, self.c_vision, self.l_template, self.c_template):
             w.setVisible(not vuota)
         tema.rimarca(self.b_collega, vuota)
         if not vuota:
@@ -683,10 +898,11 @@ class SchedaIncontri(QWidget):
 
     # -- coda salvata su disco (come quella delle trascrizioni)
     def _salva_coda(self):
-        stati = {i: {k: v for k, v in st.items() if k in ("stato", "nota")}
+        stati = {i: {k: v for k, v in st.items() if k in ("stato", "nota", "template")}
                  for i, st in self.stati.items() if st.get("stato") in ("In coda", "Errore", "Interrotta")}
         if self.in_corso:
-            stati[self.in_corso] = {"stato": "In corso", "nota": ""}
+            stati[self.in_corso] = {"stato": "In corso", "nota": "",
+                                    "template": (self.stati.get(self.in_corso) or {}).get("template")}
         try:
             core.APP_HOME.mkdir(parents=True, exist_ok=True)
             FILE_CODA.write_text(json.dumps({"coda": ([self.in_corso] if self.in_corso else []) + self.coda,
@@ -705,7 +921,8 @@ class SchedaIncontri(QWidget):
                 continue
             if st.get("stato") == "In corso":
                 st = {"stato": "Interrotta", "nota": "app chiusa durante l'elaborazione"}
-            self.stati[i] = {"stato": st.get("stato", "In coda"), "progresso": 0, "nota": st.get("nota", "")}
+            self.stati[i] = {"stato": st.get("stato", "In coda"), "progresso": 0, "nota": st.get("nota", ""),
+                             "template": st.get("template")}
         # Chi era in corso torna in fondo? No: come nelle trascrizioni resta «Interrotta» e si rimette a mano.
         self.coda = [i for i in dati.get("coda", []) if i in esistenti and self.stati.get(i, {}).get("stato") == "In coda"]
         self.in_pausa = bool(self.coda)
@@ -767,6 +984,7 @@ class SchedaIncontri(QWidget):
             self.testo.setPlainText(mia.read_text(encoding="utf-8"))
             meta = rel.carica(cartella)
             self.l_lavoro.setText(f"Relazione del {meta.get('generata', '')} con {meta.get('modello_testo', '')}"
+                                  + (f" · template «{meta['template']['nome']}»" if meta.get("template") else "")
                                   + (f" · foto: {meta['modello_vision']}" if meta.get("modello_vision") else "")
                                   + ". Puoi modificarla qui.")
         else:
@@ -827,7 +1045,8 @@ class SchedaIncontri(QWidget):
             if cartella.name in self.coda or cartella.name == self.in_corso:
                 continue
             self.coda.append(cartella.name)
-            self.stati[cartella.name] = {"stato": "In coda", "progresso": 0, "nota": ""}
+            self.stati[cartella.name] = {"stato": "In coda", "progresso": 0, "nota": "",
+                                         "template": self.c_template.currentData()}
             self._aggiorna_riga(self._riga_di(cartella.name))
         self.in_pausa = False
         self._salva_coda()
@@ -873,10 +1092,11 @@ class SchedaIncontri(QWidget):
         s = core.carica_impostazioni()
         vision = "" if self.c_vision.currentText() == SOLO_OCR else self.c_vision.currentText()
         self.in_corso = id_incontro
-        self.stati[id_incontro] = {"stato": "In corso", "progresso": 3, "nota": "preparo"}
+        template = (self.stati.get(id_incontro) or {}).get("template") or self.c_template.currentData()
+        self.stati[id_incontro] = {"stato": "In corso", "progresso": 3, "nota": "preparo", "template": template}
         self._aggiorna_riga(r)
         self.lavoro = LavoroRelazione(cartella, d, s.get("ollama_url", llm.DEFAULT_URL), s.get("modello_chat"),
-                                      vision or None, self)
+                                      vision or None, self, template=template)
         self.lavoro.sig_stato.connect(lambda t, i=id_incontro: self._nota(i, t))
         self.lavoro.sig_avanzamento.connect(lambda p, i=id_incontro: self._progresso(i, p))
         self.lavoro.sig_fine.connect(lambda i=id_incontro: self._fine(i, None))
