@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261119.1523 · riferita all'app versione 20261119.1523*
+*Versione del manuale: 20261119.1540 · riferita all'app versione 20261119.1540*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -892,16 +892,24 @@ Il controllo legge da GitHub solo il numero di versione e le novità: nessun dat
 
 **Tornare indietro.** La versione precedente resta in `whisperx-env/app_precedente`: per ripristinarla, chiudi Argo e copia il contenuto di quella cartella in `whisperx-env/app`.
 
-**Disinstallare (consigliato: con il disinstallatore).** Nel pacchetto di Argo, lo stesso che hai usato per installarlo:
+**Disinstallare, senza scaricare niente.**
 
-- **Mac:** tasto destro su `Disinstalla-Argo.command` → *Apri*;
-- **Windows:** doppio clic su `Disinstalla-Argo.bat`. Non lanciare direttamente `disinstalla_windows.ps1`: Windows blocca gli script non firmati scaricati da Internet («is not digitally signed»). Se hai solo il file `.ps1`, aprilo così da PowerShell, nella cartella in cui si trova: `powershell -NoProfile -ExecutionPolicy Bypass -File .\disinstalla_windows.ps1` (il permesso vale solo per quella volta).
+| Dove | Come |
+| --- | --- |
+| **Dentro Argo** (Mac e Windows) | *Impostazioni › Aspetto e aggiornamenti › Disinstallare Argo › **Disinstalla Argo…***: si apre il disinstallatore in una finestra a parte e Argo si chiude |
+| **Windows** | *Impostazioni › App › App installate › **Argo AI** › Disinstalla*, oppure dal menu Start › **Disinstalla Argo** |
+| **Dal pacchetto di Argo** (se Argo non si apre più) | Nella cartella `argo-ai-main` scaricata per installare: `Disinstalla-Argo.bat` (Windows, doppio clic) o `Disinstalla-Argo.command` (Mac, tasto destro → *Apri*). Se non l'hai più, riscarica lo [ZIP di Argo](https://github.com/Argo-s-new-dreams/argo-ai/archive/refs/heads/main.zip) |
+
+Sul Mac trascinare *Argo AI* nel Cestino **non basta**: resterebbe la cartella `whisperx-env` con i dati.
+
+Su Windows non lanciare direttamente `disinstalla_windows.ps1`: Windows blocca gli script non firmati scaricati da Internet («is not digitally signed»). Se hai solo quel file, aprilo da PowerShell nella cartella in cui si trova con `powershell -NoProfile -ExecutionPolicy Bypass -File .\disinstalla_windows.ps1` (il permesso vale solo per quella volta).
 
 Il disinstallatore:
-1. ti mostra cosa eliminerà e chiede conferma (con «No» non tocca niente);
-2. propone un **backup sulla Scrivania** di voci, incontri, clienti, glossario, indice dei documenti e impostazioni (`Argo-backup-AAAAMMGG-HHMM`). Token e chiavi API non vengono copiati: andranno reinseriti;
-3. chiude Argo, elimina l'app (Mac) o i collegamenti su Desktop e menu Start (Windows) e la cartella `whisperx-env` con programma e dati;
-4. chiede se eliminare anche le registrazioni archiviate in *Documenti/Argo*.
+1. si copia in una cartella temporanea e parte da lì, così può cancellare anche la cartella di Argo;
+2. ti mostra cosa eliminerà e chiede conferma (con «No» non tocca niente);
+3. propone un **backup sulla Scrivania** di voci, incontri, clienti, glossario, indice dei documenti e impostazioni (`Argo-backup-AAAAMMGG-HHMM`). Token e chiavi API non vengono copiati: andranno reinseriti;
+4. chiude Argo ed elimina l'app (Mac) oppure collegamenti e voce tra le app installate (Windows), e la cartella `whisperx-env` con programma e dati;
+5. chiede se eliminare anche le registrazioni archiviate in *Documenti/Argo*.
 
 **Non tocca** Ollama e i suoi modelli, uv, FFmpeg e le cache dei modelli di trascrizione, che possono servire ad altri programmi. Per liberare anche quello spazio, a mano:
 

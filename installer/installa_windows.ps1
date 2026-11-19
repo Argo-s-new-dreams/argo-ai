@@ -81,6 +81,8 @@ try {
         $lnk.Description = "Argo - Cassetta degli attrezzi AI (tutto in locale)"
         $lnk.Save()
     }
+    # Argo tra le app installate (Impostazioni > App) e "Disinstalla Argo" nel menu Start, solo per questo utente
+    & $py (Join-Path $Dest "disinstalla.py") registra | Out-Host
 
     Write-Host "`nINSTALLAZIONE COMPLETATA" -ForegroundColor Green
     Write-Host "Apri 'Argo AI' dal Desktop o dal menu Start."

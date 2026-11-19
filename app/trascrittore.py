@@ -3,6 +3,7 @@ Tutto gira in locale: l'audio non lascia il computer.
 """
 import json
 import os
+import threading
 import re
 import subprocess
 import sys
@@ -33,8 +34,9 @@ import m365  # noqa: E402
 import risorse  # noqa: E402
 import modelli_ollama  # noqa: E402
 import cloud  # noqa: E402
+import disinstalla  # noqa: E402
 
-VERSIONE = "20261119.1523"
+VERSIONE = "20261119.1540"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -1380,6 +1382,28 @@ class Finestra(QMainWindow):
             f4.addWidget(nota_it)
         lay.addWidget(g4)
 
+        # Disinstallare Argo: senza scaricare niente
+        g9 = QGroupBox("Disinstallare Argo")
+        l9 = QVBoxLayout(g9)
+        if os.name == "nt":
+            dove = ("Anche da Impostazioni di Windows › App › App installate › «Argo AI» › Disinstalla, "
+                    "o dal menu Start › «Disinstalla Argo».")
+        else:
+            dove = ("Trascinare Argo AI nel Cestino non basta: resterebbe la cartella whisperx-env con i dati. "
+                    "Usa questo pulsante.")
+        t9 = QLabel("Chiede conferma e propone un backup sulla Scrivania di voci, incontri, clienti, glossario e "
+                    "impostazioni (senza token e chiavi), poi elimina Argo e la cartella whisperx-env. "
+                    "Ollama, i suoi modelli e le cache dei modelli restano. " + dove)
+        t9.setWordWrap(True)
+        t9.setProperty("ruolo", "tenue")
+        l9.addWidget(t9)
+        b9 = QPushButton("Disinstalla Argo…")
+        b9.clicked.connect(self.disinstalla)
+        r9 = QHBoxLayout()
+        r9.addWidget(b9)
+        r9.addStretch(1)
+        l9.addLayout(r9)
+
         # Relazioni: i template (editor in incontri.py)
         import incontri
         g_rel = QGroupBox("Template della relazione degli incontri")
@@ -1406,7 +1430,7 @@ class Finestra(QMainWindow):
             ("🔗  Collegamenti", "Microsoft 365, Dynamics 365 Sales e ricerca web: tutti facoltativi",
              [("m365", g6), ("dynamics", g7), ("web", g8)]),
             ("⚙️  Aspetto e aggiornamenti", "Tema chiaro o scuro, canale e aggiornamenti di Argo",
-             [("aspetto", g5), ("aggiornamenti", g4)]),
+             [("aspetto", g5), ("aggiornamenti", g4), ("disinstalla", g9)]),
         ]
         radice = QWidget()
         rl = QVBoxLayout(radice)
@@ -1463,6 +1487,29 @@ class Finestra(QMainWindow):
         riga2.addWidget(info, 1)
         rl.addLayout(riga2)
         return radice
+
+    def disinstalla(self):
+        if QMessageBox.question(
+                self, "Disinstallare Argo?",
+                "Si apre il disinstallatore in una finestra a parte e Argo si chiude.\n\n"
+                "Lì potrai fare un backup e confermare: finché non confermi non viene cancellato niente.") \
+                != QMessageBox.Yes:
+            return
+        if getattr(self, "tab_incontri", None) and self.tab_incontri.occupata():
+            QMessageBox.information(self, "Un momento", "C'è un'elaborazione in corso negli Incontri: "
+                                    "aspetta che finisca o fermala, poi riprova.")
+            return
+        try:
+            partito = disinstalla.avvia()
+        except Exception as e:
+            partito = False
+            QMessageBox.warning(self, "Disinstallazione", f"Non riesco ad aprire il disinstallatore: {e}")
+            return
+        if not partito:
+            QMessageBox.warning(self, "Disinstallazione", "Disinstallatore non trovato in questa installazione: "
+                                "usa Disinstalla-Argo dal pacchetto di Argo (vedi il manuale, §14).")
+            return
+        QTimer.singleShot(800, self.close)  # closeEvent: ferma Ponte e lavori, salva le code
 
     def _stato_m365(self):
         acc = m365.account()
@@ -1862,6 +1909,13 @@ class Finestra(QMainWindow):
         e.accept()
 
 
+def _senza_errori(funzione):
+    try:
+        funzione()
+    except Exception:
+        pass
+
+
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Argo AI")
@@ -1872,6 +1926,8 @@ def main():
     f = Finestra()
     f.show()
     QTimer.singleShot(1500, f.prepara_ollama)  # Ollama acceso e modelli scelti (o proposti) già all'avvio
+    if os.name == "nt":  # Argo tra le app installate di Windows, anche per chi si aggiorna dall'app
+        threading.Thread(target=lambda: _senza_errori(disinstalla.registra_windows), daemon=True).start()
     if (core.carica_impostazioni().get("controlla_aggiornamenti", True)
             and criteri.carica().get("aggiornamenti_dall_app") is not False):
         QTimer.singleShot(3000, f.controlla_aggiornamenti)

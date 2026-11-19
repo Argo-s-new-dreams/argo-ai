@@ -1,10 +1,11 @@
 @echo off
 rem Doppio clic per disinstallare Argo su Windows: chiede conferma e propone un backup prima di cancellare.
-rem Cerca lo script nella cartella installer (pacchetto completo) oppure accanto a questo file (file scaricati sciolti).
-set "SCRIPT=%~dp0installer\disinstalla_windows.ps1"
+rem Con Argo installato si puo' anche usare Impostazioni > App installate > Argo AI > Disinstalla.
+set "SCRIPT=%~dp0app\disinstallatore\disinstalla_windows.ps1"
 if not exist "%SCRIPT%" set "SCRIPT=%~dp0disinstalla_windows.ps1"
 if not exist "%SCRIPT%" (
-  echo Non trovo disinstalla_windows.ps1: mettilo nella stessa cartella di questo file oppure nella sottocartella installer.
+  echo Non trovo disinstalla_windows.ps1: usa la cartella completa di Argo ^(argo-ai-main^) oppure
+  echo Impostazioni ^> App ^> App installate ^> Argo AI ^> Disinstalla.
   echo.
   pause
   exit /b 1

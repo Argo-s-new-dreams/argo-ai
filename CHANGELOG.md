@@ -2,6 +2,12 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261119.1540: disinstallare senza scaricare niente
+- **Dentro Argo**: *Impostazioni › Aspetto e aggiornamenti › Disinstallare Argo › «Disinstalla Argo…»*, su Mac e Windows. Si apre il disinstallatore in una finestra a parte e Argo si chiude.
+- **Windows**: Argo compare in *Impostazioni › App › App installate* con il suo **Disinstalla**, e nel menu Start c'è **«Disinstalla Argo»**. È registrato solo per l'utente, senza diritti di amministratore. Lo fa l'installer e anche Argo all'avvio, quindi vale anche per chi si aggiorna dall'app.
+- Il disinstallatore si copia in una cartella temporanea e parte da lì, così può cancellare anche la cartella di Argo. Su Windows toglie anche la voce tra le app installate.
+- Gli script stanno ora in `app/disinstallatore/` e arrivano con gli aggiornamenti; `Disinstalla-Argo.bat` e `.command` nel pacchetto restano per quando Argo non si apre.
+
 ## 20261119.1523: disinstallatori per Mac e Windows
 - **`Disinstalla-Argo.command`** (macOS) e **`Disinstalla-Argo.bat`** (Windows), nel pacchetto accanto agli installer:
   - mostrano cosa verrà eliminato e chiedono conferma;
