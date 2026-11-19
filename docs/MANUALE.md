@@ -895,7 +895,7 @@ Il controllo legge da GitHub solo il numero di versione e le novità: nessun dat
 **Disinstallare (consigliato: con il disinstallatore).** Nel pacchetto di Argo, lo stesso che hai usato per installarlo:
 
 - **Mac:** tasto destro su `Disinstalla-Argo.command` → *Apri*;
-- **Windows:** doppio clic su `Disinstalla-Argo.bat`.
+- **Windows:** doppio clic su `Disinstalla-Argo.bat`. Non lanciare direttamente `disinstalla_windows.ps1`: Windows blocca gli script non firmati scaricati da Internet («is not digitally signed»). Se hai solo il file `.ps1`, aprilo così da PowerShell, nella cartella in cui si trova: `powershell -NoProfile -ExecutionPolicy Bypass -File .\disinstalla_windows.ps1` (il permesso vale solo per quella volta).
 
 Il disinstallatore:
 1. ti mostra cosa eliminerà e chiede conferma (con «No» non tocca niente);

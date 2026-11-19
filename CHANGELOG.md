@@ -9,6 +9,7 @@ Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo 
   - chiudono Argo ed eliminano l'app o i collegamenti e la cartella `whisperx-env`;
   - chiedono se eliminare anche le registrazioni archiviate.
 - Non toccano Ollama, i suoi modelli, uv, FFmpeg e le cache dei modelli condivise: alla fine dicono come toglierli a mano.
+- `Disinstalla-Argo.bat` trova lo script anche se è accanto a lui (file scaricati sciolti) e non solo nella cartella `installer`. Il manuale spiega cosa fare con l'errore «is not digitally signed» se si lancia direttamente il `.ps1`.
 - Manuale (§14) e README aggiornati.
 
 ## 20261119.1011: schede «Maggiori info» sui modelli cloud, GB dei modelli locali, addio a GitHub Models

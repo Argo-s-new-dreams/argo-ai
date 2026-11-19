@@ -1,4 +1,4 @@
-# Disinstallazione di Argo · Cassetta degli attrezzi AI su Windows.
+# Disinstallazione di Argo - Cassetta degli attrezzi AI su Windows.
 # Avviato da "Disinstalla-Argo.bat". Non servono diritti di amministratore.
 # Toglie i collegamenti e la cartella whisperx-env (programma e dati). Prima propone un backup.
 # Non tocca Ollama, i suoi modelli, uv, FFmpeg e le cache dei modelli condivise con altri programmi.
@@ -14,7 +14,7 @@ foreach ($cartella in @([Environment]::GetFolderPath("Desktop"), [Environment]::
 
 function Si($domanda) { (Read-Host $domanda) -match '^[sS]' }
 
-Write-Host "=== Disinstallazione di Argo · Cassetta degli attrezzi AI ===" -ForegroundColor Cyan
+Write-Host "=== Disinstallazione di Argo - Cassetta degli attrezzi AI ===" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Verranno eliminati:"
 foreach ($c in $Collegamenti) { Write-Host "  - il collegamento: $c" }
