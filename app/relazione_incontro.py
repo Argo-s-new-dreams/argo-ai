@@ -110,6 +110,9 @@ def cronologia(cartella, sessione, descrizioni=None):
             parti.append("descrizione: " + descrizioni[f["file"]].replace("\n", " "))
         dettaglio = " | ".join(parti) or "nessun testo leggibile"
         voci.append((float(f.get("secondo", 0)), f"[{_durata(f.get('secondo'))}] 📷 FOTO {i}: {dettaglio}"))
+    for a in sessione.get("allegati", []):  # documenti aggiunti sul computer (PDF, Word, testo)
+        corpo = (a.get("testo") or "").strip() or "nessun testo leggibile"
+        voci.append((float(a.get("secondo", 0)), f"[{_durata(a.get('secondo'))}] 📎 ALLEGATO «{a.get('nome', a.get('file', ''))}»:\n{corpo}"))
     if not voci and sessione.get("trascrizioneLegacy"):
         return sessione["trascrizioneLegacy"]
     return "\n".join(t for _s, t in sorted(voci, key=lambda x: x[0]))
@@ -162,6 +165,8 @@ def descrivi_foto(cartella, sessione, url, modello, stato=lambda _t: None, stop=
 ISTRUZIONI = """Sei l'assistente commerciale che scrive la relazione di un incontro di lavoro (fiera o visita a un cliente).
 Il testo ha righe «[minuto] Nome: frase». Le righe «📷 FOTO» sono foto scattate in quel momento, con il testo letto
 e una descrizione: usale per identificare persone, aziende, recapiti e prodotti, e collegale a ciò che si dice.
+Le righe «📎 ALLEGATO» sono documenti aggiunti all'incontro (offerte, listini, presentazioni): usali come fonte
+di dati e cita il documento quando ne riprendi cifre o nomi.
 Chi registra è la persona indicata come «Io» (o con il nome dell'utente): non è un contatto.
 Regole: usa solo informazioni presenti; nessun nome, recapito, cifra o data inventati; campi sconosciuti vuoti.
 Scrivi in italiano, in modo concreto e professionale."""
@@ -327,5 +332,6 @@ def in_markdown(r, sessione, meta=None):
         out += ["## Azioni", ""] + [f"- [ ] {_riga(a.get('descrizione'), a.get('responsabile'), ('entro ' + a['scadenza']) if a.get('scadenza') else '')}"
                                     for a in r["azioni"]] + [""]
     modelli = _riga(meta.get("modello_testo"), ("foto: " + meta["modello_vision"]) if meta.get("modello_vision") else "")
-    out += ["---", f"*Relazione generata con Argo · AI locale ({modelli}). Va riletta prima di usarla.*"]
+    dove = "modello cloud" if "☁️" in modelli else "AI locale"
+    out += ["---", f"*Relazione generata con Argo · {dove} ({modelli}). Va riletta prima di usarla.*"]
     return "\n".join(out)

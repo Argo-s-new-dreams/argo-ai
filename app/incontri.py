@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 import crm_dynamics as crm
 import crm_incontri
 import esporta_word
+import incontri_file as inf
 import llm_locale as llm
 import ponte as pt
 import relazione_incontro as rel
@@ -72,6 +73,68 @@ class LavoroRelazione(QObject):
             self.sig_fine.emit()
         except Exception as e:
             self.sig_errore.emit("Interrotta" if self._stop else str(e))
+
+
+class LavoroFile(QObject):
+    """Nuovi incontri da audio/video e file aggiunti a un incontro, uno dopo l'altro, fuori dall'interfaccia.
+
+    operazioni: [("nuovo", file)] oppure [("aggiungi", cartella, [file…])]."""
+    sig_stato = Signal(str)
+    sig_avanzamento = Signal(int)
+    sig_fatto = Signal(str, str)     # id incontro, riepilogo
+    sig_errore = Signal(str, str)    # nome del file o dell'incontro, errore
+    sig_fine = Signal()
+
+    def __init__(self, operazioni, versione, parent=None):
+        super().__init__(parent)
+        self.operazioni = list(operazioni)
+        self.versione = versione
+        self._stop = False
+        self._thread = None
+
+    def ferma(self):
+        self._stop = True
+
+    def start(self):
+        self._thread = threading.Thread(target=self.run, name="argo-incontri-file", daemon=True)
+        self._thread.start()
+
+    def wait(self, millisecondi):
+        if self._thread:
+            self._thread.join(millisecondi / 1000)
+
+    def _stato(self, prefisso):
+        def stato(testo, percento=None):
+            self.sig_stato.emit(prefisso + testo)
+            if percento is not None:
+                self.sig_avanzamento.emit(int(percento))
+        return stato
+
+    def run(self):
+        totale = len(self.operazioni)
+        for n, op in enumerate(self.operazioni, 1):
+            if self._stop:
+                break
+            prefisso = f"[{n} di {totale}] " if totale > 1 else ""
+            try:
+                if op[0] == "nuovo":
+                    cartella, s = inf.crea_da_media(op[1], self.versione, self._stato(prefisso),
+                                                    stop=lambda: self._stop)
+                    nomi = ", ".join(p["nome"] for p in s["partecipanti"])
+                    self.sig_fatto.emit(cartella.name, f"«{s['titolo']}» creato" + (f" · {nomi}" if nomi else ""))
+                else:
+                    _tipo, cartella, file = op
+                    sessione = json.loads((Path(cartella) / "sessione.json").read_text(encoding="utf-8"))
+                    _s, riepilogo, scartati = inf.aggiungi_file(cartella, sessione, file, self._stato(prefisso),
+                                                                stop=lambda: self._stop)
+                    testo = f"Aggiunti a «{sessione.get('titolo', '')}»: {riepilogo or 'nulla'}"
+                    if scartati:
+                        testo += f" · non supportati: {', '.join(scartati)}"
+                    self.sig_fatto.emit(Path(cartella).name, testo)
+            except Exception as e:
+                nome = Path(op[1]).name if op[0] == "nuovo" else "incontro"
+                self.sig_errore.emit(nome, "Interrotto" if self._stop else str(e))
+        self.sig_fine.emit()
 
 
 class _Avvisi(QObject):
@@ -158,6 +221,12 @@ class SchedaIncontri(QWidget):
         b_importa.setToolTip("Un pacchetto Argo (.zip) arrivato per altra via, es. AirDrop o mail")
         b_importa.clicked.connect(self.importa_file)
         bar.addWidget(b_importa)
+        self.b_nuovo = QPushButton("🎙 Nuovo da audio/video…")
+        self.b_nuovo.setToolTip("Crea un incontro da una registrazione o da un video (anche più file, uno per incontro): "
+                                "trascrizione, parlanti e voci note sul computer, poi la relazione come per l'iPhone. "
+                                "Puoi anche trascinare i file su questa pagina.")
+        self.b_nuovo.clicked.connect(self.nuovo_da_media)
+        bar.addWidget(self.b_nuovo)
         bar.addStretch()
         self.b_cartella = QPushButton("Apri cartella")
         self.b_cartella.clicked.connect(self.apri_cartella)
@@ -167,6 +236,25 @@ class SchedaIncontri(QWidget):
         self.l_ponte = QLabel("")
         self.l_ponte.setProperty("ruolo", "tenue")
         lay.addWidget(self.l_ponte)
+
+        self.riga_file = QWidget()
+        rf = QHBoxLayout(self.riga_file)
+        rf.setContentsMargins(0, 0, 0, 0)
+        self.l_file = QLabel("")
+        self.l_file.setWordWrap(True)
+        rf.addWidget(self.l_file, 1)
+        self.pb_file = QProgressBar()
+        self.pb_file.setFixedWidth(160)
+        self.pb_file.setFixedHeight(8)
+        self.pb_file.setTextVisible(False)
+        rf.addWidget(self.pb_file)
+        b_ferma_file = QPushButton("■ Ferma")
+        b_ferma_file.clicked.connect(self.ferma_file)
+        rf.addWidget(b_ferma_file)
+        self.riga_file.setVisible(False)
+        lay.addWidget(self.riga_file)
+        self.lavoro_file = None
+        self.setAcceptDrops(True)
 
         # Barra dei comandi (Stile Argo): azione principale per prima, poi le scelte
         comandi = QHBoxLayout()
@@ -242,6 +330,11 @@ class SchedaIncontri(QWidget):
         self.l_lavoro.setProperty("ruolo", "tenue")
         self.l_lavoro.setWordWrap(True)
         salva.addWidget(self.l_lavoro, 1)
+        self.b_allega = QPushButton("📎 Aggiungi file…")
+        self.b_allega.setToolTip("Aggiunge all'incontro foto (descritte dal modello vision), documenti PDF/Word/testo "
+                                 "(letti dalla relazione) e altri audio o video (trascritti in coda all'incontro)")
+        self.b_allega.clicked.connect(self.aggiungi_file)
+        salva.addWidget(self.b_allega)
         self.b_modifica = QPushButton("✏️ Modifica")
         self.b_modifica.setCheckable(True)
         self.b_modifica.setToolTip("Passa dal testo impaginato al Markdown da correggere, e ritorno")
@@ -299,7 +392,9 @@ class SchedaIncontri(QWidget):
         self._lento.timeout.connect(self._avanza_piano)
 
         self.vuoto = tema.StatoVuoto("Nessun incontro ancora. Collega l'iPhone con «📱 Collega iPhone…» in alto: "
-                                     "gli incontri registrati in fiera o dai clienti arriveranno qui da soli.")
+                                     "gli incontri registrati in fiera o dai clienti arriveranno qui da soli. "
+                                     "Oppure crea un incontro da una registrazione o da un video con "
+                                     "«🎙 Nuovo da audio/video…», o trascina qui i file.")
         lay.addWidget(self.vuoto, 1)
         self._incontri = []
 
@@ -361,7 +456,7 @@ class SchedaIncontri(QWidget):
             self.finestra.statusBar().showMessage(f"📱 Incontro ricevuto dall'iPhone: {testo}", 8000)
 
     def occupata(self):
-        return self.lavoro is not None
+        return self.lavoro is not None or self.lavoro_file is not None
 
     def ferma(self):
         """Chiusura di Argo: la coda resta salvata; l'incontro in corso risulterà «Interrotta»."""
@@ -370,7 +465,104 @@ class SchedaIncontri(QWidget):
         if self.lavoro:
             self.lavoro.ferma()
             self.lavoro.wait(1500)
+        if self.lavoro_file:
+            self.lavoro_file.ferma()
+            self.lavoro_file.wait(1500)
         self.ponte.ferma()
+
+    # -- incontri da file audio/video e file aggiunti
+    def nuovo_da_media(self):
+        file, _ = QFileDialog.getOpenFileNames(self, "Registrazioni o video da trasformare in incontri",
+                                               str(Path.home()), inf.filtro_dialogo(solo_media=True))
+        if file:
+            self._avvia_file([("nuovo", f) for f in file])
+
+    def aggiungi_file(self, file=None):
+        cartella, _d = self._corrente()
+        if not cartella:
+            QMessageBox.information(self, "Scegli un incontro", "Seleziona prima l'incontro a cui aggiungere i file.")
+            return
+        if not file:
+            file, _ = QFileDialog.getOpenFileNames(self, "File da aggiungere all'incontro", str(Path.home()),
+                                                   inf.filtro_dialogo())
+        if file:
+            self._avvia_file([("aggiungi", cartella, list(file))])
+
+    def _avvia_file(self, operazioni):
+        if self.lavoro_file:
+            QMessageBox.information(self, "Un momento", "Sto già elaborando dei file: aspetta che finisca o premi «Ferma».")
+            return
+        if any(op[0] == "nuovo" for op in operazioni) or any(
+                inf.tipo_di(f) == "audio" for op in operazioni if op[0] == "aggiungi" for f in op[2]):
+            if not core.leggi_token():
+                QMessageBox.warning(self, "Manca il token", "Per trascrivere e riconoscere i parlanti serve il token "
+                                    "Hugging Face: Impostazioni › Token.")
+                return
+        self._esiti_file = []
+        lav = LavoroFile(operazioni, getattr(self.ponte, "versione_app", ""), self)
+        lav.sig_stato.connect(self.l_file.setText)
+        lav.sig_avanzamento.connect(self.pb_file.setValue)
+        lav.sig_fatto.connect(self._file_fatto)
+        lav.sig_errore.connect(lambda nome, e: self._esiti_file.append(f"⚠️ {nome}: {e}"))
+        lav.sig_fine.connect(self._file_finiti)
+        self.lavoro_file = lav
+        self.pb_file.setValue(0)
+        self.l_file.setText("Avvio…")
+        self.riga_file.setVisible(True)
+        self.b_nuovo.setEnabled(False)
+        self.b_allega.setEnabled(False)
+        lav.start()
+
+    def _file_fatto(self, id_incontro, riepilogo):
+        self._esiti_file.append("✅ " + riepilogo)
+        self.aggiorna()
+        r = self._riga_di(id_incontro)
+        if r >= 0:
+            self.tabella.selectRow(r)
+
+    def _file_finiti(self):
+        self.lavoro_file = None
+        self.riga_file.setVisible(False)
+        self.b_nuovo.setEnabled(True)
+        self.b_allega.setEnabled(True)
+        esiti = self._esiti_file or ["Niente da fare."]
+        self.finestra.statusBar().showMessage(" · ".join(esiti), 15000)
+        if any(e.startswith("⚠️") for e in esiti):
+            QMessageBox.warning(self, "File non elaborati", "\n".join(esiti))
+        elif any(e.startswith("✅") for e in esiti):
+            QMessageBox.information(self, "Fatto", "\n".join(esiti)
+                                    + "\n\nSeleziona l'incontro e premi «✨ Scrivi relazione» per la relazione.")
+
+    def ferma_file(self):
+        if self.lavoro_file:
+            self.lavoro_file.ferma()
+            self.l_file.setText("Mi fermo appena possibile…")
+
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasUrls():
+            e.acceptProposedAction()
+
+    def dropEvent(self, e):
+        file = [u.toLocalFile() for u in e.mimeData().urls() if u.isLocalFile()]
+        media = [f for f in file if inf.tipo_di(f) == "audio"]
+        altri = [f for f in file if inf.tipo_di(f) in ("immagine", "documento")]
+        cartella, d = self._corrente()
+        operazioni = []
+        if media:
+            if cartella and QMessageBox.question(
+                    self, "Audio o video", f"{len(media)} audio/video: creo un incontro nuovo per ciascuno?\n\n"
+                    f"«No» li aggiunge in coda all'incontro selezionato («{d.get('titolo', '')}»).") == QMessageBox.No:
+                altri += media
+            else:
+                operazioni += [("nuovo", f) for f in media]
+        if altri:
+            if not cartella:
+                QMessageBox.information(self, "Scegli un incontro",
+                                        "Foto e documenti si aggiungono a un incontro: selezionane uno e riprova.")
+            else:
+                operazioni.append(("aggiungi", cartella, altri))
+        if operazioni:
+            self._avvia_file(operazioni)
 
     # -- incontri
     def importa_file(self):
@@ -526,6 +718,7 @@ class SchedaIncontri(QWidget):
             self.tabella.selectRow(r)
         m = QMenu(self)
         m.addAction("✨ Scrivi relazione", self.scrivi_relazione)
+        m.addAction("📎 Aggiungi file…", self.aggiungi_file)
         if any(c.name in self.coda for c, _d in self._selezionati()):
             m.addAction("Togli dalla coda", self.togli_dalla_coda)
         m.addSeparator()
@@ -550,7 +743,9 @@ class SchedaIncontri(QWidget):
             pass
         self.l_info.setText(f"{(d.get('creata') or '')[:16].replace('T', ' ')} · durata {_durata(d.get('durata'))}"
                             + (f" · partecipanti: {nomi}" if nomi else "")
-                            + (f" · ricevuto {ricevuto.get('ricevuto', '')} da {ricevuto.get('origine', '')}" if ricevuto else ""))
+                            + (f" · ricevuto {ricevuto.get('ricevuto', '')} da {ricevuto.get('origine', '')}" if ricevuto else "")
+                            + (" · allegati: " + ", ".join(a.get("nome", "") for a in d.get("allegati", []))
+                               if d.get("allegati") else ""))
         for f in d.get("foto", []):
             pix = QPixmap(str(cartella / f.get("file", "")))
             if pix.isNull():

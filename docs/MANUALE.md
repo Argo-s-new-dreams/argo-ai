@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261118.2030 · riferita all'app versione 20261118.2030*
+*Versione del manuale: 20261119.0746 · riferita all'app versione 20261119.0746*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -498,6 +498,27 @@ La pagina **Incontri** raccoglie ciò che registri con **Argo per iPhone** in fi
 5. **Importa pacchetto…** accetta anche i `.zip` arrivati per AirDrop o mail.
 
 Come è protetto il canale: [docs/PONTE.md](PONTE.md).
+
+**Incontri da audio o video, senza iPhone**
+
+Una riunione registrata con un altro strumento, una call esportata, un video: diventano incontri come quelli dell'iPhone.
+
+1. Premi **🎙 Nuovo da audio/video…** e scegli uno o più file (MP3, M4A, WAV, MP4, MOV, MKV…): ogni file diventa un incontro. In alternativa **trascina i file** sulla pagina.
+2. Argo estrae l'audio, trascrive con WhisperX, separa i parlanti e riconosce le **voci note** dell'anagrafe, con gli stessi modelli e lo stesso profilo «Uso del computer» della pagina Trascrivi. L'avanzamento compare sotto i pulsanti; **■ Ferma** interrompe.
+3. L'incontro prende il nome del file e la data del file. **L'audio non resta**: la copia di lavoro e le impronte vocali vengono cancellate alla fine, il file originale non viene toccato.
+4. Da lì in poi è un incontro come gli altri: **✨ Scrivi relazione**, Word, Dynamics.
+
+**Aggiungere file a un incontro**
+
+Seleziona l'incontro e premi **📎 Aggiungi file…** (anche dal menu con il tasto destro, o trascinando i file sulla pagina):
+
+| File | Cosa ne fa Argo |
+| --- | --- |
+| **Foto e immagini** (JPG, PNG, HEIC, WebP…) | Le converte in JPEG e le aggiunge alle foto dell'incontro: il modello vision le descrive nella relazione, come quelle scattate con l'iPhone |
+| **Documenti** (PDF, Word, TXT, Markdown, CSV) | Li copia in `allegati/` e ne estrae il testo: la relazione li usa come fonte (offerte, listini, presentazioni) e li cita |
+| **Altri audio o video** | Li trascrive e li mette **in coda** alla trascrizione, come seguito dell'incontro. Chi ha la stessa voce nota resta la stessa persona; le voci sconosciute continuano la numerazione (Sconosciuto 3, 4…) |
+
+Foto e documenti vengono legati alla fine dell'incontro. Dopo aver aggiunto file, premi di nuovo **✨ Scrivi relazione** per aggiornarla.
 
 **Relazione dell'incontro**
 

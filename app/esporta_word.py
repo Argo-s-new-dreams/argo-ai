@@ -21,6 +21,19 @@ NOTA_TRASCRIZIONE = ("Trascrizione automatica realizzata con Argo · Cassetta de
 NOTA_AI = ("Testo generato con Argo · Cassetta degli attrezzi AI, con un modello linguistico locale. "
            "Rileggilo e verificane i contenuti prima di inviarlo.")
 
+NOTA_AI_CLOUD = ("Testo generato con Argo · Cassetta degli attrezzi AI; per alcuni attrezzi con un modello "
+                 "linguistico nel cloud (Impostazioni › Modelli cloud). Rileggilo e verificane i contenuti prima di inviarlo.")
+
+
+def _qualche_cloud():
+    """Vero se almeno un attrezzo usa un modello cloud: allora non si può scrivere «locale»."""
+    try:
+        import cloud
+        return any(cloud.e_cloud(a) for a in cloud.NOMI_ATTREZZI)
+    except Exception:
+        return False
+
+
 RE_INLINE = re.compile(r"(\*\*[^*]+\*\*|__[^_]+__|\*[^*\s][^*]*\*|_[^_\s][^_]*_|`[^`]+`)")
 RE_TRASCR = re.compile(r"^\[(\d{1,2}:\d{2}(?::\d{2})?)\]\s*([^:]{1,60}):\s*(.*)$")
 RE_NUM = re.compile(r"^\s*(\d+)[.)]\s+(.*)$")
@@ -172,7 +185,7 @@ def salva_docx(testo, percorso, titolo=None, sottotitolo=None, nota_ai=True):
     _stili(doc)
     for sez in doc.sections:
         piede = sez.footer.paragraphs[0]
-        r = piede.add_run(f"Argo · AI locale · {datetime.now():%d/%m/%Y %H:%M}")
+        r = piede.add_run(f"Argo · {'AI' if _qualche_cloud() else 'AI locale'} · {datetime.now():%d/%m/%Y %H:%M}")
         r.font.size = Pt(8)
         r.font.color.rgb = GRIGIO
     if titolo and not testo.lstrip().startswith("# "):
@@ -185,7 +198,7 @@ def salva_docx(testo, percorso, titolo=None, sottotitolo=None, nota_ai=True):
     markdown_in_docx(doc, testo)
     if nota_ai:
         p = doc.add_paragraph()
-        r = p.add_run(nota_ai if isinstance(nota_ai, str) else NOTA_AI)
+        r = p.add_run(nota_ai if isinstance(nota_ai, str) else (NOTA_AI_CLOUD if _qualche_cloud() else NOTA_AI))
         r.italic = True
         r.font.size = Pt(8)
         r.font.color.rgb = GRIGIO

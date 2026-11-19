@@ -2,6 +2,16 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261119.0746: Incontri da audio e video, e file aggiunti agli incontri
+- **🎙 Nuovo da audio/video…** nella pagina *Incontri*: ogni registrazione o video (MP3, M4A, WAV, MP4, MOV, MKV…) diventa un incontro come quelli dell'iPhone. Trascrizione WhisperX, parlanti e voci note sul computer, rispettando «Uso del computer»; avanzamento sotto i pulsanti, **■ Ferma** per interrompere. Nome e data dal file.
+- **L'audio non resta**: copia di lavoro e JSON con le impronte vocali si cancellano alla fine; il file originale non viene toccato.
+- **📎 Aggiungi file…** su un incontro (anche dal menu col tasto destro):
+  - **foto e immagini**, convertite in JPEG (anche HEIC), che il modello vision descrive nella relazione;
+  - **documenti** PDF, Word, TXT, MD e CSV, il cui testo entra nella relazione come «📎 ALLEGATO»;
+  - **altri audio o video**, trascritti in coda all'incontro, con le voci sconosciute numerate di seguito.
+- **Trascina i file** sulla pagina Incontri: audio e video diventano incontri nuovi, oppure, a scelta, il seguito dell'incontro selezionato; foto e documenti si aggiungono all'incontro selezionato.
+- Relazione, Word ed esportazioni dicono «modello cloud» invece di «AI locale» quando un attrezzo usa il cloud.
+
 ## 20261118.2030: correzione · Argo non partiva dopo l'aggiornamento
 - La 20261118.1957 si fermava all'avvio (errore `UnboundLocalError: QTimer` in `main()`), prima ancora di aprire la finestra. Corretto. Chi è rimasto bloccato deve sostituire a mano `app/trascrittore.py`: l'aggiornamento automatico parte solo dall'app aperta.
 
