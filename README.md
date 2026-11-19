@@ -50,7 +50,7 @@ L'audio non lascia mai il computer: Internet serve solo per installare i pacchet
 
 ## Il "cervello" testuale: Ollama
 
-Verbale, Documenti, Dettatura e Traduzione usano un modello linguistico locale servito da [Ollama](https://ollama.com) su `localhost`. Installa Ollama, poi scarica un modello per i testi e uno per i documenti, per esempio:
+Verbale, Documenti, Dettatura e Traduzione usano un modello linguistico locale servito da [Ollama](https://ollama.com) su `localhost`. Gli installer di Argo propongono di installare Ollama (Windows con winget, Mac dal DMG ufficiale) e al primo avvio Argo propone i modelli consigliati. A mano, scarica un modello per i testi e uno per i documenti, per esempio:
 
 ```bash
 ollama pull gemma3:12b   # testi (circa 8 GB): adatto a un Mac da 16 GB

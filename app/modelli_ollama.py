@@ -49,6 +49,14 @@ def peso(nomi):
 
 
 # ---------------------------------------------------------------- Ollama acceso
+def _app_mac():
+    """Ollama.app in /Applications o in ~/Applications (dove lo mette l'installer di Argo se serve)."""
+    for base in (Path("/Applications"), Path.home() / "Applications"):
+        if (base / "Ollama.app").exists():
+            return base / "Ollama.app"
+    return None
+
+
 def _eseguibile():
     trovato = shutil.which("ollama")
     if trovato:
@@ -59,22 +67,23 @@ def _eseguibile():
         candidati = [base / "ollama.exe"]
     elif sys.platform == "darwin":
         candidati = [Path("/usr/local/bin/ollama"), Path("/opt/homebrew/bin/ollama"),
-                     Path("/Applications/Ollama.app/Contents/Resources/ollama")]
+                     Path("/Applications/Ollama.app/Contents/Resources/ollama"),
+                     Path.home() / "Applications" / "Ollama.app" / "Contents" / "Resources" / "ollama"]
     else:
         candidati = [Path("/usr/local/bin/ollama"), Path("/usr/bin/ollama")]
     return next((str(c) for c in candidati if c.exists()), None)
 
 
 def installato():
-    return bool(_eseguibile()) or (sys.platform == "darwin" and Path("/Applications/Ollama.app").exists())
+    return bool(_eseguibile()) or (sys.platform == "darwin" and _app_mac() is not None)
 
 
 def avvia():
     """Prova ad accendere Ollama (l'app con l'icona, se c'è; altrimenti «ollama serve»). True se ha lanciato qualcosa."""
     nulla = subprocess.DEVNULL
     try:
-        if sys.platform == "darwin" and Path("/Applications/Ollama.app").exists():
-            subprocess.Popen(["/usr/bin/open", "-g", "-a", "Ollama"], stdin=nulla, stdout=nulla, stderr=nulla)
+        if sys.platform == "darwin" and _app_mac() is not None:
+            subprocess.Popen(["/usr/bin/open", "-g", "-a", str(_app_mac())], stdin=nulla, stdout=nulla, stderr=nulla)
             return True
         exe = _eseguibile()
         if not exe:

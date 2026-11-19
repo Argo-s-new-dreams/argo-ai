@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261119.1540 · riferita all'app versione 20261119.1540*
+*Versione del manuale: 20261119.1626 · riferita all'app versione 20261119.1626*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -112,7 +112,8 @@ Non serve un account GitHub né usare Git: è un normale download. In alternativ
    - installa `uv` e `ffmpeg` con winget se mancano;
    - crea l'ambiente Python 3.12 x64 in `%USERPROFILE%\whisperx-env`;
    - installa le librerie;
-   - crea il collegamento **Argo AI** sul Desktop e nel menu Start.
+   - crea il collegamento **Argo AI** sul Desktop e nel menu Start;
+   - ti chiede se installare **Ollama** (circa 1,5 GB, con winget). Se c'è già salta il passo.
 
 **macOS (Apple Silicon)**
 
@@ -121,15 +122,18 @@ Non serve un account GitHub né usare Git: è un normale download. In alternativ
    - prepara `uv` e `ffmpeg`: se c'è [Homebrew](https://brew.sh) usa quello, altrimenti scarica `uv` dal sito ufficiale (astral.sh) e prende `ffmpeg` dal pacchetto Python `imageio-ffmpeg`, dentro la cartella di Argo. Non servono password di amministratore;
    - crea l'ambiente in `~/whisperx-env`;
    - installa le librerie;
-   - crea l'app **Argo AI** in `~/Applications`.
+   - crea l'app **Argo AI** in `~/Applications`;
+   - ti chiede se installare **Ollama**: scarica `Ollama.dmg` dalla pagina ufficiale delle versioni su GitHub e copia l'app in `/Applications` (o in `~/Applications` se non hai i permessi). Ollama richiede macOS Sonoma (14) o successivo. Se c'è già salta il passo.
 
 Gli installer non sono firmati digitalmente, per questo i sistemi mostrano un avviso. Il codice è tutto leggibile nel repository.
 
 > Se hai una versione precedente chiamata "Trascrittore", l'installer la sostituisce. Voci, impostazioni e coda restano dove sono.
 
-### 3.4 Installa Ollama (per Verbale, Documenti, Dettatura, Traduzione)
+### 3.4 Ollama (per Verbale, Documenti, Dettatura, Traduzione)
 
-1. Scarica Ollama da [ollama.com](https://ollama.com) e avvialo.
+L'installer lo installa per te se rispondi **S** all'ultimo passo. Se hai risposto no, o il download non è riuscito, alla fine l'installer te lo ricorda; puoi farlo a mano così:
+
+1. Scarica Ollama da [ollama.com/download](https://ollama.com/download) e avvialo.
 2. Scarica almeno un modello per i testi e uno per gli embedding. Per esempio, da Terminale o PowerShell:
 
 ```bash

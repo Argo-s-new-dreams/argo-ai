@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 $App = Join-Path $HOME "whisperx-env"
 $Src = Join-Path (Split-Path $PSScriptRoot -Parent) "app"
 
-function Passo($n, $testo) { Write-Host "`n[$n/5] $testo" -ForegroundColor Cyan }
+function Passo($n, $testo) { Write-Host "`n[$n/6] $testo" -ForegroundColor Cyan }
 function Aggiorna-Path {
     $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
                 [Environment]::GetEnvironmentVariable("Path", "User")
@@ -84,10 +84,38 @@ try {
     # Argo tra le app installate (Impostazioni > App) e "Disinstalla Argo" nel menu Start, solo per questo utente
     & $py (Join-Path $Dest "disinstalla.py") registra | Out-Host
 
+    Passo 6 "Ollama (modelli linguistici locali: Verbale, Documenti, Traduzione, Incontri)"
+    # Non blocca mai l'installazione di Argo: se qualcosa va storto spiega come installarlo a mano.
+    $OllamaNota = ""
+    $OllamaExe = Join-Path $env:LOCALAPPDATA "Programs\Ollama\ollama.exe"
+    if ((Get-Command ollama -ErrorAction SilentlyContinue) -or (Test-Path $OllamaExe)) {
+        Write-Host "  Ollama gia' presente."
+    } else {
+        $r = Read-Host "  Ollama non e' installato. Lo installo adesso (circa 1,5 GB, i modelli dopo, da Argo)? [S/n]"
+        if ($r -match '^[nN]') {
+            $OllamaNota = "Ollama non installato: quando vuoi, scaricalo da https://ollama.com/download"
+        } else {
+            try {
+                winget install -e --id Ollama.Ollama --accept-source-agreements --accept-package-agreements | Out-Host
+                Aggiorna-Path
+                if ((Get-Command ollama -ErrorAction SilentlyContinue) -or (Test-Path $OllamaExe)) {
+                    Write-Host "  Ollama installato (icona del lama vicino all'orologio)."
+                } else {
+                    $OllamaNota = "installazione di Ollama non confermata: scaricalo da https://ollama.com/download"
+                }
+            } catch {
+                $OllamaNota = "installazione di Ollama non riuscita ($($_.Exception.Message)): scaricalo da https://ollama.com/download"
+            }
+        }
+    }
+
     Write-Host "`nINSTALLAZIONE COMPLETATA" -ForegroundColor Green
     Write-Host "Apri 'Argo AI' dal Desktop o dal menu Start."
-    if (-not (Get-Command ollama -ErrorAction SilentlyContinue)) {
-        Write-Host "NOTA: per Verbale, Documenti, Dettatura e Traduzione serve Ollama: https://ollama.com" -ForegroundColor Yellow
+    if ($OllamaNota) {
+        Write-Host "NOTA: $OllamaNota" -ForegroundColor Yellow
+        Write-Host "      Senza Ollama funzionano trascrizione e voci; Ollama serve per Verbale, Documenti, Dettatura, Traduzione e Incontri." -ForegroundColor Yellow
+    } else {
+        Write-Host "Al primo avvio Argo propone di scaricare i modelli consigliati di Ollama."
     }
     Write-Host "Al primo avvio inserisci il token Hugging Face nelle Impostazioni."
 }

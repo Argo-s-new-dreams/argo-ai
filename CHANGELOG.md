@@ -2,6 +2,14 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261119.1626: l'installer installa anche Ollama
+- **Nuovo ultimo passo [6/6]** negli installer: chiede «Installo Ollama adesso? [S/n]» e, se c'è già, lo salta.
+  - **Windows**: `winget install Ollama.Ollama` (circa 1,5 GB, per l'utente, senza diritti di amministratore).
+  - **macOS**: scarica `Ollama.dmg` dalla pagina ufficiale delle versioni su GitHub e copia l'app in `/Applications`, o in `~/Applications` se la cartella non è scrivibile; poi lo avvia. Su macOS precedenti a Sonoma (14) non lo installa e lo spiega.
+- Se rispondi no o il download non riesce, l'installazione di Argo finisce lo stesso e alla fine ti dice dove scaricare Ollama.
+- Argo trova e accende Ollama anche quando è in `~/Applications`.
+- Manuale (§3.3, §3.4) e README aggiornati.
+
 ## 20261119.1540: disinstallare senza scaricare niente
 - **Dentro Argo**: *Impostazioni › Aspetto e aggiornamenti › Disinstallare Argo › «Disinstalla Argo…»*, su Mac e Windows. Si apre il disinstallatore in una finestra a parte e Argo si chiude.
 - **Windows**: Argo compare in *Impostazioni › App › App installate* con il suo **Disinstalla**, e nel menu Start c'è **«Disinstalla Argo»**. È registrato solo per l'utente, senza diritti di amministratore. Lo fa l'installer e anche Argo all'avvio, quindi vale anche per chi si aggiorna dall'app.

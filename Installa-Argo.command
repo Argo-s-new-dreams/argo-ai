@@ -6,7 +6,7 @@ BUNDLE="$HOME/Applications/Argo AI.app"
 VECCHIO="$HOME/Applications/Trascrittore.app"
 
 errore() { echo; echo "ERRORE: $1"; echo "Copia questo messaggio e mandalo a chi ti assiste."; read -r -p "Premi Invio per chiudere..."; exit 1; }
-passo() { echo; echo "[$1/5] $2"; }
+passo() { echo; echo "[$1/6] $2"; }
 
 echo "=== Installazione Argo · Cassetta degli attrezzi AI ==="
 echo "Cartella: $APP"
@@ -81,12 +81,49 @@ EOF
 iconutil -c icns "$APP/app/icon.iconset" -o "$BUNDLE/Contents/Resources/icon.icns" 2>/dev/null || echo "  (icona non creata, nessun problema)"
 touch "$BUNDLE"
 
+passo 6 "Ollama (modelli linguistici locali: Verbale, Documenti, Traduzione, Incontri)"
+# Non blocca mai l'installazione di Argo: se qualcosa va storto spiega come installarlo a mano.
+OLLAMA_NOTA=""
+if command -v ollama >/dev/null || [ -d /Applications/Ollama.app ] || [ -d "$HOME/Applications/Ollama.app" ]; then
+  echo "  Ollama già presente."
+elif [ "$(sw_vers -productVersion | cut -d. -f1)" -lt 14 ] 2>/dev/null; then
+  OLLAMA_NOTA="Ollama richiede macOS Sonoma (14) o successivo: aggiorna macOS e scaricalo da https://ollama.com/download"
+else
+  read -r -p "  Ollama non è installato. Lo installo adesso (circa 50 MB, i modelli dopo, da Argo)? [S/n] " R
+  if [[ ! "$R" =~ ^[nN] ]]; then
+    TMP="$(mktemp -d)"
+    MNT="$TMP/volume"
+    if curl -fL --progress-bar -o "$TMP/Ollama.dmg" "https://github.com/ollama/ollama/releases/latest/download/Ollama.dmg" \
+       && hdiutil attach -nobrowse -quiet -mountpoint "$MNT" "$TMP/Ollama.dmg"; then
+      DEST="/Applications"
+      [ -w "$DEST" ] || DEST="$HOME/Applications"
+      mkdir -p "$DEST"
+      if cp -R "$MNT/Ollama.app" "$DEST/"; then
+        echo "  Ollama installato in $DEST/Ollama.app"
+        open -g -a "$DEST/Ollama.app" && echo "  Ollama avviato (icona del lama nella barra dei menu)."
+        echo "  Se Ollama chiede di creare il comando da Terminale, puoi accettare o saltare: ad Argo non serve."
+      else
+        OLLAMA_NOTA="copia di Ollama.app non riuscita: scaricalo da https://ollama.com/download"
+      fi
+      hdiutil detach -quiet "$MNT" || true
+    else
+      OLLAMA_NOTA="download di Ollama non riuscito (connessione?): scaricalo da https://ollama.com/download"
+    fi
+    rm -rf "$TMP"
+  else
+    OLLAMA_NOTA="Ollama non installato: quando vuoi, scaricalo da https://ollama.com/download"
+  fi
+fi
+
 echo
 echo "INSTALLAZIONE COMPLETATA"
 echo "Apri 'Argo AI' da Finder > Applicazioni (cartella Inizio) o con Spotlight."
-if ! command -v ollama >/dev/null && [ ! -d /Applications/Ollama.app ]; then
+if [ -n "$OLLAMA_NOTA" ]; then
   echo
-  echo "NOTA: per Verbale, Documenti, Dettatura e Traduzione serve Ollama: scaricalo da https://ollama.com"
+  echo "NOTA: $OLLAMA_NOTA"
+  echo "      Senza Ollama funzionano trascrizione e voci; servono Ollama per Verbale, Documenti, Dettatura, Traduzione e Incontri."
+else
+  echo "Al primo avvio Argo propone di scaricare i modelli consigliati di Ollama."
 fi
 echo "Al primo avvio inserisci il token Hugging Face nelle Impostazioni."
 open -R "$BUNDLE"
