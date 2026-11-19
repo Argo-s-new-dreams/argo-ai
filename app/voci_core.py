@@ -43,6 +43,7 @@ DEFAULT_SETTINGS = {
     "registra_volume_mic": 100,  # Registra: volume in %, 0-200
     "registra_volume_sistema": 100,
     "risorse": "auto",  # Uso del computer: auto | leggero | bilanciato | massimo (vedi risorse.py)
+    "riconoscimento_voci": False,  # anagrafe voci: spenta finché l'utente non la attiva (promessa di Argo)
     "cartella_registrazioni": "",  # Agenda: dove salvare le registrazioni (vuoto = ~/Documents/Argo)  # all'avvio legge da GitHub solo il numero di versione
 }
 
@@ -113,14 +114,67 @@ def elenco_voci():
         return []
     out = []
     for c in sorted(VOCI.iterdir(), key=lambda p: p.name.lower()):
-        if c.is_dir():
-            out.append((c.name, len(list(c.glob("*.npy")))))
+        n = len(list(c.glob("*.npy"))) if c.is_dir() else 0
+        if n:  # una cartella con il solo consenso (impronta non ancora calcolata) non è ancora una voce
+            out.append((c.name, n))
     return out
 
 
-def carica_voci():
+# ---------------------------------------------------------------- riconoscimento e consenso
+# Le impronte vocali che servono a riconoscere una persona possono essere dati biometrici (art. 9 GDPR).
+# Per questo il riconoscimento è spento finché l'utente non lo attiva, e ogni voce si usa solo se c'è il
+# consenso della persona, registrato con la data in voci/<Nome>/consenso.json.
+CONSENSO = "consenso.json"
+
+
+def riconoscimento_vietato():
+    """True se l'IT l'ha disattivato con i criteri aziendali (chiave «riconoscimento_voci»: false)."""
+    try:
+        import criteri
+        return criteri.carica().get("riconoscimento_voci") is False
+    except Exception:
+        return False
+
+
+def riconoscimento_attivo():
+    return bool(carica_impostazioni().get("riconoscimento_voci")) and not riconoscimento_vietato()
+
+
+def imposta_riconoscimento(attivo):
+    s = carica_impostazioni()
+    s["riconoscimento_voci"] = bool(attivo) and not riconoscimento_vietato()
+    salva_impostazioni(s)
+
+
+def consenso(nome):
+    """{'data': 'AAAA-MM-GG HH:MM', 'come': ...} o None."""
+    try:
+        return json.loads((VOCI / nome / CONSENSO).read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def registra_consenso(nome, come="confermato dall'utente"):
+    from datetime import datetime
+    c = VOCI / nome.strip()
+    c.mkdir(parents=True, exist_ok=True)
+    (c / CONSENSO).write_text(json.dumps({"data": datetime.now().strftime("%Y-%m-%d %H:%M"), "come": come},
+                                         ensure_ascii=False), encoding="utf-8")
+
+
+def senza_consenso():
+    return [n for n, _ in elenco_voci() if consenso(n) is None]
+
+
+def carica_voci(tutte=False):
+    """Impronte medie delle voci usabili: solo con il riconoscimento attivo e il consenso della persona.
+    tutte=True le carica comunque (solo per spostarle o unirle, mai per riconoscere)."""
+    if not tutte and not riconoscimento_attivo():
+        return {}
     voci = {}
     for nome, n in elenco_voci():
+        if not tutte and consenso(nome) is None:
+            continue
         campioni = [np.load(f) for f in (VOCI / nome).glob("*.npy")]
         if campioni:
             voci[nome] = norm(np.mean(campioni, axis=0))
@@ -132,9 +186,11 @@ def nome_valido(nome):
     return bool(nome) and not any(ch in nome for ch in '\\/:*?"<>|') and nome not in (".", "..")
 
 
-def salva_impronta(nome, vettore):
+def salva_impronta(nome, vettore, controlla=True):
     if not nome_valido(nome):
         raise ValueError(f"Nome non valido: {nome!r}")
+    if controlla and (not riconoscimento_attivo() or consenso(nome.strip()) is None):
+        raise PermissionError(f"Manca il consenso di {nome.strip()} o il riconoscimento delle voci è spento.")
     c = VOCI / nome.strip()
     c.mkdir(parents=True, exist_ok=True)
     n = 1
@@ -151,7 +207,9 @@ def rinomina_voce(vecchio, nuovo):
     if dst.exists():
         # unisce i campioni nella voce esistente
         for f in (VOCI / vecchio).glob("*.npy"):
-            salva_impronta(nuovo, np.load(f))
+            salva_impronta(nuovo, np.load(f), controlla=False)
+        if consenso(nuovo.strip()) is None and consenso(vecchio) is not None:
+            shutil.copy2(VOCI / vecchio / CONSENSO, dst / CONSENSO)
         shutil.rmtree(VOCI / vecchio)
     else:
         (VOCI / vecchio).rename(dst)
@@ -273,6 +331,8 @@ def ridiarizza(file_json, file_audio, n_parlanti=0, device="cpu"):
     kw = {"num_speakers": int(n_parlanti)} if int(n_parlanti) > 0 else {}
     df, emb = pipe(load_audio(str(file_audio)), return_embeddings=True,
                    progress_callback=lambda pct: print(f"Progress: {pct:.1f}%", flush=True), **kw)
+    if not riconoscimento_attivo():  # le impronte non si conservano se non servono a riconoscere
+        emb = None
     dati = assign_word_speakers(df, dati, emb)
     Path(file_json).write_text(json.dumps(dati, ensure_ascii=False), encoding="utf-8")
     print(f"OK - parlanti trovati: {len(set(df['speaker'])) if len(df) else 0}", flush=True)
@@ -331,7 +391,7 @@ def comando_whisperx(file_audio, n_parlanti, impostazioni, token):
         "--model", s.get("model", "large-v3"),
         "--device", device,
         "--compute_type", "float16" if device == "cuda" else "int8",
-        "--diarize", "--speaker_embeddings",
+        "--diarize",
         "--hf_token", token,
         "--output_format", "json",
         "--output_dir", str(Path(file_audio).parent),
@@ -346,6 +406,8 @@ def comando_whisperx(file_audio, n_parlanti, impostazioni, token):
         cmd += ["--min_speakers", str(n_parlanti), "--max_speakers", str(n_parlanti)]
     if s.get("hotwords", "").strip():
         cmd += ["--hotwords", s["hotwords"].strip()]
+    if riconoscimento_attivo():  # impronte dei parlanti solo se servono a riconoscerli
+        cmd.insert(cmd.index("--diarize") + 1, "--speaker_embeddings")
     return cmd
 
 

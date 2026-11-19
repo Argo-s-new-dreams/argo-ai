@@ -280,12 +280,20 @@ class _Gestore(BaseHTTPRequestHandler):
             return self._json(200, {"id": id_desktop, "nome": nome, "versione": ponte.versione_app,
                                     "protocollo": VERSIONE_PROTOCOLLO, "servizi": ["anagrafe", "incontri"]})
         if self.path == "/v1/anagrafe":
+            if not core.riconoscimento_attivo():
+                # L'iPhone (dalla 0.6.4) a questa risposta elimina l'anagrafe che aveva scaricato
+                return self._json(404, {"errore": "Riconoscimento delle voci spento sul computer: "
+                                                  "l'iPhone non usa più le voci."})
             scelte = core.carica_impostazioni().get("voci_iphone") or []
             if not scelte:
                 return self._json(404, {"errore": "Nessuna voce scelta: Argo › Voci › 📱 Per iPhone…"})
-            with tempfile.TemporaryDirectory() as t:
-                p, _n = core.esporta_per_iphone(Path(t) / "anagrafe", scelte)
-                dati = p.read_bytes()
+            try:
+                with tempfile.TemporaryDirectory() as t:
+                    p, _n = core.esporta_per_iphone(Path(t) / "anagrafe", scelte)
+                    dati = p.read_bytes()
+            except ValueError:
+                return self._json(404, {"errore": "Nessuna voce con il consenso registrato tra quelle scelte: "
+                                                  "Argo › Voci"})
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(dati)))

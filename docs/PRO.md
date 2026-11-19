@@ -91,5 +91,7 @@ Per aziende con molti utenti: Ollama e la trascrizione su un server in LAN con G
 - `canale_aggiornamenti`: blocca il canale. L'utente lo vede ma non lo può cambiare.
 - `aggiornamenti_dall_app: false`: Argo non controlla e non installa aggiornamenti da solo, perché li distribuisce l'IT.
 - `registrazione`: `"completa"` (predefinito, Live e Archivia), `"solo_live"` (l'audio delle riunioni non viene mai conservato) oppure `"nessuna"` (pagina Registra disattivata).
+- `riconoscimento_voci`: `false` disattiva l'anagrafe voci: niente riconoscimento e niente impronte nuove (quelle salvate restano, inutilizzate). Di base il riconoscimento è spento e lo attiva l'utente, con il consenso voce per voce.
+- `ricerca_web`: `false` toglie la ricerca web della pagina Clienti (scheda pubblica con Ollama Web Search).
 - `trace`: `true` tiene accesa la modalità trace su quel PC (log più dettagliati, mai contenuti), per un'analisi del supporto. Va tolto a lavoro finito: finché c'è, l'utente non la può spegnere.
 - `modelli_cloud`: `"consentiti"` (predefinito), `"vietati"` (Argo usa solo Ollama locale e il riquadro *Modelli cloud* lo dice) oppure un elenco dei fornitori ammessi tra `"claude"` e `"ollama_cloud"`. Le scelte già fatte dall'utente su un fornitore non più ammesso tornano automaticamente in locale.

@@ -18,6 +18,9 @@ Chiavi riconosciute (tutte facoltative):
     "modelli_cloud": "consentiti" | "vietati" | ["claude", "ollama_cloud"]
                                              modelli linguistici nel cloud: consentiti (predefinito), vietati
                                              (Argo usa solo Ollama locale) oppure solo i fornitori elencati
+    "riconoscimento_voci": false             anagrafe voci disattivata: nessuna impronta nuova, nessun
+                                             riconoscimento (le voci salvate restano, inutilizzate)
+    "ricerca_web": false                     niente ricerca web nella pagina Clienti (scheda pubblica)
     "trace": true                            modalità trace sempre attiva su questo PC, per un'analisi del
                                              supporto (log più dettagliati, mai contenuti); toglierla dopo
 """
@@ -26,7 +29,8 @@ import os
 import sys
 from pathlib import Path
 
-CHIAVI = {"canale_aggiornamenti", "aggiornamenti_dall_app", "registrazione", "modelli_cloud", "trace"}
+CHIAVI = {"canale_aggiornamenti", "aggiornamenti_dall_app", "registrazione", "modelli_cloud", "trace",
+          "riconoscimento_voci", "ricerca_web"}
 
 
 def percorso():
@@ -56,7 +60,7 @@ def carica():
     if regola is not None and regola not in ("consentiti", "vietati") and not (
             isinstance(regola, list) and all(isinstance(x, str) for x in regola)):
         criteri.pop("modelli_cloud")
-    for chiave in ("aggiornamenti_dall_app", "trace"):
+    for chiave in ("aggiornamenti_dall_app", "trace", "riconoscimento_voci", "ricerca_web"):
         if chiave in criteri and not isinstance(criteri[chiave], bool):
             criteri.pop(chiave)
     return criteri

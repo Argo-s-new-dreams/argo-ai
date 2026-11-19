@@ -83,10 +83,28 @@ def _token():
 
 
 # ---------------------------------------------------------------- Web API
+_TIPI = {"leads": "nuovo lead", "annotations": "nota (relazione) su un record", "tasks": "attività",
+         "accounts": "nuovo account", "contacts": "nuovo contatto"}
+
+
+def _uscita(metodo, percorso):
+    """Cosa esce verso Dynamics: record creati o modificati e i testi delle ricerche (nomi, mail, aziende)."""
+    entita = percorso.split("?")[0].strip("/").split("(")[0].split("/")[-1]
+    if metodo in ("POST", "PATCH"):
+        cosa = _TIPI.get(entita, f"dati del record «{entita}»")
+    elif metodo == "GET" and "$filter" in percorso:
+        cosa = "ricerca nel CRM (nomi, mail o aziende)"
+    else:
+        return
+    import uscite
+    uscite.registra("Dynamics 365 Sales", cosa)
+
+
 def api(metodo, percorso, corpo=None, token=None):
     """Chiamata alla Dataverse Web API. Ritorna (json, id_creato)."""
     if not ambiente():
         raise ErroreCRM("Indirizzo dell'ambiente Dynamics mancante (Impostazioni).")
+    _uscita(metodo, percorso)
     url = percorso if percorso.startswith("http") else f"{ambiente()}/api/data/{VERSIONE_API}/{percorso.lstrip('/')}"
     # Spazi e caratteri speciali dei filtri OData vanno codificati (i valori sono già protetti da _q)
     url = urllib.parse.quote(url, safe=":/?&=$(),'@*!;%-._~")

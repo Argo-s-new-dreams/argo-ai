@@ -12,7 +12,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261119.1658"
+VERSIONE = "20261119.1720"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -41,6 +41,7 @@ import modelli_ollama  # noqa: E402
 import cloud  # noqa: E402
 import disinstalla  # noqa: E402
 import supporto  # noqa: E402
+import consenso_voci  # noqa: E402
 
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
@@ -224,6 +225,9 @@ class RevisioneDialog(QDialog):
             self.tab.setCellWidget(r, 3, combo)
             chk = QCheckBox()
             chk.setEnabled(spk in self.emb)
+            if not self.emb:
+                chk.setToolTip("Per memorizzare le voci attiva il riconoscimento delle voci (pagina Voci) e "
+                               "rifai i parlanti")
             box = QWidget()
             bl = QHBoxLayout(box)
             bl.setContentsMargins(0, 0, 0, 0)
@@ -243,7 +247,7 @@ class RevisioneDialog(QDialog):
         lay.addWidget(bb)
 
     def applica(self):
-        nuova, memorizzate = {}, []
+        nuova, memorizzate, da_memorizzare = {}, [], []
         for spk, combo, chk in self.righe:
             nome = combo.currentText().strip() or self.mappa[spk]
             nuova[spk] = nome
@@ -251,8 +255,13 @@ class RevisioneDialog(QDialog):
                 if nome.startswith(("Sconosciuto", "Parlante")) or not core.nome_valido(nome):
                     QMessageBox.warning(self, "Nome mancante", f"Dai un nome vero a {spk} prima di memorizzarlo.")
                     return
-                core.salva_impronta(nome, self.emb[spk])
-                memorizzate.append(nome)
+                da_memorizzare.append((spk, nome))
+        if da_memorizzare:
+            ok = consenso_voci.chiedi([n for _, n in da_memorizzare], self)
+            for spk, nome in da_memorizzare:
+                if nome in ok:
+                    core.salva_impronta(nome, self.emb[spk])
+                    memorizzate.append(nome)
         core.salva_nomi(self.file_json, nuova)
         self.dati[core.NOMI_KEY] = nuova
         self.out = core.scrivi_trascrizione(self.dati, nuova, self.file_json)
@@ -982,13 +991,26 @@ class Finestra(QMainWindow):
         self.b_camp.setToolTip("Un altro audio della stessa persona: più campioni, riconoscimento migliore")
         self.b_ren = QPushButton("Rinomina…")
         self.b_del = QPushButton("Elimina")
-        for b in (self.b_camp, self.b_ren):
+        self.b_consenso = QPushButton("Conferma consenso…")
+        self.b_consenso.setToolTip("La persona ha acconsentito a essere riconosciuta: da ora la sua voce si usa")
+        self.b_consenso.clicked.connect(self.conferma_consenso)
+        for b in (self.b_consenso, self.b_camp, self.b_ren):
             bar.addWidget(b)
         bar.addSpacing(16)
         bar.addWidget(self.b_del)
         lay.addLayout(bar)
-        self.tab_voci = QTableWidget(0, 2)
-        self.tab_voci.setHorizontalHeaderLabels(["Nome", "Campioni"])
+        self.banda_voci = QFrame()
+        self.banda_voci.setProperty("ruolo", "scheda")
+        bvl = QHBoxLayout(self.banda_voci)
+        self.l_banda_voci = QLabel()
+        self.l_banda_voci.setWordWrap(True)
+        self.b_attiva_voci = QPushButton("Attiva il riconoscimento…")
+        self.b_attiva_voci.clicked.connect(self.attiva_riconoscimento)
+        bvl.addWidget(self.l_banda_voci, 1)
+        bvl.addWidget(self.b_attiva_voci)
+        lay.addWidget(self.banda_voci)
+        self.tab_voci = QTableWidget(0, 3)
+        self.tab_voci.setHorizontalHeaderLabels(["Nome", "Campioni", "Consenso"])
         self.tab_voci.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.tab_voci.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tab_voci.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -1015,6 +1037,23 @@ class Finestra(QMainWindow):
         scelta = bool(self.tab_voci.selectedItems())
         for b in (self.b_camp, self.b_ren, self.b_del):
             b.setVisible(scelta)
+        n = self._voce_selezionata()
+        self.b_consenso.setVisible(bool(scelta and n and core.consenso(n) is None))
+        attivo, vietato = core.riconoscimento_attivo(), core.riconoscimento_vietato()
+        for a in (self.b_reg_voce, self.b_nuova, self.b_marca):
+            a.setEnabled(attivo)
+        self.b_camp.setEnabled(attivo)
+        self.banda_voci.setVisible(not attivo or bool(core.senza_consenso()))
+        if vietato:
+            self.l_banda_voci.setText("🏢 Il riconoscimento delle voci è disattivato dall'IT. Le trascrizioni "
+                                      "usano «Parlante 1, 2…».")
+        elif not attivo:
+            self.l_banda_voci.setText("Riconoscimento delle voci spento: le trascrizioni usano «Parlante 1, 2…» e "
+                                      "non si salvano impronte. Attivalo solo con il consenso delle persone.")
+        else:
+            self.l_banda_voci.setText("⚠️ Alcune voci non hanno il consenso registrato e non vengono usate: "
+                                      "selezionale e premi «Conferma consenso…».")
+        self.b_attiva_voci.setVisible(not attivo and not vietato)
         vuota = self.tab_voci.rowCount() == 0
         self.b_iphone.setVisible(not vuota)
         self.tab_voci.setVisible(not vuota)
@@ -1026,6 +1065,8 @@ class Finestra(QMainWindow):
         for r, (n, c) in enumerate(voci):
             self.tab_voci.setItem(r, 0, QTableWidgetItem(n))
             self.tab_voci.setItem(r, 1, QTableWidgetItem(str(c)))
+            cons = core.consenso(n)
+            self.tab_voci.setItem(r, 2, QTableWidgetItem(f"✅ {cons['data']}" if cons else "⚠️ da confermare"))
         self._azioni_voce()
 
     def _voce_selezionata(self):
@@ -1033,12 +1074,37 @@ class Finestra(QMainWindow):
         it = self.tab_voci.item(r, 0) if r >= 0 else None
         return it.text() if it else None
 
+    def attiva_riconoscimento(self):
+        if consenso_voci.attiva(self):
+            self.statusBar().showMessage("Riconoscimento delle voci attivato.", 6000)
+        self._aggiorna_voci()
+        if hasattr(self, "cb_riconoscimento"):
+            self.cb_riconoscimento.blockSignals(True)
+            self.cb_riconoscimento.setChecked(core.riconoscimento_attivo())
+            self.cb_riconoscimento.blockSignals(False)
+
+    def _cambia_riconoscimento(self, attivo):
+        if attivo:
+            self.attiva_riconoscimento()
+        else:
+            consenso_voci.disattiva()
+            self.statusBar().showMessage("Riconoscimento delle voci spento: le voci salvate restano, "
+                                         "inutilizzate.", 6000)
+            self._aggiorna_voci()
+
+    def conferma_consenso(self):
+        n = self._voce_selezionata()
+        if n and consenso_voci.chiedi([n], self, "confermato dalla pagina Voci"):
+            self._aggiorna_voci()
+
     def iscrivi_voce(self, nome):
         if self.worker_voce:
             QMessageBox.information(self, "Attendi", "Sto già elaborando una voce.")
             return
         if not core.leggi_token():
             QMessageBox.warning(self, "Token mancante", "Inserisci prima il token nelle Impostazioni.")
+            return
+        if not core.riconoscimento_attivo() and not consenso_voci.attiva(self):
             return
         if nome is None:
             nome, ok = QInputDialog.getText(self, "Nuova voce", "Nome della persona:")
@@ -1061,6 +1127,9 @@ class Finestra(QMainWindow):
         if not core.leggi_token():
             QMessageBox.warning(self, "Token mancante", "Inserisci prima il token nelle Impostazioni.")
             return False
+        if not core.riconoscimento_attivo() and not consenso_voci.attiva(self):
+            return False
+        self._aggiorna_voci()
         return True
 
     def registra_voce(self):
@@ -1068,7 +1137,7 @@ class Finestra(QMainWindow):
             return
         dlg = voci_strumenti.RegistraVoceDialog([n for n, _ in core.elenco_voci()], self._voce_selezionata(), self)
         if dlg.exec() and dlg.risultato:
-            self._avvia_iscrizioni(dlg.risultato)
+            self._avvia_iscrizioni(dlg.risultato, consenso_dato="spuntato registrando la voce al microfono")
 
     def marca_voci(self, file_audio=None):
         if not self._pronto_per_voci():
@@ -1076,10 +1145,22 @@ class Finestra(QMainWindow):
         dlg = voci_strumenti.MarcaVociDialog([n for n, _ in core.elenco_voci()], file_audio, self)
         if dlg.exec() and dlg.risultato:
             self.tabs.setCurrentWidget(self.pag_voci)
-            self._avvia_iscrizioni(dlg.risultato)
+            self._avvia_iscrizioni(dlg.risultato, consenso_dato="spuntato segnando le voci in una registrazione")
 
-    def _avvia_iscrizioni(self, coppie):
-        """Calcola le impronte una dopo l'altra: coppie = [(nome, file_audio)]."""
+    def _avvia_iscrizioni(self, coppie, consenso_dato=None):
+        """Calcola le impronte una dopo l'altra: coppie = [(nome, file_audio)]. Solo con il consenso:
+        già spuntato nella finestra di registrazione (consenso_dato = come) oppure chiesto qui."""
+        if consenso_dato and (core.riconoscimento_attivo() or consenso_voci.attiva(self)):
+            for n, _ in coppie:
+                if core.consenso(n) is None:
+                    core.registra_consenso(n, consenso_dato)
+        ok = consenso_voci.chiedi([n for n, _ in coppie], self)
+        scartate = sorted({n for n, _ in coppie if n not in ok})
+        coppie = [(n, f) for n, f in coppie if n in ok]
+        if scartate:
+            QMessageBox.information(self, "Senza consenso", "Impronta non salvata per: " + ", ".join(scartate) + ".")
+        if not coppie:
+            return
         self._coda_voci = list(coppie)
         self._fatte_voci, self._errori_voci = [], []
         self._prossima_iscrizione()
@@ -1147,8 +1228,12 @@ class Finestra(QMainWindow):
 
     def esporta_voci_iphone(self):
         """Anagrafe → Argo per iPhone: scelta delle persone, conferma del consenso, file .argovoci."""
-        voci = [n for n, _ in core.elenco_voci()]
+        if not core.riconoscimento_attivo():
+            QMessageBox.information(self, "Voci per iPhone", "Attiva prima il riconoscimento delle voci.")
+            return
+        voci = [n for n, _ in core.elenco_voci() if core.consenso(n) is not None]
         if not voci:
+            QMessageBox.information(self, "Voci per iPhone", "Nessuna voce con il consenso registrato.")
             return
         imp = core.carica_impostazioni()
         dlg = voci_strumenti.EsportaIphoneDialog(voci, imp.get("voci_iphone"), self)
@@ -1256,6 +1341,13 @@ class Finestra(QMainWindow):
 
         g3 = QGroupBox("Riconoscimento voci")
         f3 = QFormLayout(g3)
+        self.cb_riconoscimento = QCheckBox("Riconosci le persone dalla voce (anagrafe voci, solo con il loro consenso)")
+        self.cb_riconoscimento.setChecked(core.riconoscimento_attivo())
+        self.cb_riconoscimento.setEnabled(not core.riconoscimento_vietato())
+        if core.riconoscimento_vietato():
+            self.cb_riconoscimento.setToolTip("Disattivato dall'IT con i criteri aziendali")
+        self.cb_riconoscimento.toggled.connect(self._cambia_riconoscimento)
+        f3.addRow(self.cb_riconoscimento)
         self.s_soglia = QDoubleSpinBox()
         self.s_soglia.setRange(0.2, 0.95)
         self.s_soglia.setSingleStep(0.05)
@@ -1462,7 +1554,7 @@ class Finestra(QMainWindow):
              [("m365", g6), ("dynamics", g7), ("web", g8)]),
             ("⚙️  Aspetto e aggiornamenti", "Tema chiaro o scuro, canale e aggiornamenti di Argo",
              [("aspetto", g5), ("aggiornamenti", g4), ("disinstalla", g9)]),
-            ("🛟  Supporto", "Chiedi supporto, modalità trace, registro di Argo e ritorno alla versione precedente",
+            ("🛟  Supporto", "Cosa è uscito da questo computer, chiedi supporto, modalità trace, registro e versione precedente",
              self.pannello_supporto.gruppi),
         ]
         radice = QWidget()

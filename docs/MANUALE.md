@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261119.1658 · riferita all'app versione 20261119.1658*
+*Versione del manuale: 20261119.1720 · riferita all'app versione 20261119.1720*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -422,6 +422,16 @@ Non è un client di posta completo: è un **assistente** accanto a Outlook. Most
 
 L'anagrafe contiene un'**impronta vocale** (un vettore numerico) per ogni persona. Più campioni ha una persona, più il riconoscimento è stabile: Argo ne fa la media.
 
+### Riconoscimento spento finché non lo attivi
+
+Le impronte che servono a riconoscere una persona possono essere **dati biometrici** (art. 9 GDPR). Per questo, dalla versione 20261119.1720, il riconoscimento delle voci è **spento** per tutti finché non lo attivi:
+
+- **spento**: le trascrizioni separano comunque i parlanti, ma li chiamano «Parlante 1, 2…» (li rinomini a mano nella Revisione). Argo non calcola né conserva impronte, e il Ponte dice all'iPhone di non usare più le voci;
+- **attivarlo**: pagina *Voci* › **Attiva il riconoscimento…**, oppure *Impostazioni › Trascrizione e voci › Riconosci le persone dalla voce*. Argo spiega cosa comporta e chiede di confermare che riconoscerai solo persone che hanno acconsentito;
+- **consenso per ogni voce**: ogni voce si usa solo se c'è il consenso della persona, salvato con la data (colonna **Consenso**). Registrando al microfono o segnando le voci in una registrazione basta la casella del consenso già presente; aggiungendo una voce da un file, o memorizzandola dalla Revisione, Argo lo chiede prima di salvare l'impronta;
+- **voci già salvate** prima di questa versione: all'attivazione Argo te le elenca. Spunta quelle per cui la persona ha acconsentito; le altre restano salvate ma **non vengono usate** («⚠️ da confermare»), finché non le selezioni e premi **Conferma consenso…**, o le elimini;
+- l'IT può vietare il riconoscimento con il criterio `"riconoscimento_voci": false` ([PRO.md](PRO.md)).
+
 ### Aggiungere una voce
 
 Premi **＋ Nuova voce ▾** e scegli uno dei tre modi. **Aggiungi campione…**, **Rinomina…** ed **Elimina** compaiono quando selezioni una voce nell'elenco.
@@ -699,7 +709,7 @@ Contiene il token, il pulsante **Mostra** e **Salva e verifica**, più i link al
 
 ### 11.3 Riconoscimento voci
 
-**Somiglianza minima**: vedi [§6](#6-anagrafe-voci).
+**Riconosci le persone dalla voce**: acceso o spento (spento di base), vedi [§6](#6-voci-anagrafe-voci). **Somiglianza minima**: vedi §6.
 
 ### 11.3bis Aspetto
 
@@ -807,6 +817,18 @@ Il token di accesso resta in `whisperx-env/m365_token.bin`, leggibile solo dal t
 Se usavi già Argo con Microsoft 365 non servono nuovi permessi: Agenda e Posta AI usano gli stessi.
 
 ### 11.6 Supporto e diagnostica
+
+**Cosa è uscito da questo computer.** Di base la conversazione resta sul computer: escono solo i dati che decidi tu. Ogni volta che qualcosa esce, in basso compare per qualche secondo «☁️ Uscito ora: *che cosa* → *verso dove*», e l'uscita resta nell'elenco in cima a *Impostazioni › 🛟 Supporto* (al massimo 500 righe; le uscite uguali entro un minuto diventano una riga con il numero di volte). Si registrano solo destinazione e tipo di dato, **mai il contenuto**:
+
+| Verso | Che cosa | Quando |
+| --- | --- | --- |
+| Il modello cloud scelto (Claude, Ollama Cloud) | Testo per quell'attrezzo | Solo per gli attrezzi a cui hai dato un modello cloud (§11.4bis) |
+| Ollama su un altro computer | Testo per il modello, testi dei documenti | Solo se l'indirizzo di Ollama non è questo computer |
+| Ollama Web Search / Web Fetch | Testo della ricerca (nome dell'azienda), indirizzi di pagine | Clienti › scheda pubblica |
+| Microsoft 365 · Outlook / Planner | Bozze di mail e di risposta, allegati, task | Quando li confermi |
+| Dynamics 365 Sales | Nuovi lead, account, contatti, note, attività; testi delle ricerche nel CRM | Quando lavori nella pagina Clienti |
+
+Non compaiono il Ponte verso il tuo iPhone (rete locale), i download di modelli e aggiornamenti (non portano dati tuoi) e le letture da Microsoft 365 e Dynamics (calendario, posta, record).
 
 **Il registro di Argo (log).** Argo scrive un registro sul tuo computer, in `whisperx-env/log/`:
 
@@ -1030,11 +1052,12 @@ Se un file va in **Errore**, il registro tecnico sotto la coda di *Trascrivi* (c
 > **Non è un registratore. È una stenografa digitale locale.**
 > Ascolta solamente mentre viene utilizzato, trascrive localmente e, di base, non invia la conversazione a un cloud: solo se lo scegli tu, attrezzo per attrezzo. Non conserva la voce, non profila gli interlocutori e lascia all'utente/organizzazione il controllo del testo prodotto.
 
-- **Tutto locale, di base.** Audio e documenti non lasciano il computer. Fa eccezione solo il testo degli attrezzi per cui scegli tu un modello cloud (§11.4bis): Argo lo segnala ogni volta, e l'IT può vietarlo. La telemetria anonima di pyannote è disattivata dall'app. L'unica connessione che Argo fa da sé è il controllo degli aggiornamenti su GitHub, che legge solo numero di versione e novità e si può disattivare in *Impostazioni → Aspetto e aggiornamenti*.
+- **Tutto locale, di base.** Audio e documenti non lasciano il computer. Escono solo i dati che decidi tu: il testo degli attrezzi per cui scegli un modello cloud (§11.4bis), il nome dell'azienda nella ricerca web dei Clienti, bozze e task in Microsoft 365, record in Dynamics. Ogni uscita compare in basso e nell'elenco *Cosa è uscito da questo computer* (§11.6); l'IT può vietare cloud e ricerca web. La telemetria anonima di pyannote è disattivata dall'app. L'unica connessione che Argo fa da sé è il controllo degli aggiornamenti su GitHub, che legge solo numero di versione e novità e si può disattivare in *Impostazioni → Aspetto e aggiornamenti*.
 - **Microsoft 365 è facoltativo:** se lo colleghi, Argo legge il calendario e scrive su Microsoft 365 solo la bozza della mail e i task che confermi, nel tuo tenant. Audio, trascrizioni e documenti non vengono inviati.
 - **Informa sempre** i partecipanti che la riunione viene registrata e trascritta. La pagina *Registra* chiede la conferma prima di ogni registrazione e prepara l'avviso da incollare in chat.
 - **Modalità Live = minimizzazione dei dati** (art. 5, par. 1, lett. c GDPR): l'audio esiste solo per il tempo necessario a trascriverlo. È la scelta consigliata per le riunioni di lavoro. Tieni comunque attiva la cifratura del disco (FileVault, BitLocker): sugli SSD la sovrascrittura di un file cancellato non garantisce che il dato sparisca fisicamente.
-- **Le impronte vocali sono dati biometrici** (art. 9 GDPR). Registra le voci di altre persone solo con il loro consenso esplicito e cancellale quando non servono più (**Elimina** nell'Anagrafe).
+- **Non conserva la voce, di base.** *Registra* parte in **Live**; **Archivia** è una scelta che fai ogni volta, con la conferma dell'informativa, e l'IT può toglierla (`"registrazione": "solo_live"`).
+- **Non profila gli interlocutori, di base.** Il riconoscimento delle voci è spento finché non lo attivi, e ogni voce si usa solo con il consenso registrato della persona (§6). Le impronte vocali sono dati biometrici (art. 9 GDPR): cancellale quando non servono più (**Elimina** nell'Anagrafe).
 - **Documenti riservati:** l'indice contiene estratti testuali dei documenti. Proteggi il computer (cifratura del disco, account con password) come faresti con gli originali.
 
 ### AI Act (Regolamento UE 2024/1689)

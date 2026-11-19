@@ -19,6 +19,7 @@ import urllib.error
 import urllib.request
 
 import diagnostica
+import uscite
 import voci_core as core
 
 FORNITORI = {
@@ -347,6 +348,8 @@ def chat(fornitore, modello, messaggi, temperatura=0.3, on_token=None, stop=None
     """Chat in streaming con un fornitore cloud. Ritorna il testo completo (solo JSON se `formato`)."""
     if fornitore not in ammessi():
         raise ErroreCloud(f"{FORNITORI[fornitore]['nome']} non è consentito dai criteri aziendali.")
+    uscite.registra(f"{FORNITORI[fornitore]['nome']} (modello cloud)",
+                    f"testo per l'attrezzo «{attrezzo() or 'Argo'}»")
     with diagnostica.misura("chat", fornitore=fornitore, modello=modello):
         return _chat(fornitore, modello, messaggi, temperatura, on_token, stop, formato)
 

@@ -11,6 +11,7 @@ import urllib.request
 import numpy as np
 
 import diagnostica
+import uscite
 import risorse
 
 DEFAULT_URL = "http://localhost:11434"
@@ -37,6 +38,11 @@ def _req(url, path, payload=None, timeout=600):
     except Exception as e:
         diagnostica.http(req.get_method(), req.full_url, type(e).__name__, inizio)
         raise ErroreLLM(f"Ollama non raggiungibile su {url}: {e}. È avviato?") from None
+
+
+def _host(url):
+    import urllib.parse
+    return urllib.parse.urlparse(url).hostname or url
 
 
 def e_locale(url):
@@ -85,6 +91,8 @@ def chat(messaggi, modello, url=DEFAULT_URL, temperatura=0.3, on_token=None, sto
     with risorse.turno(on_attesa=on_attesa):
         if stop and stop():
             return ""
+        if not e_locale(url):
+            uscite.registra(f"Ollama su {_host(url)}", "testo per il modello linguistico")
         with diagnostica.misura("chat", fornitore="ollama" if e_locale(url) else "ollama_remoto", modello=modello):
             return _chat_stream(url, payload, on_token, stop)
 
@@ -115,6 +123,8 @@ def _chat_stream(url, payload, on_token, stop):
 
 def embed(testi, modello, url=DEFAULT_URL):
     """Vettori normalizzati per una lista di testi."""
+    if not e_locale(url):
+        uscite.registra(f"Ollama su {_host(url)}", "testi dei documenti da indicizzare")
     with diagnostica.misura("embedding", modello=modello, testi=len(testi)):
         return _embed(testi, modello, url)
 

@@ -275,7 +275,9 @@ class SchedaClienti(QWidget):
         manca = []
         if not crm.configurato():
             manca.append("<a href='dynamics'>Dynamics 365 Sales</a>")
-        if not web.configurata():
+        if web.vietata():
+            manca.append("ricerca web (disattivata dall'IT)")
+        elif not web.configurata():
             manca.append("<a href='web'>chiave di Ollama Web Search</a>")
         self.l_stato.setText(("Da configurare nelle Impostazioni: " + " · ".join(manca)) if manca else
                              "🔒 Trascrizioni e partecipanti restano su questo computer; sul web esce solo il nome "
@@ -428,6 +430,9 @@ class SchedaClienti(QWidget):
         nome = self.e_cerca.text().strip()
         if not nome:
             QMessageBox.information(self, "Scheda pubblica", "Scrivi il nome dell'azienda.")
+            return
+        if web.vietata():
+            QMessageBox.information(self, "Ricerca web", "La ricerca web è disattivata dall'IT con i criteri aziendali.")
             return
         if not web.configurata():
             QMessageBox.information(self, "Ricerca web", "Serve la chiave di Ollama Web Search: Impostazioni › Ricerca web.")

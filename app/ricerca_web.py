@@ -39,8 +39,17 @@ def salva_chiave(valore):
         pass
 
 
+def vietata():
+    """True se l'IT ha disattivato la ricerca web con i criteri aziendali («ricerca_web»: false)."""
+    try:
+        import criteri
+        return criteri.carica().get("ricerca_web") is False
+    except Exception:
+        return False
+
+
 def configurata():
-    return bool(chiave())
+    return bool(chiave()) and not vietata()
 
 
 def _contesti():
@@ -53,8 +62,14 @@ def _contesti():
 
 
 def _post(percorso, corpo, timeout=40):
+    if vietata():
+        raise ErroreRicerca("La ricerca web è disattivata dall'IT con i criteri aziendali.")
     if not chiave():
         raise ErroreRicerca("Manca la chiave di Ollama Web Search: Impostazioni › Ricerca web (account Ollama gratuito).")
+    import uscite
+    uscite.registra("Ollama Web Search" if percorso == "web_search" else "Ollama Web Fetch",
+                    "testo di una ricerca web (nome dell'azienda)" if percorso == "web_search"
+                    else "indirizzo di una pagina web da leggere")
     req = urllib.request.Request(f"{BASE}/{percorso}", data=json.dumps(corpo).encode("utf-8"), method="POST",
                                  headers={"Authorization": f"Bearer {chiave()}", "Content-Type": "application/json"})
     ultimo = None

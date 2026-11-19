@@ -2,6 +2,15 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261119.1720: la promessa, alla lettera
+- **Riconoscimento delle voci spento per tutti** finché non lo attivi (*Voci › Attiva il riconoscimento…* o *Impostazioni › Trascrizione e voci*). Da spento: parlanti «Parlante 1, 2…», nessuna impronta calcolata o conservata (WhisperX gira senza `--speaker_embeddings`), Live senza anagrafe, niente voci per l'iPhone.
+- **Consenso per ogni voce**, salvato con la data in `voci/<Nome>/consenso.json` e mostrato nella nuova colonna **Consenso**. Le voci salvate prima restano ma non si usano finché non confermi il consenso (all'attivazione o con **Conferma consenso…**). Senza consenso nessuna impronta viene salvata, nemmeno dalla Revisione.
+- **Cosa è uscito da questo computer**: ogni uscita compare in basso («☁️ Uscito ora: … → …») e resta in un elenco in *Impostazioni › 🛟 Supporto*: modelli cloud, Ollama su un altro computer, ricerca web, bozze e task in Microsoft 365, record e ricerche in Dynamics. Solo destinazione e tipo di dato, mai il contenuto.
+- **Nuovi criteri IT**: `"riconoscimento_voci": false` e `"ricerca_web": false`.
+- **Ponte**: con il riconoscimento spento dice all'iPhone che non deve più usare le voci (l'app iPhone le elimina dalla 0.6.4).
+- *Registra* partiva già in Live, con Archivia come scelta esplicita: invariato.
+- Manuale (§6, §11.3, §11.6, §16) e PRO.md aggiornati.
+
 ## 20261119.1658: «Chiedi supporto» allega davvero il pacchetto
 - Prima la mail si apriva con un link `mailto:`, che **non può portare allegati**: il pacchetto andava trascinato a mano. Ora nel passo 2 c'è **Invia con**:
   - **Outlook · Microsoft 365** (se è collegato): bozza nella cartella *Bozze* con il pacchetto allegato, aperta in Outlook sul web. Usa il permesso `Mail.ReadWrite` che Argo ha già; sopra i 3 MB carica l'allegato a pezzi, come indica Microsoft Graph.

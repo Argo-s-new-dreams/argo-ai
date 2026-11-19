@@ -21,10 +21,11 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QFrame, QGroupBox, QHBoxLayout,
     QLabel, QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton, QSplitter,
-    QStackedWidget, QVBoxLayout, QWidget,
+    QStackedWidget, QTableWidget, QTableWidgetItem, QHeaderView, QVBoxLayout, QWidget,
 )
 
 import diagnostica
+import uscite
 
 INDIRIZZO = "supporto@argo-net.it"
 ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # niente 0/O e 1/I: si legge e si detta senza equivoci
@@ -457,6 +458,7 @@ def chiedi_supporto(parent=None, successo=""):
 # ====================================================================== errori e avvio protetto
 class _Ponte(QObject):
     errore = Signal(str, str, str)
+    uscita = Signal(str)
 
 
 _ponte = None
@@ -469,7 +471,18 @@ def collega():
     global _ponte
     _ponte = _Ponte()
     _ponte.errore.connect(_mostra, Qt.QueuedConnection)
+    _ponte.uscita.connect(_avviso_uscita, Qt.QueuedConnection)
+    uscite._avvisa = _ponte.uscita.emit  # i segnali Qt si possono emettere da qualunque thread
     diagnostica.collega_qt(mostra_errore)
+
+
+def _avviso_uscita(testo):
+    f = _finestra_principale()
+    if f is not None:
+        f.statusBar().showMessage(testo, 8000)
+        pannello = getattr(f, "pannello_supporto", None)
+        if pannello is not None:
+            pannello.aggiorna_uscite()
 
 
 def mostra_errore(tipo, messaggio, traccia):
@@ -727,6 +740,36 @@ class PannelloSupporto(QWidget):
         r.addStretch(1)
         lg.addLayout(r)
         self.gruppi.append(("precedente", g))
+
+        g = QGroupBox("Cosa è uscito da questo computer")
+        lg = QVBoxLayout(g)
+        t = QLabel("Di base la conversazione resta qui. Escono solo i dati che decidi tu, e qui c'è l'elenco: verso "
+                   "dove e che tipo di dato, mai il contenuto. Per esempio un modello cloud scelto per un attrezzo, "
+                   "una ricerca web, una bozza in Outlook, un record in Dynamics. Non compaiono il Ponte verso il "
+                   "tuo iPhone (rete locale), i download di modelli e aggiornamenti e le letture da Microsoft 365 e "
+                   "Dynamics.")
+        t.setWordWrap(True)
+        t.setProperty("ruolo", "tenue")
+        lg.addWidget(t)
+        self.tab_uscite = QTableWidget(0, 4)
+        self.tab_uscite.setHorizontalHeaderLabels(["Quando", "Verso", "Che cosa", "Volte"])
+        self.tab_uscite.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.tab_uscite.verticalHeader().setVisible(False)
+        self.tab_uscite.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.tab_uscite.setMinimumHeight(220)
+        lg.addWidget(self.tab_uscite)
+        r = QHBoxLayout()
+        b = QPushButton("Aggiorna")
+        b.clicked.connect(self.aggiorna_uscite)
+        b2 = QPushButton("Svuota l'elenco")
+        b2.clicked.connect(self._svuota_uscite)
+        r.addWidget(b)
+        r.addWidget(b2)
+        self.l_uscite = QLabel()
+        self.l_uscite.setProperty("ruolo", "tenue")
+        r.addWidget(self.l_uscite, 1)
+        lg.addLayout(r)
+        self.gruppi.insert(0, ("uscite", g))
         self.aggiorna()
 
     def aggiorna(self):
@@ -751,6 +794,23 @@ class PannelloSupporto(QWidget):
             "Nessuna versione precedente salvata: Argo ne salva una a ogni aggiornamento fatto dall'app.")
         self.b_prec.setText(f"Torna alla versione {v}…" if v else "Torna alla versione precedente…")
         self.b_prec.setEnabled(bool(v))
+        self.aggiorna_uscite()
+
+    def aggiorna_uscite(self):
+        righe = uscite.elenco(200)
+        self.tab_uscite.setRowCount(len(righe))
+        for i, u in enumerate(righe):
+            for j, v in enumerate((u.get("quando", ""), u.get("verso", ""), u.get("cosa", ""), str(u.get("volte", 1)))):
+                self.tab_uscite.setItem(i, j, QTableWidgetItem(v))
+        self.tab_uscite.resizeColumnToContents(0)
+        self.tab_uscite.resizeColumnToContents(1)
+        self.l_uscite.setText("Nessuna uscita registrata." if not righe else f"Ultime {len(righe)} uscite.")
+
+    def _svuota_uscite(self):
+        if QMessageBox.question(self.finestra, "Svuotare l'elenco?", "L'elenco delle uscite si cancella. "
+                                "Le prossime uscite verranno registrate di nuovo.") == QMessageBox.Yes:
+            uscite.svuota()
+            self.aggiorna_uscite()
 
     def _trace(self, attiva):
         diagnostica.imposta_trace(attiva, al_riavvio=self.c_durata.currentIndex() == 1)

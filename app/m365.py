@@ -154,7 +154,28 @@ def _contesti():
         pass
 
 
+def _uscita(metodo, percorso):
+    """Cosa esce verso Microsoft 365 quando Argo scrive (le letture non si registrano)."""
+    if metodo not in ("POST", "PATCH", "PUT") or "createUploadSession" in percorso:
+        return
+    if metodo == "PATCH" and "/me/messages/" in percorso:
+        return  # solo «letta / non letta»
+    if "/planner/tasks" in percorso:
+        cosa = "task in Planner"
+    elif percorso.endswith("/attachments"):
+        cosa = "allegato di una bozza di mail"
+    elif "createReply" in percorso:
+        cosa = "bozza di risposta"
+    elif percorso.startswith("/me/messages"):
+        cosa = "bozza di mail"
+    else:
+        cosa = "dati verso Microsoft 365"
+    import uscite
+    uscite.registra("Microsoft 365 · " + ("Planner" if "planner" in percorso else "Outlook"), cosa)
+
+
 def graph(metodo, percorso, corpo=None, token=None, testo=False):
+    _uscita(metodo, percorso)
     url = percorso if percorso.startswith("http") else GRAPH + percorso
     dati = json.dumps(corpo).encode() if corpo is not None else None
     prefer = 'outlook.timezone="Europe/Rome"' + (', outlook.body-content-type="text"' if testo else "")
