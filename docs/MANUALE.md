@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261119.1011 · riferita all'app versione 20261119.1011*
+*Versione del manuale: 20261119.1523 · riferita all'app versione 20261119.1523*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -892,11 +892,26 @@ Il controllo legge da GitHub solo il numero di versione e le novità: nessun dat
 
 **Tornare indietro.** La versione precedente resta in `whisperx-env/app_precedente`: per ripristinarla, chiudi Argo e copia il contenuto di quella cartella in `whisperx-env/app`.
 
-**Disinstallare:**
+**Disinstallare (consigliato: con il disinstallatore).** Nel pacchetto di Argo, lo stesso che hai usato per installarlo:
 
-1. Elimina il collegamento **Argo AI** (Desktop e menu Start) oppure `~/Applications/Argo AI.app`.
-2. Elimina la cartella `whisperx-env`. Attenzione: dentro ci sono anche le impronte vocali e il glossario, quindi fai prima un backup se ti servono.
-3. Facoltativo: rimuovi i modelli da Ollama (`ollama rm <modello>`) e la cache di Hugging Face (`~/.cache/huggingface`).
+- **Mac:** tasto destro su `Disinstalla-Argo.command` → *Apri*;
+- **Windows:** doppio clic su `Disinstalla-Argo.bat`.
+
+Il disinstallatore:
+1. ti mostra cosa eliminerà e chiede conferma (con «No» non tocca niente);
+2. propone un **backup sulla Scrivania** di voci, incontri, clienti, glossario, indice dei documenti e impostazioni (`Argo-backup-AAAAMMGG-HHMM`). Token e chiavi API non vengono copiati: andranno reinseriti;
+3. chiude Argo, elimina l'app (Mac) o i collegamenti su Desktop e menu Start (Windows) e la cartella `whisperx-env` con programma e dati;
+4. chiede se eliminare anche le registrazioni archiviate in *Documenti/Argo*.
+
+**Non tocca** Ollama e i suoi modelli, uv, FFmpeg e le cache dei modelli di trascrizione, che possono servire ad altri programmi. Per liberare anche quello spazio, a mano:
+
+| Cosa | Come |
+| --- | --- |
+| Modelli di Ollama | `ollama list` per vederli, `ollama rm <nome>` per toglierli; Ollama si disinstalla come un'app normale |
+| Cache dei modelli di trascrizione | Cartelle `.cache/huggingface` e `.cache/torch` nella cartella utente, se nessun altro programma le usa |
+| FFmpeg e uv (Windows) | `winget uninstall Gyan.FFmpeg` e `winget uninstall astral-sh.uv`, se li aveva installati Argo |
+
+**A mano, senza disinstallatore.** Chiudi Argo, elimina `~/Applications/Argo AI.app` (Mac) oppure i collegamenti **Argo AI** su Desktop e menu Start (Windows), poi la cartella `whisperx-env` nella cartella utente. Prima fai un backup delle cartelle `voci`, `incontri` e `clienti` se ti servono.
 
 ---
 

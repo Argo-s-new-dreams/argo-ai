@@ -2,6 +2,15 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261119.1523: disinstallatori per Mac e Windows
+- **`Disinstalla-Argo.command`** (macOS) e **`Disinstalla-Argo.bat`** (Windows), nel pacchetto accanto agli installer:
+  - mostrano cosa verrà eliminato e chiedono conferma;
+  - propongono un backup sulla Scrivania di voci, incontri, clienti, glossario, indice dei documenti e impostazioni, senza token e chiavi;
+  - chiudono Argo ed eliminano l'app o i collegamenti e la cartella `whisperx-env`;
+  - chiedono se eliminare anche le registrazioni archiviate.
+- Non toccano Ollama, i suoi modelli, uv, FFmpeg e le cache dei modelli condivise: alla fine dicono come toglierli a mano.
+- Manuale (§14) e README aggiornati.
+
 ## 20261119.1011: schede «Maggiori info» sui modelli cloud, GB dei modelli locali, addio a GitHub Models
 - **ℹ️ Maggiori info** accanto a ogni fornitore cloud: sito, come creare la chiave passo per passo, **dove vengono elaborati i dati** (Europa o no), per quanto vengono conservati, se finiscono nell'addestramento, con i link alle pagine ufficiali e la data della verifica (19/11/2026).
   - **Claude**: con l'API diretta l'elaborazione è «global» o solo USA e i dati salvati stanno negli USA: nessuna garanzia di restare in Europa. Input e output vengono cancellati entro 30 giorni e non sono usati per l'addestramento.

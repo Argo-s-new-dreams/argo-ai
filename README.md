@@ -87,6 +87,8 @@ Servono anche circa 10 GB liberi e un account gratuito [Hugging Face](https://hu
    - macOS: tasto destro su `Installa-Argo.command` → *Apri*. Se macOS lo blocca: *Impostazioni di Sistema → Privacy e sicurezza → Apri comunque*.
 4. **Apri Argo AI** (Desktop/menu Start su Windows, Applicazioni su Mac), incolla il token in *Impostazioni* e premi **Salva e verifica**.
 
+**Disinstallare:** `Disinstalla-Argo.bat` (Windows) o `Disinstalla-Argo.command` (macOS, tasto destro → *Apri*). Chiede conferma, propone un backup sulla Scrivania e non tocca Ollama. Dettagli nel [manuale](docs/MANUALE.md#14-aggiornare-e-disinstallare).
+
 Gli installer non sono firmati digitalmente: per questo Windows e macOS mostrano un avviso. Il codice è tutto qui, leggibile.
 
 ## Uso in breve
@@ -149,6 +151,7 @@ Queste note sono informative e non costituiscono consulenza legale.
 | `docs/MANUALE.md` | Manuale d'uso completo |
 | `installer/installa_windows.ps1` | Installer Windows (lanciato da `Installa-Argo.bat`) |
 | `Installa-Argo.command` | Installer macOS, crea `~/Applications/Argo AI.app` |
+| `Disinstalla-Argo.command` · `Disinstalla-Argo.bat` + `installer/disinstalla_windows.ps1` | Disinstallatori macOS e Windows: conferma, backup facoltativo, poi app e `whisperx-env` |
 
 ## Stato del progetto
 
