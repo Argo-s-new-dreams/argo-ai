@@ -477,7 +477,7 @@ class SchedaIncontri(QWidget):
         self.c_vision.setSizeAdjustPolicy(QComboBox.AdjustToContents)
         self.c_vision.setToolTip("Un modello vision di Ollama guarda anche le foto (prodotti, stand, schemi); "
                                  "senza, si usa il testo letto dall'iPhone")
-        self.c_vision.currentTextChanged.connect(self._salva_vision)
+        self.c_vision.currentIndexChanged.connect(lambda _i: self._salva_vision(self._vision_scelto()))
         comandi.addWidget(self.c_vision)
         comandi.addStretch()
         lay.addLayout(comandi)
@@ -1013,20 +1013,27 @@ class SchedaIncontri(QWidget):
             vision = []
         self.c_vision.blockSignals(True)
         self.c_vision.clear()
-        self.c_vision.addItem(SOLO_OCR)
-        self.c_vision.addItems(vision)
+        self.c_vision.addItem(SOLO_OCR, "")
+        dim = llm.dimensioni(s.get("ollama_url", llm.DEFAULT_URL))  # GB sul disco accanto a ogni modello
+        for nome in vision:
+            self.c_vision.addItem(llm.etichetta(nome, dim.get(nome)), nome)
         scelto = s.get("modello_vision")
         if scelto in vision:
-            self.c_vision.setCurrentText(scelto)
+            self.c_vision.setCurrentIndex(self.c_vision.findData(scelto))
         elif scelto is None and vision:
             self.c_vision.setCurrentIndex(1)  # prima volta: se c'è un modello vision, si usa
         self.c_vision.blockSignals(False)
         if not vision:
             self.c_vision.setToolTip("Nessun modello vision in Ollama: es. «ollama pull qwen2.5vl:7b» o gemma3")
 
-    def _salva_vision(self, testo):
+    def _vision_scelto(self):
+        """Nome del modello vision scelto ('' = solo il testo letto dall'iPhone)."""
+        dato = self.c_vision.currentData()
+        return dato if dato is not None else ("" if self.c_vision.currentText() == SOLO_OCR else self.c_vision.currentText())
+
+    def _salva_vision(self, nome):
         s = core.carica_impostazioni()
-        s["modello_vision"] = "" if testo == SOLO_OCR else testo
+        s["modello_vision"] = nome or ""
         core.salva_impostazioni(s)
 
     # -- coda delle relazioni (come la coda delle trascrizioni)
@@ -1090,7 +1097,7 @@ class SchedaIncontri(QWidget):
             return self._prossima()
         cartella, d = self._incontri[r]
         s = core.carica_impostazioni()
-        vision = "" if self.c_vision.currentText() == SOLO_OCR else self.c_vision.currentText()
+        vision = self._vision_scelto()
         self.in_corso = id_incontro
         template = (self.stati.get(id_incontro) or {}).get("template") or self.c_template.currentData()
         self.stati[id_incontro] = {"stato": "In corso", "progresso": 3, "nota": "preparo", "template": template}

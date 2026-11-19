@@ -2,6 +2,13 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261119.1011: schede «Maggiori info» sui modelli cloud, GB dei modelli locali, addio a GitHub Models
+- **ℹ️ Maggiori info** accanto a ogni fornitore cloud: sito, come creare la chiave passo per passo, **dove vengono elaborati i dati** (Europa o no), per quanto vengono conservati, se finiscono nell'addestramento, con i link alle pagine ufficiali e la data della verifica (19/11/2026).
+  - **Claude**: con l'API diretta l'elaborazione è «global» o solo USA e i dati salvati stanno negli USA: nessuna garanzia di restare in Europa. Input e output vengono cancellati entro 30 giorni e non sono usati per l'addestramento.
+  - **Ollama Cloud**: soprattutto USA, a volte Europa o Singapore. Ollama dichiara nessun log, nessuna conservazione e nessun addestramento.
+- **Dimensione in GB dei modelli locali** nelle tendine di *Impostazioni › Ollama* e in *Incontri › Foto* (es. `gemma3:12b · 8,1 GB`), letta da Ollama.
+- **Tolto GitHub Models**: GitHub l'ha chiuso il 30 luglio 2026 (API, catalogo e chiavi non funzionano più). Gli attrezzi che lo usavano tornano in locale; criteri e documenti aggiornati.
+
 ## 20261119.0801: template delle relazioni e Impostazioni per argomento
 - **Template delle relazioni**, nel nuovo argomento *Impostazioni › 📝 Relazioni*: sezioni da spuntare e riordinare trascinandole, lunghezza (breve, media, dettagliata) e **«Come la voglio»**, le tue indicazioni in parole tue.
 - **Cinque template standard**: *Fiera · primo contatto* (★ predefinito, come le relazioni di prima), *Visita cliente*, *Riunione interna · verbale*, *Intervista · assessment* (temi, risposte e citazioni fedeli), *Nota rapida · CRM o mail*. Gli standard si duplicano; i tuoi si creano, modificano ed eliminano, e uno diventa il ★ predefinito.

@@ -46,6 +46,24 @@ def elenco_modelli(url=DEFAULT_URL):
     return chat, emb
 
 
+def dimensioni(url=DEFAULT_URL):
+    """{nome modello: byte occupati sul disco} dei modelli installati in Ollama ({} se non risponde)."""
+    try:
+        with _req(url, "/api/tags", timeout=10) as r:
+            return {m.get("name", ""): int(m.get("size") or 0) for m in json.load(r).get("models", [])}
+    except Exception:
+        return {}
+
+
+def etichetta(nome, dimensioni_byte=None):
+    """«gemma3:12b · 8,1 GB» per le tendine (il nome vero va nei dati della voce)."""
+    if not dimensioni_byte:
+        return nome
+    gb = dimensioni_byte / 1e9
+    testo = f"{gb:.1f}" if gb >= 0.1 else f"{gb:.2f}"
+    return f"{nome} · {testo.replace('.', ',')} GB"
+
+
 def chat(messaggi, modello, url=DEFAULT_URL, temperatura=0.3, on_token=None, stop=None, contesto=None,
          on_attesa=None):
     """Chat in streaming. on_token(testo) riceve i pezzi; stop() -> True interrompe. Ritorna il testo completo.

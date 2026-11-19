@@ -142,7 +142,7 @@ Queste note sono informative e non costituiscono consulenza legale.
 | `app/llm_locale.py` | Client minimale per Ollama: chat in streaming, embedding, download modelli |
 | `app/template_relazione.py` | Template delle relazioni degli incontri: cinque standard e quelli dell'utente (sezioni, lunghezza, «come la voglio») |
 | `app/incontri_file.py` | Incontri creati sul computer da audio o video (WhisperX + voci note) e file aggiunti a un incontro (foto, documenti, altri audio) |
-| `app/cloud.py` | Modelli cloud facoltativi (Claude, GitHub Models, Ollama Cloud), scelti attrezzo per attrezzo e limitabili dai criteri aziendali |
+| `app/cloud.py` | Modelli cloud facoltativi (Claude, Ollama Cloud) con schede «Maggiori info» su dove vanno i dati, scelti attrezzo per attrezzo e limitabili dai criteri aziendali |
 | `app/modelli_ollama.py` | All'avvio: accende Ollama se serve, propone i modelli consigliati (gemma3, bge-m3) e li sceglie |
 | `app/risorse.py` | «Uso del computer»: core, priorità e memoria concessi a WhisperX e Ollama, un lavoro pesante alla volta sui PC leggeri |
 | `app/esempi/` | Riunione, NDA e capitolato fittizi per le prove |

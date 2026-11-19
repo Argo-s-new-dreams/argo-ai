@@ -34,7 +34,7 @@ import risorse  # noqa: E402
 import modelli_ollama  # noqa: E402
 import cloud  # noqa: E402
 
-VERSIONE = "20261119.0801"
+VERSIONE = "20261119.1011"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [

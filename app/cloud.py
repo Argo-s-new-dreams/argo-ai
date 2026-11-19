@@ -2,7 +2,6 @@
 
 Di base Argo usa solo Ollama su questo computer. In Impostazioni › Modelli cloud si possono collegare:
     claude        Anthropic Claude      (chiave API da console.anthropic.com)
-    github        GitHub Models         (token personale GitHub con permesso «models: read»)
     ollama_cloud  Ollama Cloud          (chiave da ollama.com/settings/keys; la stessa della Ricerca web)
 e poi, per ogni attrezzo (Verbale, Traduzione, Incontri…), scegliere «Locale» oppure un modello cloud.
 Quando un attrezzo usa il cloud, il testo che elabora esce dal computer: Argo lo scrive nello stato.
@@ -23,11 +22,73 @@ import voci_core as core
 FORNITORI = {
     "claude": {"nome": "Claude (Anthropic)", "breve": "Claude",
                "aiuto": "Chiave API da console.anthropic.com › API Keys"},
-    "github": {"nome": "GitHub Models", "breve": "GitHub",
-               "aiuto": "Token personale (fine-grained) con permesso «Models: read» da github.com/settings/tokens"},
     "ollama_cloud": {"nome": "Ollama Cloud", "breve": "Ollama Cloud",
                      "aiuto": "Chiave da ollama.com/settings/keys (vuota = quella della Ricerca web)"},
 }
+# Schede «Maggiori info» (verificate sulle pagine ufficiali il 19/11/2026: le condizioni dei fornitori
+# cambiano, per questo ogni scheda porta la data e i link alle fonti).
+VERIFICATO_IL = "19/11/2026"
+INFO = {
+    "claude": {
+        "sito": ("console Claude (platform.claude.com)", "https://platform.claude.com"),
+        "passi": [
+            "Crea un account sulla console Claude (platform.claude.com) e scegli o crea l'organizzazione.",
+            "In Billing aggiungi un metodo di pagamento o del credito: l'API si paga a consumo.",
+            "Apri API Keys › Create Key, dai un nome (es. «Argo») e copia la chiave: si vede una volta sola.",
+            "In Argo incollala qui e premi «Collega e verifica», poi scegli Claude per gli attrezzi che vuoi.",
+        ],
+        "dove": "<b>Nessuna garanzia di restare in Europa.</b> Con l'API diretta di Anthropic, che è quella usata da Argo, l'elaborazione "
+                "può avvenire in qualunque area geografica disponibile (impostazione «global», predefinita) oppure "
+                "solo negli Stati Uniti; i dati salvati stanno negli Stati Uniti. Un'elaborazione solo in Europa "
+                "oggi è possibile tramite AWS Bedrock o Google Vertex AI, che Argo non usa.",
+        "conservazione": "Input e output dell'API vengono cancellati automaticamente entro 30 giorni, salvo accordi "
+                         "di conservazione zero (per le organizzazioni che li ottengono), violazioni delle regole d'uso "
+                         "(fino a 2 anni) o obblighi di legge.",
+        "addestramento": "Per i prodotti commerciali, API compresa, Anthropic per impostazione predefinita non usa i "
+                         "dati dei clienti per addestrare i modelli.",
+        "fonti": [("Conservazione dei dati dell'API", "https://privacy.claude.com/en/articles/7996866"),
+                  ("Residenza dei dati", "https://platform.claude.com/docs/en/manage-claude/data-residency")],
+    },
+    "ollama_cloud": {
+        "sito": ("ollama.com", "https://ollama.com"),
+        "passi": [
+            "Crea un account su ollama.com (lo stesso che usi per la Ricerca web della pagina Clienti, se c'è già).",
+            "Apri ollama.com/settings/keys e crea una chiave API; copiala.",
+            "In Argo incollala qui (o lascia vuoto per usare la chiave della Ricerca web) e premi «Collega e verifica».",
+            "I modelli cloud disponibili sono elencati su ollama.com/search?c=cloud; piani e prezzi sono su ollama.com.",
+        ],
+        "dove": "<b>Principalmente negli Stati Uniti.</b> Ollama dichiara di ospitare modelli e calcolo soprattutto "
+                "negli USA e di poter instradare le richieste anche in Europa e a Singapore per avere capacità in "
+                "più: non si può scegliere l'area. I modelli girano presso fornitori cloud partner di NVIDIA.",
+        "conservazione": "Ollama dichiara che elabora prompt e risposte solo per dare il servizio, senza salvarli "
+                         "né registrarli nei log, e che ai partner richiede nessun log, nessun addestramento e "
+                         "conservazione zero.",
+        "addestramento": "Ollama dichiara che prompt e risposte non vengono mai usati per l'addestramento.",
+        "fonti": [("Domande frequenti di Ollama (privacy)", "https://docs.ollama.com/faq"),
+                  ("Ollama Cloud · piani e privacy", "https://registry.ollama.ai/cloud"),
+                  ("Documentazione Ollama Cloud", "https://docs.ollama.com/cloud")],
+    },
+}
+
+
+def scheda_info(fornitore):
+    """Testo (HTML semplice) della scheda «Maggiori info» di un fornitore."""
+    i = INFO[fornitore]
+    nome, url = i["sito"]
+    righe = [f"<h3>{FORNITORI[fornitore]['nome']}</h3>",
+             f"<p><b>Sito:</b> <a href='{url}'>{nome}</a></p>",
+             "<p><b>Come collegarlo ad Argo</b></p><ol>" + "".join(f"<li>{x}</li>" for x in i["passi"]) + "</ol>",
+             f"<p><b>🌍 Dove vengono elaborati i dati</b><br>{i['dove']}</p>",
+             f"<p><b>🗄 Quanto vengono conservati</b><br>{i['conservazione']}</p>",
+             f"<p><b>🧠 Addestramento</b><br>{i['addestramento']}</p>",
+             "<p><b>Cosa esce da Argo:</b> solo il testo dell'attrezzo per cui scegli questo fornitore (lo vedi "
+             "riga per riga in «Quale modello per ogni attrezzo»). Audio, trascrizione, voci e indice dei documenti "
+             "restano sul computer.</p>",
+             "<p><b>Fonti</b> (verificate il " + VERIFICATO_IL + "; le condizioni possono cambiare): "
+             + " · ".join(f"<a href='{u}'>{t}</a>" for t, u in i["fonti"]) + "</p>"]
+    return "".join(righe)
+
+
 ATTREZZI = [  # chiave, nome mostrato, cosa esce dal computer se si sceglie il cloud
     ("verbale", "Verbale", "la trascrizione della riunione"),
     ("documenti", "Documenti riservati", "la domanda e gli estratti dei documenti trovati"),
@@ -46,7 +107,6 @@ LOCALE = "locale"
 FILE_CHIAVI = core.APP_HOME / ".chiavi_cloud.json"
 URL = {
     "claude": "https://api.anthropic.com",
-    "github": "https://models.github.ai",
     "ollama_cloud": "https://ollama.com",
 }
 
@@ -163,8 +223,6 @@ def _intestazioni(fornitore):
     if fornitore == "claude":
         return {"x-api-key": k, "anthropic-version": "2023-06-01", "Content-Type": "application/json"}
     h = {"Authorization": f"Bearer {k}", "Content-Type": "application/json"}
-    if fornitore == "github":
-        h.update({"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2026-03-10"})
     return h
 
 
@@ -202,12 +260,6 @@ def elenco_modelli(fornitore):
     if fornitore == "claude":
         with _apri(fornitore, "/v1/models?limit=100", timeout=20) as r:
             return [m["id"] for m in json.load(r).get("data", []) if m.get("id")]
-    if fornitore == "github":
-        with _apri(fornitore, "/catalog/models", timeout=20) as r:
-            dati = json.load(r)
-        voci = dati if isinstance(dati, list) else dati.get("models", [])
-        return sorted(m["id"] for m in voci if m.get("id") and "text" in (m.get("supported_output_modalities") or ["text"])
-                      and "embed" not in m["id"].lower())
     with _apri(fornitore, "/api/tags", timeout=20) as r:
         return sorted(m.get("name", "") for m in json.load(r).get("models", []) if m.get("name"))
 
@@ -254,7 +306,7 @@ def _per_claude(messaggi):
 
 
 def _con_formato(messaggi, formato):
-    """Claude e GitHub non accettano lo schema JSON di Ollama: lo si chiede nelle istruzioni."""
+    """Claude non accetta lo schema JSON di Ollama: lo si chiede nelle istruzioni."""
     if not formato:
         return messaggi
     schema = "" if formato == "json" else "\nSchema JSON da rispettare:\n" + json.dumps(formato, ensure_ascii=False)
@@ -312,17 +364,6 @@ def chat(fornitore, modello, messaggi, temperatura=0.3, on_token=None, stop=None
                 pezzo(d.get("message", {}).get("content", ""))
                 if d.get("done"):
                     break
-    elif fornitore == "github":
-        payload = {"model": modello, "messages": _per_openai(_con_formato(messaggi, formato)), "stream": True,
-                   "temperature": temperatura}
-        if formato:
-            payload["response_format"] = {"type": "json_object"}
-        with _apri_chat(fornitore, "/inference/chat/completions", payload) as r:
-            for d in _righe_sse(r):
-                if stop and stop():
-                    break
-                for scelta in d.get("choices") or []:
-                    pezzo((scelta.get("delta") or {}).get("content") or "")
     else:  # claude
         sistema, msg = _per_claude(_con_formato(messaggi, formato))
         payload = {"model": modello, "max_tokens": 8192, "messages": msg, "stream": True,

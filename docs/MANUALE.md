@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261119.0801 · riferita all'app versione 20261119.0801*
+*Versione del manuale: 20261119.1011 · riferita all'app versione 20261119.1011*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -704,7 +704,7 @@ Contiene il token, il pulsante **Mostra** e **Salva e verifica**, più i link al
 
 - **Indirizzo Ollama:** predefinito `http://localhost:11434`.
 - **Verifica e aggiorna elenco:** legge i modelli installati in Ollama.
-- **Modello per testi:** usato da Verbale, Documenti, Dettatura e Traduzione.
+- **Modello per testi:** usato da Verbale, Documenti, Dettatura e Traduzione. Accanto a ogni modello c'è lo spazio che occupa sul disco (es. `gemma3:12b · 8,1 GB`), letto da Ollama; lo stesso vale per la tendina **Foto:** della pagina Incontri.
 - **Modello per documenti:** il modello di embedding usato dalla ricerca nei documenti, ad esempio `bge-m3`.
 - **Trascrizione rapida:** il modello faster-whisper usato da Dettatura e Traduzione da audio (predefinito `large-v3-turbo`).
 - **Scarica un modello:** scrivi il nome di un modello (es. `bge-m3`), premi **Scarica** e Argo lo scarica tramite Ollama, mostrando l'avanzamento.
@@ -733,11 +733,14 @@ Per salvare tutto premi **Salva impostazioni**. **Apri cartella dati** apre la c
 
 Di base **tutto resta su questo computer**. Qui puoi collegare uno o più fornitori cloud e scegliere, **attrezzo per attrezzo**, se usarli al posto di Ollama locale.
 
-| Fornitore | Cosa serve |
-| --- | --- |
-| **Claude (Anthropic)** | Una chiave API da [console.anthropic.com](https://console.anthropic.com) (si paga a consumo sull'account Anthropic) |
-| **GitHub Models** | Un token personale GitHub (fine-grained) con permesso **Models: read**, da [github.com/settings/tokens](https://github.com/settings/tokens). Modelli come `openai/gpt-4.1`, con i limiti del tuo account GitHub |
-| **Ollama Cloud** | Una chiave da [ollama.com/settings/keys](https://ollama.com/settings/keys). Se la lasci vuota, Argo usa quella di *Ricerca web* |
+| Fornitore | Cosa serve | Dove vanno i dati (al 19/11/2026) |
+| --- | --- | --- |
+| **Claude (Anthropic)** | Una chiave API dalla [console Claude](https://platform.claude.com), che si paga a consumo | Nessuna garanzia di restare in Europa: elaborazione «global» o solo USA, dati salvati negli USA; cancellati entro 30 giorni; non usati per l'addestramento |
+| **Ollama Cloud** | Una chiave da [ollama.com/settings/keys](https://ollama.com/settings/keys). Se la lasci vuota, Argo usa quella di *Ricerca web* | Soprattutto negli USA, a volte Europa o Singapore; Ollama dichiara nessun log, nessuna conservazione e nessun addestramento |
+
+Accanto a ogni fornitore, **ℹ️ Maggiori info** apre una scheda con il sito, i passi per creare la chiave, dove vengono elaborati e conservati i dati, l'uso per l'addestramento e i link alle pagine ufficiali da cui sono presi. Le condizioni dei fornitori cambiano: la scheda riporta la data della verifica.
+
+*GitHub Models non c'è più:* GitHub l'ha chiuso il 30 luglio 2026. Gli attrezzi che lo usavano tornano da soli in locale.
 
 1. Incolla la chiave e premi **Collega e verifica**: Argo controlla la chiave e legge i modelli disponibili.
 2. In **Quale modello per ogni attrezzo** scegli, riga per riga, **🖥 Locale** oppure un modello **☁️**. Argo chiede conferma e dice quali dati usciranno (es. *Verbale: la trascrizione della riunione*). La scelta si salva subito.

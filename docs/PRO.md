@@ -84,11 +84,11 @@ Per aziende con molti utenti: Ollama e la trascrizione su un server in LAN con G
   "canale_aggiornamenti": "pro",
   "aggiornamenti_dall_app": false,
   "registrazione": "solo_live",
-  "modelli_cloud": ["github"]
+  "modelli_cloud": ["claude"]
 }
 ```
 
 - `canale_aggiornamenti`: blocca il canale. L'utente lo vede ma non lo può cambiare.
 - `aggiornamenti_dall_app: false`: Argo non controlla e non installa aggiornamenti da solo, perché li distribuisce l'IT.
 - `registrazione`: `"completa"` (predefinito, Live e Archivia), `"solo_live"` (l'audio delle riunioni non viene mai conservato) oppure `"nessuna"` (pagina Registra disattivata).
-- `modelli_cloud`: `"consentiti"` (predefinito), `"vietati"` (Argo usa solo Ollama locale e il riquadro *Modelli cloud* lo dice) oppure un elenco dei fornitori ammessi tra `"claude"`, `"github"`, `"ollama_cloud"`. Le scelte già fatte dall'utente su un fornitore non più ammesso tornano automaticamente in locale.
+- `modelli_cloud`: `"consentiti"` (predefinito), `"vietati"` (Argo usa solo Ollama locale e il riquadro *Modelli cloud* lo dice) oppure un elenco dei fornitori ammessi tra `"claude"` e `"ollama_cloud"`. Le scelte già fatte dall'utente su un fornitore non più ammesso tornano automaticamente in locale.

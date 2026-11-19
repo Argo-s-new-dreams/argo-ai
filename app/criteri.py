@@ -15,7 +15,7 @@ Chiavi riconosciute (tutte facoltative):
     "registrazione": "completa" | "solo_live" | "nessuna"
                                              pagina Registra: entrambe le modalità (predefinito), solo Live
                                              (l'audio non viene mai conservato) oppure nessuna registrazione
-    "modelli_cloud": "consentiti" | "vietati" | ["claude", "github", "ollama_cloud"]
+    "modelli_cloud": "consentiti" | "vietati" | ["claude", "ollama_cloud"]
                                              modelli linguistici nel cloud: consentiti (predefinito), vietati
                                              (Argo usa solo Ollama locale) oppure solo i fornitori elencati
 """

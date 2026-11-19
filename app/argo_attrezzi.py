@@ -988,12 +988,14 @@ class PannelloOllama(QGroupBox):
             return
         s = imp()
         scelti = completa_modelli(s, chat, emb)
+        dim = llm.dimensioni(url)  # GB sul disco accanto a ogni modello
         for combo, voci, attuale in ((self.c_chat, chat, s.get("modello_chat")),
                                      (self.c_embed, emb, s.get("modello_embed"))):
             combo.clear()
-            combo.addItems(voci)
+            for nome in voci:
+                combo.addItem(llm.etichetta(nome, dim.get(nome)), nome)
             if attuale in voci:
-                combo.setCurrentText(attuale)
+                combo.setCurrentIndex(combo.findData(attuale))
         avviso = "" if llm.e_locale(url) else " ⚠️ L'indirizzo NON è locale: i testi lascerebbero il computer."
         self.l_stato.setText(f"✅ Ollama risponde: {len(chat)} modelli per testi, {len(emb)} per documenti.{avviso}")
         if scelti:
@@ -1007,7 +1009,8 @@ class PannelloOllama(QGroupBox):
     def salva(self):
         s = imp()
         s.update(ollama_url=self.e_url.text().strip() or llm.DEFAULT_URL,
-                 modello_chat=self.c_chat.currentText(), modello_embed=self.c_embed.currentText(),
+                 modello_chat=self.c_chat.currentData() or self.c_chat.currentText(),
+                 modello_embed=self.c_embed.currentData() or self.c_embed.currentText(),
                  modello_dettatura=self.c_dett.currentText())
         core.salva_impostazioni(s)
         self.l_stato.setText("Modelli salvati.")
@@ -1031,7 +1034,7 @@ class PannelloCloud(QGroupBox):
     cambiato = Signal()
 
     def __init__(self, parent=None):
-        super().__init__("Modelli cloud (facoltativi) · Claude, GitHub Models, Ollama Cloud", parent)
+        super().__init__("Modelli cloud (facoltativi) · Claude, Ollama Cloud", parent)
         self.lavori = {}
         lay = QVBoxLayout(self)
         if cloud.vietati_da_criteri():
@@ -1057,11 +1060,15 @@ class PannelloCloud(QGroupBox):
             e.setToolTip(info["aiuto"])
             b = QPushButton("Collega e verifica")
             b.clicked.connect(lambda _c=False, x=fid: self.verifica(x))
+            b_info = QPushButton("ℹ️ Maggiori info")
+            b_info.setToolTip("Sito, come creare la chiave, dove vengono elaborati e conservati i dati")
+            b_info.clicked.connect(lambda _c=False, x=fid: self.mostra_info(x))
             esito = QLabel(self._testo_esito(fid))
             esito.setWordWrap(True)
             r = QHBoxLayout()
             r.addWidget(e, 1)
             r.addWidget(b)
+            r.addWidget(b_info)
             f.addRow(info["nome"] + ":", r)
             f.addRow("", esito)
             self.chiavi[fid], self.esiti[fid] = e, esito
@@ -1082,6 +1089,15 @@ class PannelloCloud(QGroupBox):
         self.l_stato.setWordWrap(True)
         lay.addWidget(self.l_stato)
         self.riempi()
+
+    def mostra_info(self, fid):
+        box = QMessageBox(self)
+        box.setWindowTitle(f"{cloud.FORNITORI[fid]['nome']} · maggiori info")
+        box.setTextFormat(Qt.RichText)
+        box.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        box.setText(cloud.scheda_info(fid))
+        box.setStandardButtons(QMessageBox.Ok)
+        box.exec()
 
     @staticmethod
     def _testo_esito(fid):
