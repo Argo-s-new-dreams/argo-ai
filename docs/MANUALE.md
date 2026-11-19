@@ -931,11 +931,14 @@ Il controllo legge da GitHub solo il numero di versione e le novità: nessun dat
 | "Controllo non riuscito" negli aggiornamenti | Nessuna connessione, oppure un firewall blocca GitHub | Riprova più tardi o aggiorna a mano dal pacchetto; puoi disattivare il controllo in *Impostazioni → Aspetto e aggiornamenti* |
 | "Homebrew non trovato" (versioni fino alla 1830) | L'installer vecchio richiedeva Homebrew | Usa l'installer dalla versione 1845 in poi: Homebrew non serve più |
 
-Se un file va in **Errore**, il registro tecnico sotto la coda di *Trascrivi* (compare appena c'è qualcosa da leggere) riporta il messaggio: è il primo posto dove guardare, e il testo da allegare a una segnalazione su GitHub.
+Se un file va in **Errore**, il registro tecnico sotto la coda di *Trascrivi* (compare appena c'è qualcosa da leggere) riporta il messaggio: è il primo posto dove guardare, e il testo da allegare a una richiesta di supporto a **supporto@argo-net.it**. Argo è un esperimento: il supporto è dato al meglio delle possibilità, senza tempi garantiti.
 
 ---
 
 ## 16. Privacy, GDPR e AI Act
+
+> **Non è un registratore. È una stenografa digitale locale.**
+> Ascolta solamente mentre viene utilizzato, trascrive localmente e, di base, non invia la conversazione a un cloud: solo se lo scegli tu, attrezzo per attrezzo. Non conserva la voce, non profila gli interlocutori e lascia all'utente/organizzazione il controllo del testo prodotto.
 
 - **Tutto locale, di base.** Audio e documenti non lasciano il computer. Fa eccezione solo il testo degli attrezzi per cui scegli tu un modello cloud (§11.4bis): Argo lo segnala ogni volta, e l'IT può vietarlo. La telemetria anonima di pyannote è disattivata dall'app. L'unica connessione che Argo fa da sé è il controllo degli aggiornamenti su GitHub, che legge solo numero di versione e novità e si può disattivare in *Impostazioni → Aspetto e aggiornamenti*.
 - **Microsoft 365 è facoltativo:** se lo colleghi, Argo legge il calendario e scrive su Microsoft 365 solo la bozza della mail e i task che confermi, nel tuo tenant. Audio, trascrizioni e documenti non vengono inviati.
