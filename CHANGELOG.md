@@ -2,6 +2,15 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261119.1658: «Chiedi supporto» allega davvero il pacchetto
+- Prima la mail si apriva con un link `mailto:`, che **non può portare allegati**: il pacchetto andava trascinato a mano. Ora nel passo 2 c'è **Invia con**:
+  - **Outlook · Microsoft 365** (se è collegato): bozza nella cartella *Bozze* con il pacchetto allegato, aperta in Outlook sul web. Usa il permesso `Mail.ReadWrite` che Argo ha già; sopra i 3 MB carica l'allegato a pezzi, come indica Microsoft Graph.
+  - **Mail di macOS**: mail con l'allegato via AppleScript. La prima volta macOS chiede il permesso ad Argo di controllare Mail.
+  - **Outlook classico** su Windows: mail con l'allegato via COM. Il nuovo Outlook non lo permette.
+  - **Altro programma di posta**: come prima, senza allegato.
+- Argo non invia mai da solo. Se il modo scelto non riesce, lo dice e ripiega sull'ultimo.
+- Manuale §11.6 aggiornato.
+
 ## 20261119.1648: registro locale, modalità trace, avvio protetto e «Chiedi supporto»
 - **Registro di Argo** in `whisperx-env/log/` (5 file da 2 MB a rotazione): avvio, versione, canale, sistema, CPU, RAM, fasi dei lavori con durata ed esito, errori con traccia, tempi di Ollama e dei modelli cloud (solo fornitore e modello), aggiornamenti. **Mai contenuti**: niente audio, trascrizioni, prompt e risposte, nomi dei file e dei parlanti. Un filtro toglie anche mail, telefoni, chiavi, token e percorsi della cartella utente. Nessuna telemetria: il registro esce solo se lo mandi tu.
 - **Errori non gestiti** (anche nei thread e prima della finestra) finiscono nel registro e aprono una finestra con **🛟 Chiedi supporto** e, all'avvio, **Torna alla versione …**. Un errore come quello della 20261118.1957 oggi si vede subito.

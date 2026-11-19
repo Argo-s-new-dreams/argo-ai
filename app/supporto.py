@@ -173,9 +173,99 @@ def testo_mail(richiesta, zip_path):
 
 
 def apri_mail(richiesta, zip_path):
+    """Solo testo: un link mailto: non può portare allegati."""
     oggetto, corpo = testo_mail(richiesta, zip_path)
     url = f"mailto:{INDIRIZZO}?subject={urllib.parse.quote(oggetto)}&body={urllib.parse.quote(corpo)}"
     return QDesktopServices.openUrl(QUrl(url))
+
+
+# ---------------------------------------------------------------------- invio con l'allegato
+# Un link mailto: non può allegare file. Per allegare il pacchetto Argo usa un programma di posta che sa farlo:
+# Outlook con Microsoft 365 (bozza via Graph), Mail di macOS (AppleScript), Outlook classico su Windows (COM).
+_SCRIPT_MAIL = """on run argv
+    set {oggetto, corpo, destinatario, percorso} to argv
+    set allegato to POSIX file percorso
+    tell application "Mail"
+        set m to make new outgoing message with properties {subject:oggetto, content:corpo & return & return, visible:true}
+        tell m
+            make new to recipient at end of to recipients with properties {address:destinatario}
+            make new attachment with properties {file name:allegato} at after the last paragraph
+        end tell
+        activate
+    end tell
+end run"""
+
+_SCRIPT_OUTLOOK = """$ErrorActionPreference = 'Stop'
+$o = New-Object -ComObject Outlook.Application
+$m = $o.CreateItem(0)
+$m.To = $env:ARGO_A
+$m.Subject = $env:ARGO_OGGETTO
+$m.Body = $env:ARGO_CORPO
+[void]$m.Attachments.Add($env:ARGO_FILE)
+$m.Display()"""
+
+
+def _m365_collegato():
+    try:
+        import m365
+        return bool(m365.configurato() and m365.account())
+    except Exception:
+        return False
+
+
+def _outlook_classico():
+    if os.name != "nt":
+        return False
+    try:
+        import winreg
+        winreg.CloseKey(winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, r"Outlook.Application\CLSID"))
+        return True
+    except Exception:
+        return False
+
+
+def modi_di_invio():
+    """[(chiave, etichetta)] dal più comodo; l'ultimo c'è sempre."""
+    modi = []
+    if _m365_collegato():
+        modi.append(("m365", "Outlook · Microsoft 365: bozza con il pacchetto già allegato"))
+    if sys.platform == "darwin" and Path("/System/Applications/Mail.app").exists():
+        modi.append(("mail_mac", "Mail di macOS: mail con il pacchetto già allegato"))
+    if _outlook_classico():
+        modi.append(("outlook_win", "Outlook classico: mail con il pacchetto già allegato"))
+    modi.append(("mailto", "Altro programma di posta: alleghi tu il pacchetto"))
+    return modi
+
+
+def invia(modo, richiesta, zip_path):
+    """Prepara la mail per supporto@argo-net.it. Ritorna (allegato_già_messo, messaggio per l'utente).
+    Non invia mai da solo: l'ultimo clic su «Invia» resta all'utente."""
+    oggetto, corpo = testo_mail(richiesta, zip_path)
+    if modo == "m365":
+        import m365
+        link = m365.bozza_con_allegato(INDIRIZZO, oggetto, corpo, str(zip_path))
+        if link:
+            QDesktopServices.openUrl(QUrl(link))
+        return True, ("Ho creato la bozza in Outlook (cartella Bozze) con il pacchetto allegato e l'ho aperta in "
+                      "Outlook sul web. Controllala e premi Invia.")
+    if modo == "mail_mac":
+        r = subprocess.run(["/usr/bin/osascript", "-e", _SCRIPT_MAIL, oggetto, corpo, INDIRIZZO, str(zip_path)],
+                           capture_output=True, text=True, timeout=60)
+        if r.returncode != 0:
+            raise RuntimeError(r.stderr.strip()[-300:] or f"osascript ha risposto {r.returncode}")
+        return True, ("Si è aperta una mail in Mail con il pacchetto allegato: controllala e premi Invia. "
+                      "La prima volta macOS chiede se Argo può controllare Mail: serve per allegare il file.")
+    if modo == "outlook_win":
+        env = dict(os.environ, ARGO_A=INDIRIZZO, ARGO_OGGETTO=oggetto, ARGO_CORPO=corpo, ARGO_FILE=str(zip_path))
+        r = subprocess.run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", _SCRIPT_OUTLOOK],
+                           capture_output=True, text=True, timeout=90, env=env, creationflags=0x08000000)
+        if r.returncode != 0:
+            raise RuntimeError(r.stderr.strip()[-300:] or f"PowerShell ha risposto {r.returncode}")
+        return True, "Si è aperta una mail in Outlook con il pacchetto allegato: controllala e premi Invia."
+    apri_mail(richiesta, zip_path)
+    return False, (f"Ho aperto una mail per {INDIRIZZO} con il codice {richiesta['codice']}. Un link di posta "
+                   "non può portare allegati: trascina nella mail il pacchetto che ti ho mostrato e invia. Se non "
+                   "si è aperto nessun programma di posta, scrivi a quell'indirizzo e allega il file.")
 
 
 def mostra_nel_finder(percorso):
@@ -263,6 +353,13 @@ class DialogoSupporto(QDialog):
         div.addWidget(self.anteprima)
         div.setSizes([260, 540])
         l2.addWidget(div, 1)
+        r_invio = QHBoxLayout()
+        r_invio.addWidget(QLabel("Invia con"))
+        self.c_invio = QComboBox()
+        for chiave, etichetta in modi_di_invio():
+            self.c_invio.addItem(etichetta, chiave)
+        r_invio.addWidget(self.c_invio, 1)
+        l2.addLayout(r_invio)
         self.pile.addWidget(p2)
 
         self.bottoni = QDialogButtonBox()
@@ -313,13 +410,22 @@ class DialogoSupporto(QDialog):
         except Exception as e:
             QMessageBox.warning(self, "Chiedi supporto", f"Non riesco a creare il pacchetto: {e}")
             return
-        mostra_nel_finder(zip_path)
-        apri_mail(self.richiesta(), zip_path)
-        QMessageBox.information(
-            self, "Quasi fatto",
-            f"Ho creato «{zip_path.name}» in {zip_path.parent} e aperto una mail per {INDIRIZZO} con il codice "
-            f"{self.codice}.\n\nArgo non può allegare file alla mail da solo: trascina il pacchetto nella mail "
-            "e invia. Se non si è aperto nessun programma di posta, scrivi a quell'indirizzo e allega il file.")
+        modo = self.c_invio.currentData()
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            allegato, messaggio = invia(modo, self.richiesta(), zip_path)
+        except Exception as e:
+            diagnostica.log.warning("invio del pacchetto con %s non riuscito: %s", modo, e)
+            modo = "mailto"
+            allegato, messaggio = invia(modo, self.richiesta(), zip_path)
+            messaggio = f"Non sono riuscito a preparare la mail con l'allegato ({e}).\n\n" + messaggio
+        finally:
+            QApplication.restoreOverrideCursor()
+        diagnostica.log.info("richiesta di supporto %s preparata con %s", self.codice, modo)
+        if not allegato:
+            mostra_nel_finder(zip_path)
+        QMessageBox.information(self, "Quasi fatto", f"Pacchetto: «{zip_path.name}» in {zip_path.parent}.\n\n"
+                                + messaggio)
         self.accept()
 
     def _mostra(self, riga):

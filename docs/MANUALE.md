@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261119.1648 · riferita all'app versione 20261119.1648*
+*Versione del manuale: 20261119.1658 · riferita all'app versione 20261119.1658*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -824,7 +824,16 @@ Nel registro **non finiscono mai**: audio, testi trascritti, domande e risposte 
 
 1. scrivi cosa stavi facendo, cosa ti aspettavi e cosa è successo, e scegli l'urgenza;
 2. Argo prepara un pacchetto e ti mostra **ogni file** prima di crearlo: le tue risposte, i dati tecnici del computer e lo stato di Ollama, le impostazioni tecniche (delle altre, per esempio parole chiave o cartelle, solo «impostato» o «vuoto»), l'elenco delle librerie, i log degli ultimi 3 giorni e, se la scegli, una schermata. Togli la spunta ai file che non vuoi mandare;
-3. Argo salva `argo-supporto-AAAAMMGG-HHMM-XXXX.zip` sulla Scrivania, te lo mostra e apre una mail per **supporto@argo-net.it** con il **codice** della richiesta (per esempio `ARGO-20261119-7F3K`). Argo non può allegare file da solo: trascina il pacchetto nella mail e invia.
+3. scegli **Invia con**: Argo salva `argo-supporto-AAAAMMGG-HHMM-XXXX.zip` sulla Scrivania e prepara una mail per **supporto@argo-net.it** con il **codice** della richiesta (per esempio `ARGO-20261119-7F3K`). Non la invia mai da solo: l'ultimo clic su **Invia** è tuo.
+
+| Invia con | Quando c'è | Cosa succede |
+| --- | --- | --- |
+| **Outlook · Microsoft 365** | Microsoft 365 collegato (§11.5) | Bozza in Outlook, cartella *Bozze*, con il pacchetto **già allegato**; si apre in Outlook sul web e la trovi anche in Outlook sul computer |
+| **Mail di macOS** | Sul Mac | Si apre una mail in Mail con il pacchetto **già allegato**. La prima volta macOS chiede se Argo può controllare Mail: serve per allegare il file |
+| **Outlook classico** | Su Windows, se è installato Outlook classico | Si apre una mail in Outlook con il pacchetto **già allegato**. Il nuovo Outlook per Windows non lo permette: usa Microsoft 365 |
+| **Altro programma di posta** | Sempre | Si apre una mail con il codice ma **senza allegato**: un link di posta (`mailto:`) non può portarne. Argo ti mostra il pacchetto: trascinalo nella mail |
+
+Se il modo scelto non riesce (per esempio l'accesso a Microsoft 365 è scaduto), Argo lo dice e passa all'ultimo.
 
 Il supporto lo dà Luca (Argos New Dreams), al meglio delle possibilità: Argo è un esperimento e non ci sono tempi di risposta garantiti.
 

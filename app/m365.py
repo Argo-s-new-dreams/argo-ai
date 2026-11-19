@@ -9,6 +9,7 @@ Cosa NON fa: l'audio, la trascrizione e i documenti non vengono mai inviati; su 
 i risultati che l'utente conferma. Accesso delegato con MSAL (codice dispositivo), token conservato in
 whisperx-env/m365_token.bin con permessi 600.
 """
+import base64
 import json
 import os
 import re
@@ -241,6 +242,53 @@ def crea_bozza(mail, destinatari):
            "toRecipients": [{"emailAddress": {"address": d["email"], "name": d["nome"]}} for d in destinatari]}
     r = graph("POST", "/me/messages", msg)
     return {"id": r.get("id"), "link": r.get("webLink"), "oggetto": oggetto}
+
+
+def bozza_con_allegato(destinatario, oggetto, corpo, percorso_file):
+    """Bozza in Outlook con un file allegato (non viene inviata). Ritorna il link per aprirla in Outlook sul web.
+    Sotto i 3 MB un solo POST sugli allegati; da 3 a 150 MB una sessione di caricamento a pezzi (Microsoft Graph,
+    «Attach large files to Outlook messages or events»)."""
+    msg = graph("POST", "/me/messages", {
+        "subject": oggetto, "body": {"contentType": "Text", "content": corpo},
+        "toRecipients": [{"emailAddress": {"address": destinatario}}]})
+    mid = urllib.parse.quote(msg["id"])
+    nome = os.path.basename(percorso_file)
+    with open(percorso_file, "rb") as f:
+        dati = f.read()
+    if len(dati) < 3 * 1024 * 1024:
+        graph("POST", f"/me/messages/{mid}/attachments", {
+            "@odata.type": "#microsoft.graph.fileAttachment", "name": nome, "contentType": "application/zip",
+            "contentBytes": base64.b64encode(dati).decode("ascii")})
+    else:
+        sessione = graph("POST", f"/me/messages/{mid}/attachments/createUploadSession", {
+            "AttachmentItem": {"attachmentType": "file", "name": nome, "size": len(dati),
+                               "contentType": "application/zip"}})
+        pezzo = 3 * 1024 * 1024  # al massimo 4 MB per richiesta
+        for inizio in range(0, len(dati), pezzo):
+            parte = dati[inizio:inizio + pezzo]
+            _carica(sessione["uploadUrl"], parte,
+                    f"bytes {inizio}-{inizio + len(parte) - 1}/{len(dati)}")
+    return msg.get("webLink")
+
+
+def _carica(url, parte, intervallo):
+    """Un pezzo della sessione di caricamento: l'indirizzo è già autorizzato, niente intestazione Authorization."""
+    req = urllib.request.Request(url, data=parte, method="PUT", headers={
+        "Content-Type": "application/octet-stream", "Content-Length": str(len(parte)), "Content-Range": intervallo})
+    ultimo = None
+    for ctx in _contesti():
+        try:
+            with urllib.request.urlopen(req, timeout=120, context=ctx) as r:
+                r.read()
+                return
+        except urllib.error.HTTPError as e:
+            raise ErroreM365(f"caricamento dell'allegato non riuscito ({e.code})") from None
+        except urllib.error.URLError as e:
+            if isinstance(getattr(e, "reason", None), ssl.SSLCertVerificationError):
+                ultimo = e
+                continue
+            raise ErroreM365(f"Microsoft 365 non raggiungibile: {e.reason}") from None
+    raise ErroreM365(f"certificato non verificato: {ultimo}")
 
 
 # ---------------------------------------------------------------- Planner
