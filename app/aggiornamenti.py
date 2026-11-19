@@ -314,6 +314,12 @@ def installa(cartella_app, stato=lambda t: None, canale=CANALE_PREDEFINITO):
         json.dumps({"versione": versione, "quando": time.strftime("%Y-%m-%d %H:%M"), "librerie": librerie,
                     "canale": canale, "verifica": verifica}),
         encoding="utf-8")
+    try:
+        import diagnostica
+        diagnostica.log.info("aggiornamento installato: versione %s · canale %s · verifica %s · librerie %s",
+                             versione, canale, verifica, librerie[:200])
+    except Exception:
+        pass
     return {"versione": versione, "backup": str(backup), "librerie": librerie, "canale": canale,
             "verifica": verifica}
 

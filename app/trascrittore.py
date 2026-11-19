@@ -11,6 +11,12 @@ import time
 import uuid
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+VERSIONE = "20261119.1648"
+import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
+if __name__ == "__main__":
+    diagnostica.inizia(VERSIONE)
+
 from PySide6.QtCore import QPoint, QSize, Qt, QThread, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
@@ -21,7 +27,6 @@ from PySide6.QtWidgets import (
     QToolButton, QVBoxLayout, QWidget,
 )
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 import voci_core as core  # noqa: E402
 import argo_attrezzi as attrezzi  # noqa: E402
 import llm_locale  # noqa: E402
@@ -35,8 +40,8 @@ import risorse  # noqa: E402
 import modelli_ollama  # noqa: E402
 import cloud  # noqa: E402
 import disinstalla  # noqa: E402
+import supporto  # noqa: E402
 
-VERSIONE = "20261119.1626"
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
 MODELLI = [
@@ -341,7 +346,14 @@ class Finestra(QMainWindow):
         cl.setSpacing(0)
         cl.addWidget(self.nav)
         cl.addWidget(self.tabs, 1)
-        self.setCentralWidget(centro)
+        contenitore = QWidget()  # banda (trace, modalità sicura) sopra a tutto, visibile solo quando serve
+        vl = QVBoxLayout(contenitore)
+        vl.setContentsMargins(0, 0, 0, 0)
+        vl.setSpacing(0)
+        self.banda = supporto.Banda(self)
+        vl.addWidget(self.banda)
+        vl.addWidget(centro, 1)
+        self.setCentralWidget(contenitore)
         self.tabs.setCurrentWidget(self.pag_coda)
         self.nav.seleziona(self.tabs.indexOf(self.pag_coda))
         self.badge = QLabel()
@@ -764,6 +776,10 @@ class Finestra(QMainWindow):
         self.t_inizio = time.time()
         self._log_job = []
         self.filtro = FiltroRumore()
+        diagnostica.log.info("trascrizione: inizio · %s · %s · modello %s · %s · partecipanti %s",
+                             diagnostica.descrivi_file(job["file"]),
+                             "solo parlanti" if job.get("solo_parlanti") else "completa", imp.get("model"),
+                             imp.get("device"), job["parlanti"] or "auto")
         w = ProcessWorker(cmd, self)
         self.worker = w
         w.riga.connect(lambda testo, w=w: self._riga_whisperx(testo) if w is self.worker else None)
@@ -785,8 +801,10 @@ class Finestra(QMainWindow):
             testo = re.sub(r"hf_[A-Za-z0-9]+", "hf_***", testo)
         self.log.appendPlainText(testo)
         self._log_job = (self._log_job + [testo])[-200:]
+        diagnostica.riga_processo(testo)
         for chiave, (nome, ini, fine) in FASI.items():
             if chiave in testo:
+                diagnostica.log.info("trascrizione: fase %s dopo %.0f s", nome.lower(), time.time() - self.t_inizio)
                 job.update(nota=nome.lower(), progresso=ini)
                 self._fase_corrente = (nome, ini, fine)
                 self._aggiorna_riga(job)
@@ -828,6 +846,13 @@ class Finestra(QMainWindow):
                     job.update(stato="Errore", nota=f"identificazione voci: {e}")
             else:
                 job.update(stato="Errore", nota=self._spiega_errore(), progresso=0)
+                diagnostica.coda_processo(getattr(self, "_log_job", []), motivo=f"codice di uscita {codice}")
+        if job["stato"] == "Completata":
+            diagnostica.log.info("trascrizione: completata in %d min · parlanti %d", minuti,
+                                 len(set(mappa.values())))
+        else:  # la nota dell'errore è tecnica; per «Completata» contiene i nomi e non si scrive
+            diagnostica.log.warning("trascrizione: %s dopo %d min · %s", job["stato"].lower(), minuti,
+                                    job.get("nota", ""))
         self.log.appendPlainText(f"--- {job['stato']}: {job.get('nota', '')}")
         self._aggiorna_dettaglio()
         self._aggiorna_riga(job)
@@ -1090,6 +1115,10 @@ class Finestra(QMainWindow):
 
     def _fine_iscrizione(self, codice, nome):
         self.worker_voce = None
+        diagnostica.log.info("anagrafe voci: iscrizione %s (codice %s)", "riuscita" if codice == 0 else "non riuscita",
+                             codice)
+        if codice != 0:
+            diagnostica.coda_processo(getattr(self, "_righe_voce", []), "voci_core", f"codice di uscita {codice}")
         self._aggiorna_voci()
         if codice == 0:
             self._fatte_voci.append(nome)
@@ -1419,6 +1448,8 @@ class Finestra(QMainWindow):
             lambda: self.tab_incontri.carica_template() if hasattr(self, "tab_incontri") else None)
         lr.addWidget(self.editor_template)
 
+        self.pannello_supporto = supporto.PannelloSupporto(self)
+
         # Pagina a argomenti (Stile Argo): colonna a sinistra, a destra solo l'argomento scelto
         self._categorie_imp = [
             ("🎙  Trascrizione e voci", "Token, modelli di trascrizione, uso del computer, riconoscimento delle voci",
@@ -1431,6 +1462,8 @@ class Finestra(QMainWindow):
              [("m365", g6), ("dynamics", g7), ("web", g8)]),
             ("⚙️  Aspetto e aggiornamenti", "Tema chiaro o scuro, canale e aggiornamenti di Argo",
              [("aspetto", g5), ("aggiornamenti", g4), ("disinstalla", g9)]),
+            ("🛟  Supporto", "Chiedi supporto, modalità trace, registro di Argo e ritorno alla versione precedente",
+             self.pannello_supporto.gruppi),
         ]
         radice = QWidget()
         rl = QVBoxLayout(radice)
@@ -1487,6 +1520,10 @@ class Finestra(QMainWindow):
         riga2.addWidget(info, 1)
         rl.addLayout(riga2)
         return radice
+
+    def _aggiorna_supporto(self):
+        if hasattr(self, "pannello_supporto"):
+            self.pannello_supporto.aggiorna()
 
     def disinstalla(self):
         if QMessageBox.question(
@@ -1906,6 +1943,7 @@ class Finestra(QMainWindow):
             self._lav_modelli.ferma()
             self._lav_modelli.wait(5000)
         self._salva_coda()
+        diagnostica.avvio_riuscito()  # chiusa dall'utente: l'avvio era andato a buon fine
         e.accept()
 
 
@@ -1917,20 +1955,38 @@ def _senza_errori(funzione):
 
 
 def main():
+    precedenti = diagnostica.inizia(VERSIONE)
     app = QApplication(sys.argv)
     app.setApplicationName("Argo AI")
     tema.applica(app, core.carica_impostazioni().get("tema", "scuro"))
     icona = Path(__file__).resolve().parent / "icon.png"
     if icona.exists():
         app.setWindowIcon(QIcon(str(icona)))
+    supporto.collega()  # da qui un errore non gestito apre una finestra con «Chiedi supporto»
+    _senza_errori(lambda: diagnostica.log.info("canale %s", aggiornamenti.canale_effettivo(
+        core.carica_impostazioni(), criteri.carica())))
+    # Avvio protetto: dopo due avvii di fila che non sono arrivati alla finestra (o con --sicura)
+    if "--sicura" in sys.argv or precedenti >= diagnostica.AVVII_PRIMA_DELLA_SICURA:
+        scelta = "sicura" if "--sicura" in sys.argv else supporto.chiedi_avvio_protetto(precedenti)
+        diagnostica.log.warning("avvio protetto: %d avvii non riusciti, scelta «%s»", precedenti, scelta)
+        if scelta == "esci":
+            return
+        if scelta == "precedente":
+            if supporto.torna_alla_precedente(None, chiedi=False):
+                return
+            scelta = "sicura"
+        diagnostica.MODALITA_SICURA = scelta == "sicura"
+    app.aboutToQuit.connect(diagnostica.chiusura)
     f = Finestra()
     f.show()
-    QTimer.singleShot(1500, f.prepara_ollama)  # Ollama acceso e modelli scelti (o proposti) già all'avvio
-    if os.name == "nt":  # Argo tra le app installate di Windows, anche per chi si aggiorna dall'app
-        threading.Thread(target=lambda: _senza_errori(disinstalla.registra_windows), daemon=True).start()
-    if (core.carica_impostazioni().get("controlla_aggiornamenti", True)
-            and criteri.carica().get("aggiornamenti_dall_app") is not False):
-        QTimer.singleShot(3000, f.controlla_aggiornamenti)
+    QTimer.singleShot(8000, diagnostica.avvio_riuscito)  # finestra rimasta aperta: avvio riuscito
+    if not diagnostica.MODALITA_SICURA:
+        QTimer.singleShot(1500, f.prepara_ollama)  # Ollama acceso e modelli scelti (o proposti) già all'avvio
+        if os.name == "nt":  # Argo tra le app installate di Windows, anche per chi si aggiorna dall'app
+            threading.Thread(target=lambda: _senza_errori(disinstalla.registra_windows), daemon=True).start()
+        if (core.carica_impostazioni().get("controlla_aggiornamenti", True)
+                and criteri.carica().get("aggiornamenti_dall_app") is not False):
+            QTimer.singleShot(3000, f.controlla_aggiornamenti)
     sys.exit(app.exec())
 
 

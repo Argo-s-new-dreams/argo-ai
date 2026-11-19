@@ -4,11 +4,13 @@ Nessuna dipendenza esterna: solo libreria standard + numpy. Tutto il traffico re
 """
 import json
 import re
+import time
 import urllib.error
 import urllib.request
 
 import numpy as np
 
+import diagnostica
 import risorse
 
 DEFAULT_URL = "http://localhost:11434"
@@ -23,12 +25,17 @@ def _req(url, path, payload=None, timeout=600):
     req = urllib.request.Request(url.rstrip("/") + path, data=data,
                                  headers={"Content-Type": "application/json"},
                                  method="POST" if data is not None else "GET")
+    inizio = time.monotonic()
     try:
-        return urllib.request.urlopen(req, timeout=timeout)
+        r = urllib.request.urlopen(req, timeout=timeout)
+        diagnostica.http(req.get_method(), req.full_url, r.status, inizio)
+        return r
     except urllib.error.HTTPError as e:
+        diagnostica.http(req.get_method(), req.full_url, e.code, inizio)
         corpo = e.read().decode("utf-8", "replace")[:300]
         raise ErroreLLM(f"Ollama ha risposto {e.code}: {corpo}") from None
     except Exception as e:
+        diagnostica.http(req.get_method(), req.full_url, type(e).__name__, inizio)
         raise ErroreLLM(f"Ollama non raggiungibile su {url}: {e}. È avviato?") from None
 
 
@@ -78,7 +85,8 @@ def chat(messaggi, modello, url=DEFAULT_URL, temperatura=0.3, on_token=None, sto
     with risorse.turno(on_attesa=on_attesa):
         if stop and stop():
             return ""
-        return _chat_stream(url, payload, on_token, stop)
+        with diagnostica.misura("chat", fornitore="ollama" if e_locale(url) else "ollama_remoto", modello=modello):
+            return _chat_stream(url, payload, on_token, stop)
 
 
 def _chat_stream(url, payload, on_token, stop):
@@ -107,6 +115,11 @@ def _chat_stream(url, payload, on_token, stop):
 
 def embed(testi, modello, url=DEFAULT_URL):
     """Vettori normalizzati per una lista di testi."""
+    with diagnostica.misura("embedding", modello=modello, testi=len(testi)):
+        return _embed(testi, modello, url)
+
+
+def _embed(testi, modello, url):
     vettori = []
     for i in range(0, len(testi), 16):
         richiesta = {"model": modello, "input": testi[i:i + 16], "options": risorse.opzioni_ollama(),

@@ -18,13 +18,15 @@ Chiavi riconosciute (tutte facoltative):
     "modelli_cloud": "consentiti" | "vietati" | ["claude", "ollama_cloud"]
                                              modelli linguistici nel cloud: consentiti (predefinito), vietati
                                              (Argo usa solo Ollama locale) oppure solo i fornitori elencati
+    "trace": true                            modalità trace sempre attiva su questo PC, per un'analisi del
+                                             supporto (log più dettagliati, mai contenuti); toglierla dopo
 """
 import json
 import os
 import sys
 from pathlib import Path
 
-CHIAVI = {"canale_aggiornamenti", "aggiornamenti_dall_app", "registrazione", "modelli_cloud"}
+CHIAVI = {"canale_aggiornamenti", "aggiornamenti_dall_app", "registrazione", "modelli_cloud", "trace"}
 
 
 def percorso():
@@ -54,8 +56,9 @@ def carica():
     if regola is not None and regola not in ("consentiti", "vietati") and not (
             isinstance(regola, list) and all(isinstance(x, str) for x in regola)):
         criteri.pop("modelli_cloud")
-    if "aggiornamenti_dall_app" in criteri and not isinstance(criteri["aggiornamenti_dall_app"], bool):
-        criteri.pop("aggiornamenti_dall_app")
+    for chiave in ("aggiornamenti_dall_app", "trace"):
+        if chiave in criteri and not isinstance(criteri[chiave], bool):
+            criteri.pop(chiave)
     return criteri
 
 

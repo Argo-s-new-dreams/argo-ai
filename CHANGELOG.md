@@ -2,6 +2,15 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261119.1648: registro locale, modalità trace, avvio protetto e «Chiedi supporto»
+- **Registro di Argo** in `whisperx-env/log/` (5 file da 2 MB a rotazione): avvio, versione, canale, sistema, CPU, RAM, fasi dei lavori con durata ed esito, errori con traccia, tempi di Ollama e dei modelli cloud (solo fornitore e modello), aggiornamenti. **Mai contenuti**: niente audio, trascrizioni, prompt e risposte, nomi dei file e dei parlanti. Un filtro toglie anche mail, telefoni, chiavi, token e percorsi della cartella utente. Nessuna telemetria: il registro esce solo se lo mandi tu.
+- **Errori non gestiti** (anche nei thread e prima della finestra) finiscono nel registro e aprono una finestra con **🛟 Chiedi supporto** e, all'avvio, **Torna alla versione …**. Un errore come quello della 20261118.1957 oggi si vede subito.
+- **Avvio protetto**: dopo due avvii di fila che non arrivano alla finestra, Argo propone la **modalità sicura** (senza Ponte, Live, aggiornamenti automatici e avvio di Ollama), il ritorno alla versione precedente o l'avvio normale. Anche con `--sicura`.
+- **Torna alla versione precedente** da *Impostazioni › 🛟 Supporto*: rimette `app_precedente` (salvata a ogni aggiornamento dall'app), tiene da parte quella attuale in `app_scartata` e riapre Argo.
+- **Modalità trace**: per 24 ore o fino al riavvio, con una banda in alto e **Spegni**; righe tecniche di WhisperX e del Live, richieste HTTP con tempi e codici, passi delle relazioni. Anche con `--trace` o con il nuovo criterio IT `"trace": true`.
+- **🛟 Chiedi supporto**: richiesta in tre domande più l'urgenza, codice `ARGO-AAAAMMGG-XXXX`, pacchetto zip sulla Scrivania che si vede file per file prima di crearlo, mail precompilata per supporto@argo-net.it. Nessun server: il file si allega a mano.
+- Nuovo argomento *Impostazioni › 🛟 Supporto*. Manuale (§11.6, §12, §13, §15), PRO.md e README aggiornati.
+
 ## 20261119.1626: l'installer installa anche Ollama
 - **Nuovo ultimo passo [6/6]** negli installer: chiede «Installo Ollama adesso? [S/n]» e, se c'è già, lo salta.
   - **Windows**: `winget install Ollama.Ollama` (circa 1,5 GB, per l'utente, senza diritti di amministratore).

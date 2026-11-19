@@ -14,9 +14,11 @@ import json
 import os
 import re
 import threading
+import time
 import urllib.error
 import urllib.request
 
+import diagnostica
 import voci_core as core
 
 FORNITORI = {
@@ -230,15 +232,20 @@ def _apri(fornitore, percorso, payload=None, timeout=600):
     dati = json.dumps(payload).encode("utf-8") if payload is not None else None
     req = urllib.request.Request(URL[fornitore] + percorso, data=dati, headers=_intestazioni(fornitore),
                                  method="POST" if dati is not None else "GET")
+    inizio = time.monotonic()
     try:
-        return urllib.request.urlopen(req, timeout=timeout)
+        r = urllib.request.urlopen(req, timeout=timeout)
+        diagnostica.http(req.get_method(), req.full_url, r.status, inizio)
+        return r
     except urllib.error.HTTPError as e:
+        diagnostica.http(req.get_method(), req.full_url, e.code, inizio)
         corpo = e.read().decode("utf-8", "replace")[:300]
         motivo = {401: "chiave non valida", 403: "accesso negato (permessi o criteri dell'account)",
                   404: "modello o indirizzo non trovato", 429: "troppe richieste o credito esaurito"}.get(e.code, "")
         raise ErroreCloud(f"{FORNITORI[fornitore]['nome']} ha risposto {e.code}"
                           + (f" ({motivo})" if motivo else "") + f": {corpo}") from None
     except Exception as e:
+        diagnostica.http(req.get_method(), req.full_url, type(e).__name__, inizio)
         raise ErroreCloud(f"{FORNITORI[fornitore]['nome']} non raggiungibile: {e}") from None
 
 
@@ -340,6 +347,11 @@ def chat(fornitore, modello, messaggi, temperatura=0.3, on_token=None, stop=None
     """Chat in streaming con un fornitore cloud. Ritorna il testo completo (solo JSON se `formato`)."""
     if fornitore not in ammessi():
         raise ErroreCloud(f"{FORNITORI[fornitore]['nome']} non è consentito dai criteri aziendali.")
+    with diagnostica.misura("chat", fornitore=fornitore, modello=modello):
+        return _chat(fornitore, modello, messaggi, temperatura, on_token, stop, formato)
+
+
+def _chat(fornitore, modello, messaggi, temperatura, on_token, stop, formato):
     out = []
 
     def pezzo(t):

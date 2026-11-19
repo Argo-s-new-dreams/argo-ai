@@ -24,6 +24,7 @@ import crm_incontri
 import esporta_word
 import incontri_file as inf
 import llm_locale as llm
+import diagnostica
 import ponte as pt
 import relazione_incontro as rel
 import tema
@@ -68,12 +69,19 @@ class LavoroRelazione(QObject):
         if self._thread:
             self._thread.join(millisecondi / 1000)
 
+    def _stato_trace(self, testo):
+        diagnostica.log.debug("relazione · passo %d", self._passi)  # in trace solo il numero del passo
+        self._passi += 1
+        self.sig_stato.emit(testo)
+
     def run(self):
+        self._passi = 1
         cartella, sessione, url, testo, vision = self.argomenti
         try:
-            rel.scrivi_relazione(cartella, sessione, url, testo, vision, stato=self.sig_stato.emit,
-                                 stop=lambda: self._stop, avanzamento=self.sig_avanzamento.emit,
-                                 template=self.template)
+            with diagnostica.misura("relazione incontro", modello=testo, foto=vision or None):
+                rel.scrivi_relazione(cartella, sessione, url, testo, vision, stato=self._stato_trace,
+                                     stop=lambda: self._stop, avanzamento=self.sig_avanzamento.emit,
+                                     template=self.template)
             self.sig_fine.emit()
         except Exception as e:
             self.sig_errore.emit("Interrotta" if self._stop else str(e))
@@ -121,24 +129,29 @@ class LavoroFile(QObject):
                 break
             prefisso = f"[{n} di {totale}] " if totale > 1 else ""
             try:
-                if op[0] == "nuovo":
-                    cartella, s = inf.crea_da_media(op[1], self.versione, self._stato(prefisso),
-                                                    stop=lambda: self._stop)
-                    nomi = ", ".join(p["nome"] for p in s["partecipanti"])
-                    self.sig_fatto.emit(cartella.name, f"«{s['titolo']}» creato" + (f" · {nomi}" if nomi else ""))
-                else:
-                    _tipo, cartella, file = op
-                    sessione = json.loads((Path(cartella) / "sessione.json").read_text(encoding="utf-8"))
-                    _s, riepilogo, scartati = inf.aggiungi_file(cartella, sessione, file, self._stato(prefisso),
-                                                                stop=lambda: self._stop)
-                    testo = f"Aggiunti a «{sessione.get('titolo', '')}»: {riepilogo or 'nulla'}"
-                    if scartati:
-                        testo += f" · non supportati: {', '.join(scartati)}"
-                    self.sig_fatto.emit(Path(cartella).name, testo)
+                with diagnostica.misura("incontro da file", operazione=op[0],
+                                        file=diagnostica.descrivi_file(op[1]) if op[0] == "nuovo" else f"{len(op[2])} file"):
+                    self._esegui(op, prefisso)
             except Exception as e:
                 nome = Path(op[1]).name if op[0] == "nuovo" else "incontro"
                 self.sig_errore.emit(nome, "Interrotto" if self._stop else str(e))
         self.sig_fine.emit()
+
+    def _esegui(self, op, prefisso):
+        if op[0] == "nuovo":
+            cartella, s = inf.crea_da_media(op[1], self.versione, self._stato(prefisso),
+                                            stop=lambda: self._stop)
+            nomi = ", ".join(p["nome"] for p in s["partecipanti"])
+            self.sig_fatto.emit(cartella.name, f"«{s['titolo']}» creato" + (f" · {nomi}" if nomi else ""))
+        else:
+            _tipo, cartella, file = op
+            sessione = json.loads((Path(cartella) / "sessione.json").read_text(encoding="utf-8"))
+            _s, riepilogo, scartati = inf.aggiungi_file(cartella, sessione, file, self._stato(prefisso),
+                                                        stop=lambda: self._stop)
+            testo = f"Aggiunti a «{sessione.get('titolo', '')}»: {riepilogo or 'nulla'}"
+            if scartati:
+                testo += f" · non supportati: {', '.join(scartati)}"
+            self.sig_fatto.emit(Path(cartella).name, testo)
 
 
 class EditorTemplate(QWidget):
@@ -597,7 +610,7 @@ class SchedaIncontri(QWidget):
 
         QTimer.singleShot(800, self._carica_modelli_vision)
         # Il Ponte parte da solo se c'è già almeno un iPhone collegato.
-        if pt.dispositivi():
+        if pt.dispositivi() and not diagnostica.MODALITA_SICURA:  # in modalità sicura si avvia solo a mano
             QTimer.singleShot(500, self._avvia_ponte)
         self.aggiorna()
 
@@ -606,8 +619,10 @@ class SchedaIncontri(QWidget):
         try:
             porta = self.ponte.avvia()
         except Exception as e:
+            diagnostica.log.warning("Ponte non avviato: %s", e)
             self.l_ponte.setText(f"⚠️ Ponte non avviato: {e}")
             return False
+        diagnostica.log.info("Ponte avviato sulla porta %s", porta)
         self._aggiorna_stato_ponte(porta)
         return True
 

@@ -87,6 +87,8 @@ Servono anche circa 10 GB liberi e un account gratuito [Hugging Face](https://hu
    - macOS: tasto destro su `Installa-Argo.command` → *Apri*. Se macOS lo blocca: *Impostazioni di Sistema → Privacy e sicurezza → Apri comunque*.
 4. **Apri Argo AI** (Desktop/menu Start su Windows, Applicazioni su Mac), incolla il token in *Impostazioni* e premi **Salva e verifica**.
 
+**Supporto:** *Impostazioni › 🛟 Supporto* prepara un pacchetto con log e dati tecnici, te lo mostra file per file e apre una mail per supporto@argo-net.it con un codice `ARGO-…`. Il registro resta sul computer e non contiene mai contenuti; c'è la modalità trace per i problemi che si ripetono, l'avvio protetto (modalità sicura) e il ritorno alla versione precedente. Dettagli nel [manuale](docs/MANUALE.md#116-supporto-e-diagnostica).
+
 **Disinstallare:** dentro Argo, *Impostazioni › Aspetto e aggiornamenti › Disinstalla Argo…*; su Windows anche da *Impostazioni › App › App installate › Argo AI*. Se Argo non si apre: `Disinstalla-Argo.bat` (Windows) o `Disinstalla-Argo.command` (macOS) nel pacchetto. Chiede conferma, propone un backup sulla Scrivania e non tocca Ollama. Dettagli nel [manuale](docs/MANUALE.md#14-aggiornare-e-disinstallare).
 
 Gli installer non sono firmati digitalmente: per questo Windows e macOS mostrano un avviso. Il codice è tutto qui, leggibile.

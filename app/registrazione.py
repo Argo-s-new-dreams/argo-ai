@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 
 import cattura_audio as ca
 import criteri
+import diagnostica
 import live_core as live
 import tema
 import voci_core as core
@@ -314,6 +315,10 @@ class SchedaRegistra(QWidget):
         modo = "live" if self.r_live.isChecked() else "archivia"
         if modo not in modalita_consentite():
             return
+        if modo == "live" and diagnostica.MODALITA_SICURA:
+            QMessageBox.information(self, "Modalità sicura", "In modalità sicura la trascrizione Live è spenta. "
+                                    "Puoi registrare in archivio, oppure riavviare Argo normalmente.")
+            return
         if modo == "live" and not core.leggi_token():
             QMessageBox.warning(self, "Token mancante", "Per la Live serve il token Hugging Face (Impostazioni).")
             return
@@ -452,6 +457,7 @@ class SchedaRegistra(QWidget):
         self.motore.finished.connect(self._motore_finito)
         self.motore.setWorkingDirectory(str(QUI))
         self.motore.start(sys.executable, ["-u", str(QUI / "live_motore.py")])
+        diagnostica.log.info("motore Live avviato")
         self.stato.setText("Avvio della trascrizione Live…")
 
     def _leggi_motore(self):
@@ -460,6 +466,7 @@ class SchedaRegistra(QWidget):
         for r in righe:
             r = r.decode("utf-8", "replace").strip()
             if not r.startswith("@@ARGO "):
+                diagnostica.riga_processo(r, "live")  # i messaggi @@ARGO contengono il testo: mai nel registro
                 continue
             try:
                 m = json.loads(r[7:])
@@ -490,7 +497,8 @@ class SchedaRegistra(QWidget):
             else:
                 self.stato.setText("Errore: " + m.get("msg", ""))
 
-    def _motore_finito(self, *_):
+    def _motore_finito(self, *argomenti):
+        diagnostica.log.info("motore Live chiuso · codice %s", argomenti[0] if argomenti else "?")
         self.motore_pronto = False
         if self.sessione and (self.coda or self.in_lavoro):
             if self.in_lavoro:

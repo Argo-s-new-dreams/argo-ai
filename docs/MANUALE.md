@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261119.1626 · riferita all'app versione 20261119.1626*
+*Versione del manuale: 20261119.1648 · riferita all'app versione 20261119.1648*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -679,6 +679,7 @@ Le Impostazioni sono divise **per argomento**: a sinistra la colonna degli argom
 | 📝 **Relazioni** | Template delle relazioni degli incontri (§11.4ter) |
 | 🔗 **Collegamenti** | Microsoft 365, Dynamics 365 Sales, ricerca web: tutti facoltativi (§11.5 e seguenti) |
 | ⚙️ **Aspetto e aggiornamenti** | Tema chiaro o scuro, canale e aggiornamenti (§11.3bis, §14) |
+| 🛟 **Supporto** | Chiedi supporto, modalità trace, registro di Argo, ritorno alla versione precedente (§11.6) |
 
 I pulsanti «Collega…» delle altre pagine (Agenda, Posta, Clienti) aprono le Impostazioni già sull'argomento e sul riquadro giusti. **Salva impostazioni** resta sempre in vista in basso: salva token, trascrizione, voci, collegamenti e aggiornamenti. Modelli, modelli cloud e template si salvano già nei loro riquadri.
 
@@ -805,6 +806,40 @@ Il token di accesso resta in `whisperx-env/m365_token.bin`, leggibile solo dal t
 
 Se usavi già Argo con Microsoft 365 non servono nuovi permessi: Agenda e Posta AI usano gli stessi.
 
+### 11.6 Supporto e diagnostica
+
+**Il registro di Argo (log).** Argo scrive un registro sul tuo computer, in `whisperx-env/log/`:
+
+| File | Cosa contiene |
+| --- | --- |
+| `argo.log` | Avvio e chiusura, versione, canale, sistema operativo, CPU, RAM, profilo «Uso del computer», fasi dei lavori con durata ed esito, errori con la traccia completa, tempi di Ollama e dei modelli cloud (solo fornitore e modello), aggiornamenti installati |
+| `processi.log` | Righe tecniche di WhisperX e del motore Live: sempre le ultime righe quando un lavoro finisce con un errore, tutte le righe tecniche in modalità trace |
+| `crash.log` | Arresti gravi del programma |
+
+Ogni registro occupa al massimo 5 file da 2 MB, poi i più vecchi si cancellano da soli.
+
+Nel registro **non finiscono mai**: audio, testi trascritti, domande e risposte dei modelli, relazioni, nomi dei tuoi file (solo estensione e dimensione), nomi dei parlanti. Prima di scrivere, un filtro toglie anche mail, numeri di telefono, chiavi, token e i percorsi della tua cartella utente, nel caso compaiano in un messaggio d'errore. Il registro **non esce dal computer** se non lo mandi tu: Argo non ha telemetria automatica.
+
+**🛟 Chiedi supporto.** In *Impostazioni › 🛟 Supporto*, e nella finestra che compare quando qualcosa va storto:
+
+1. scrivi cosa stavi facendo, cosa ti aspettavi e cosa è successo, e scegli l'urgenza;
+2. Argo prepara un pacchetto e ti mostra **ogni file** prima di crearlo: le tue risposte, i dati tecnici del computer e lo stato di Ollama, le impostazioni tecniche (delle altre, per esempio parole chiave o cartelle, solo «impostato» o «vuoto»), l'elenco delle librerie, i log degli ultimi 3 giorni e, se la scegli, una schermata. Togli la spunta ai file che non vuoi mandare;
+3. Argo salva `argo-supporto-AAAAMMGG-HHMM-XXXX.zip` sulla Scrivania, te lo mostra e apre una mail per **supporto@argo-net.it** con il **codice** della richiesta (per esempio `ARGO-20261119-7F3K`). Argo non può allegare file da solo: trascina il pacchetto nella mail e invia.
+
+Il supporto lo dà Luca (Argos New Dreams), al meglio delle possibilità: Argo è un esperimento e non ci sono tempi di risposta garantiti.
+
+**Modalità trace.** Per un problema che si ripete: spunta *Attiva la modalità trace* e scegli *per 24 ore* oppure *fino al prossimo riavvio di Argo*. Per quel tempo il registro diventa molto più dettagliato (righe tecniche di WhisperX, richieste a Ollama e ai modelli cloud con tempi e codici, passi delle relazioni degli incontri), sempre senza contenuti. In alto compare una banda «🔍 Modalità trace attiva fino a…» con il pulsante **Spegni**. Si può accendere anche avviando Argo con `--trace` (§13) o, dall'IT, con il criterio `"trace": true` ([PRO.md](PRO.md)).
+
+**Avvio protetto.** Se Argo non arriva alla finestra per due avvii di fila, al terzo chiede come partire:
+
+- **modalità sicura**: senza Ponte, trascrizione Live, controllo degli aggiornamenti e avvio automatico di Ollama. In alto una banda lo ricorda, con **Riavvia normalmente**;
+- **torna alla versione precedente**, se ce n'è una salvata;
+- **avvia normalmente** o **esci**.
+
+Se l'errore arriva prima della finestra, Argo lo mostra subito, con **Chiedi supporto** e, se c'è, **Torna alla versione …**.
+
+**Versione precedente.** A ogni aggiornamento fatto dall'app Argo salva la versione di prima in `whisperx-env/app_precedente`. *Impostazioni › 🛟 Supporto › Torna alla versione …* la rimette al suo posto e riapre Argo; la versione che stavi usando resta in `whisperx-env/app_scartata`. Voci, incontri, impostazioni e dati non si toccano; le librerie Python restano quelle installate. Per restare sulla versione precedente spegni il controllo automatico degli aggiornamenti (§14).
+
 ---
 
 ## 11bis. I documenti Word
@@ -838,6 +873,8 @@ Puoi spostarla impostando la variabile d'ambiente `TRASCRITTORE_HOME`.
 | `trascrittore_coda.json` | La coda delle trascrizioni |
 | `documenti_indice.json` + `.npy` | Indice dei Documenti riservati, con gli estratti dei testi |
 | `glossario.csv` | Glossario di traduzione |
+| `log/` | Registro di Argo (§11.6): solo dati tecnici, al massimo circa 20 MB |
+| `app_precedente/`, `app_scartata/` | La versione di prima, salvata a ogni aggiornamento dall'app, e quella lasciata quando torni indietro (§11.6) |
 | `live/<sessione>/` | Solo durante una sessione Live: blocchi audio in attesa di trascrizione e testo già trascritto. Si svuota da sola a fine sessione |
 
 Trascrizioni e verbali vengono salvati **accanto ai file audio**, non in questa cartella. I modelli scaricati stanno nelle cache di Hugging Face e di Ollama.
@@ -867,6 +904,18 @@ cd ~/whisperx-env/app
 ```
 
 Per `iscrivi` il token Hugging Face deve essere già salvato (lo fa l'app).
+
+**Opzioni di avvio di Argo.** Utili quando Argo non parte o per un'analisi del supporto: `--trace` accende la modalità trace fino alla chiusura, `--sicura` avvia direttamente in modalità sicura (§11.6). Sul Mac:
+
+```bash
+~/whisperx-env/bin/python ~/whisperx-env/app/trascrittore.py --sicura
+```
+
+Su Windows, da PowerShell:
+
+```powershell
+& "$env:USERPROFILE\whisperx-env\Scripts\python.exe" "$env:USERPROFILE\whisperx-env\app\trascrittore.py" --trace
+```
 
 ---
 
@@ -931,6 +980,8 @@ Il disinstallatore:
 
 | Sintomo | Causa probabile | Soluzione |
 | --- | --- | --- |
+| Argo non si apre | Errore all'avvio, spesso dopo un aggiornamento | Argo mostra l'errore con **Chiedi supporto** e **Torna alla versione …**; dopo due avvii falliti propone la modalità sicura (§11.6). Da riga di comando: `--sicura` (§13) |
+| Un problema che si ripete e non si capisce | Mancano dettagli | Accendi la **modalità trace** (§11.6), rifai l'operazione e poi **🛟 Chiedi supporto** |
 | Errore **401** / token non valido | Token sbagliato, revocato o con spazi | Creane uno nuovo di tipo Read e premi **Salva e verifica** |
 | Errore **403** / accesso negato al modello | Condizioni di pyannote non accettate | Accettale sulla pagina del modello con lo stesso account |
 | "File … is not digitally signed" (Windows) | File scaricato bloccato da Windows | Usa `Installa-Argo.bat`, che sblocca i file prima di procedere |
