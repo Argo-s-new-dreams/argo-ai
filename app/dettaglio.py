@@ -100,7 +100,7 @@ class DettaglioTrascrizione(QWidget):
         bar = QHBoxLayout()
         self.bottoni = []
         for testo, sig, prim in (("Nomi dei parlanti", self.nomi, False), ("Marca voci", self.marca, False),
-                                 ("Apri testo", self.apri, False), ("Word", self.word, False),
+                                 ("Apri testo", self.apri, False), ("⬇️ Scarica ▾", self.word, False),
                                  ("Verbale →", self.verbale, False)):  # un solo primario per pagina: «Avvia coda»
             b = QPushButton(testo)
             if prim:

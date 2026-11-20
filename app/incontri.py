@@ -27,6 +27,7 @@ import incontri_file as inf
 import llm_locale as llm
 import diagnostica
 import ponte as pt
+import esporta_trascrizione
 import relazione_incontro as rel
 import secondo_cervello as cervello
 import secondo_cervello_ui as cervello_ui
@@ -579,8 +580,15 @@ class SchedaIncontri(QWidget):
         self.b_salva.setText("Salva ▾")
         self.b_salva.setPopupMode(QToolButton.InstantPopup)
         ms = QMenu(self.b_salva)
-        ms.addAction("Word (.docx)…").triggered.connect(lambda: self.esporta("docx"))
-        ms.addAction("Markdown (.md)…").triggered.connect(lambda: self.esporta("md"))
+        ms.addAction("Relazione in Word (.docx)…").triggered.connect(lambda: self.esporta("docx"))
+        ms.addAction("Relazione in Markdown (.md)…").triggered.connect(lambda: self.esporta("md"))
+        ms.addSeparator()
+        ms.addAction("Trascrizione in Word (.docx)…").triggered.connect(
+            lambda: esporta_trascrizione.scarica(self, self._sorgente_trascrizione, ("docx",)))
+        ms.addAction("Trascrizione in WebVTT (.vtt)…").triggered.connect(
+            lambda: esporta_trascrizione.scarica(self, self._sorgente_trascrizione, ("vtt",)))
+        ms.addAction("Trascrizione in Word e WebVTT…").triggered.connect(
+            lambda: esporta_trascrizione.scarica(self, self._sorgente_trascrizione, ("docx", "vtt")))
         self.b_salva.setMenu(ms)
         salva.addWidget(self.b_salva)
         dl.addLayout(salva)
@@ -967,6 +975,7 @@ class SchedaIncontri(QWidget):
         m = QMenu(self)
         m.addAction("✨ Scrivi relazione", self.scrivi_relazione)
         m.addAction("📎 Aggiungi file…", self.aggiungi_file)
+        m.addMenu(esporta_trascrizione.menu(self, self._sorgente_trascrizione)).setText("⬇️ Scarica trascrizione")
         if cervello.attivo():
             m.addAction("🧠 Con chi stai parlando?…", self.con_chi)
         if any(c.name in self.coda for c, _d in self._selezionati()):
@@ -1264,6 +1273,13 @@ class SchedaIncontri(QWidget):
             percorso = Path(f)
             percorso.write_text(testo, encoding="utf-8")
         self.finestra.statusBar().showMessage(f"Salvata in {percorso}", 6000)
+
+    def _sorgente_trascrizione(self):
+        cartella, d = self._corrente()
+        if not cartella:
+            return None
+        titolo = (d or {}).get("titolo") or "Incontro"
+        return esporta_trascrizione.da_incontro(cartella), titolo, Path.home() / "Documents", f"Trascrizione: {titolo}"
 
     def apri_cartella(self):
         cartella, _d = self._corrente()

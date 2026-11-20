@@ -2,6 +2,12 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261120.2033: scarica la trascrizione in Word e in WebVTT
+- **⬇️ Scarica trascrizione**: **Word (.docx)**, **sottotitoli WebVTT (.vtt)** oppure **entrambi**. Si trova in *Trascrivi* (pulsante nel dettaglio e tasto destro, al posto di «Esporta in Word»), in *Registra* dopo una Live e negli *Incontri* (*Salva ▾*, dove le voci della relazione ora si chiamano «Relazione in…», e tasto destro).
+- **WebVTT** standard W3C: una riga per frase con inizio e fine presi da WhisperX (al millesimo), il parlante nel tag di voce `<v Nome>`, le frasi lunghe divise. Senza il `.json` i tempi si ricavano dal `_nomi.txt`.
+- **Word**: un paragrafo per intervento, con orario e parlante in grassetto, e la nota «trascrizione automatica».
+- Manuale §4 e §5.4 aggiornati.
+
 ## 20261120.1854: backup, ripristino e configurazione condivisa tra più computer
 - **Backup su richiesta, alla chiusura e programmati** (Impostazioni › 💾 Backup e più computer), in due livelli: *Configurazione* (impostazioni, template, glossario) e *Completo* (anche voci, incontri, clienti, Secondo cervello, indice dei Documenti). Di base, a ogni chiusura, un backup della configurazione in Documenti › Argo › Backup; si conservano gli ultimi 10 per livello.
 - **OneDrive e Google Drive** tramite le loro cartelle sincronizzate (app OneDrive e Google Drive per desktop), trovate da sole su Mac e Windows: nessun accesso nuovo. Ogni scrittura nel cloud compare in «Cosa è uscito da questo computer» e nella barra in basso.
