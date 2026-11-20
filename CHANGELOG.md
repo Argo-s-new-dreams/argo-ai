@@ -2,6 +2,12 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261120.1419: modelli adatti al computer su cui gira Argo
+- **Argo legge la RAM** e capisce quali modelli di Ollama ci stanno (fino a tre quarti della RAM: con 8 GB `gemma3:4b` sì, `gemma3:12b` no; con 16 GB entrambi).
+- **All'avvio, se il modello scelto per i testi o per le foto è troppo grande**, Argo passa da solo al migliore installato che ci sta e lo scrive in basso nella finestra (e nel registro tecnico). Se nessuno ci sta, propone di scaricare `gemma3:4b` spiegando perché, anche a chi aveva risposto «Non ora» ai modelli consigliati.
+- Nelle tendine dei modelli (Impostazioni e Foto degli Incontri) i modelli troppo grandi hanno «⚠️ troppo grande per questo computer».
+- Manuale §11.4 aggiornato.
+
 ## 20261120.1411: errori di Ollama più chiari
 - **Ollama lento non è Ollama spento**: un tempo scaduto (Ollama acceso ma occupato a caricare un modello, o senza memoria) ora dice proprio questo, invece di «Ollama non raggiungibile… È avviato?». Se il modello scelto è troppo grande per la RAM del computer, il messaggio lo dice con le dimensioni e propone un modello più piccolo. Ollama davvero spento ha un messaggio a parte, con come avviarlo.
 - Elenco e dettagli dei modelli aspettano fino a 30 secondi (prima 10) e l'elenco riprova una volta: su un Mac occupato a caricare un modello grande 10 secondi non bastavano, e la relazione falliva subito.

@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261120.1411 · riferita all'app versione 20261120.1411*
+*Versione del manuale: 20261120.1419 · riferita all'app versione 20261120.1419*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -779,9 +779,11 @@ Contiene il token, il pulsante **Mostra** e **Salva e verifica**, più i link al
 
 **Scelta automatica.** Se non hai ancora scelto un modello, o quello scelto non è più installato, Argo ne sceglie uno da solo fra quelli presenti in Ollama e te lo segnala. Per i testi preferisce `gemma3`, poi `qwen3`, `llama3`, `mistral`, `phi`; per i documenti preferisce `bge-m3`. Puoi sempre cambiare la scelta qui.
 
+**Adatti a questo computer.** Argo legge la RAM del computer su cui gira. Un modello che occupa più dei **tre quarti della RAM** (per esempio `gemma3:12b`, 8,2 GB, su un Mac con 8 GB) non ci sta: nelle tendine compare con «⚠️ troppo grande per questo computer». All'avvio, se il modello scelto per i testi o per le foto è troppo grande, Argo passa da solo al migliore installato che ci sta (per esempio `gemma3:4b`) e lo scrive in basso nella finestra. Se nessuno di quelli installati ci sta, propone di scaricare quello giusto. Vale solo per Ollama su questo computer.
+
 **All'avvio.** Ogni volta che parte, Argo controlla Ollama: se è installato ma spento lo **accende** (sul Mac l'app con l'icona del lama, su Windows l'icona nella barra) e aspetta fino a 30 secondi. Poi sceglie i modelli come sopra, compreso quello per le **foto degli Incontri** (la prima volta, il modello dei testi se sa guardare le immagini).
 
-**Modelli consigliati.** Se in Ollama manca un modello per i testi o per i documenti, Argo propone di scaricare:
+**Modelli consigliati.** Se in Ollama manca un modello per i testi o per i documenti, o quelli per i testi sono tutti troppo grandi per la RAM, Argo propone di scaricare:
 
 | Ruolo | Modello | Peso circa |
 | --- | --- | --- |
