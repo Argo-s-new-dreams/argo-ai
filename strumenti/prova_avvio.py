@@ -24,6 +24,11 @@ TEMPO_MASSIMO = 600  # il primo import di torch e WhisperX su un runner può ess
 
 
 def main():
+    for flusso in (sys.stdout, sys.stderr):  # Windows: la console della Action non è UTF-8
+        try:
+            flusso.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     casa = Path(tempfile.mkdtemp(prefix="argo-prova-"))
     env = dict(os.environ, TRASCRITTORE_HOME=str(casa), QT_QPA_PLATFORM="offscreen",
                ARGO_PROVA_AVVIO=str(SECONDI_APERTA), PYTHONIOENCODING="utf-8", PYTHONUTF8="1")
