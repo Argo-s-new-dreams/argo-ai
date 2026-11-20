@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261120.1230 · riferita all'app versione 20261120.1230*
+*Versione del manuale: 20261120.1411 · riferita all'app versione 20261120.1411*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -1076,6 +1076,7 @@ Il disinstallatore:
 | Tutti "Sconosciuto" | Anagrafe vuota o soglia troppo alta | Registra le voci; prova con soglia 0,45-0,50 |
 | Persone scambiate tra loro | Soglia troppo bassa o campioni poco puliti | Alza la soglia; aggiungi campioni puliti |
 | "Ollama non è acceso" | Ollama non è avviato o l'indirizzo è sbagliato | Avvia Ollama (icona del lama nella barra dei menu) e riprova |
+| «Ollama è acceso ma non ha risposto entro … s» (fino alla 1230: «Ollama non raggiungibile … timed out. È avviato?») | Ollama sta caricando un modello, oppure il modello è troppo grande per la RAM e il computer lavora sul disco | Aspetta un minuto e riprova. Se succede sempre, scegli un modello più piccolo in *Impostazioni › Modelli AI*: con 8 GB di RAM `gemma3:4b`, con 16 GB al massimo `gemma3:12b`. Per vedere la RAM: menu  › Informazioni su questo Mac; per vedere cosa ha caricato Ollama: `ollama ps` nel Terminale |
 | "Nessun modello scaricato" | Ollama è acceso ma vuoto | `ollama pull gemma3:12b` dal Terminale, oppure *Impostazioni → Scarica un modello* |
 | "Manca il modello per i documenti" | Nessun modello di embedding | `ollama pull bge-m3` |
 | Nessuna risposta dai Documenti | Indice vuoto o PDF scansionato | Indicizza documenti con testo selezionabile |

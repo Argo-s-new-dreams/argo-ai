@@ -66,7 +66,7 @@ def modelli_vision(url):
     for nome in chat:
         capacita = None
         try:
-            with llm._req(url, "/api/show", {"model": nome}, timeout=10) as r:
+            with llm._req(url, "/api/show", {"model": nome}, timeout=llm.TEMPO_BREVE) as r:
                 capacita = json.load(r).get("capabilities")
         except Exception:
             pass

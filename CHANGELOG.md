@@ -2,6 +2,11 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261120.1411: errori di Ollama più chiari
+- **Ollama lento non è Ollama spento**: un tempo scaduto (Ollama acceso ma occupato a caricare un modello, o senza memoria) ora dice proprio questo, invece di «Ollama non raggiungibile… È avviato?». Se il modello scelto è troppo grande per la RAM del computer, il messaggio lo dice con le dimensioni e propone un modello più piccolo. Ollama davvero spento ha un messaggio a parte, con come avviarlo.
+- Elenco e dettagli dei modelli aspettano fino a 30 secondi (prima 10) e l'elenco riprova una volta: su un Mac occupato a caricare un modello grande 10 secondi non bastavano, e la relazione falliva subito.
+- Manuale §15: nuova riga nei problemi frequenti.
+
 ## 20261120.1230: Secondo cervello, secondo blocco · Distilla e Base anonima
 - **✨ Distilla** (scheda *Incontri* della pagina Secondo cervello, anche **Distilla i nuovi**): il modello **locale** estrae da trascrizioni e relazioni solo fatti di lavoro: sintesi, temi, esigenze, problemi, come lavorano oggi, decisioni, domande che hanno funzionato, punti aperti. Testi lunghi a pezzi, poi uniti.
 - **Anonimizzazione irreversibile in tre passi**: nomi noti tolti prima che il modello legga (aziende del catalogo e loro parole distintive, siti, parlanti, partecipanti, voci; mail, telefoni, partite IVA), categorie al posto dei nomi nel testo del modello, controllo finale dei nomi rimasti. Software e tecnologie restano.
