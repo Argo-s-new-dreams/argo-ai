@@ -16,7 +16,7 @@ $ErrorActionPreference = "Stop"
 $Radice = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $Lavoro = Join-Path ([IO.Path]::GetTempPath()) "argo-msix"
 $Pkg = Join-Path $Lavoro "pacchetto"
-$UrlFfmpeg = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-win64-lgpl-shared-7.1.zip"
+$ModelloFfmpeg = "^ffmpeg-n7\.\d+-latest-win64-lgpl-shared-7\.\d+\.zip$"  # FFmpeg 7.x LGPL condiviso (BtbN)
 
 function Passo($testo) { Write-Host "`n== $testo" -ForegroundColor Cyan }
 
@@ -46,7 +46,11 @@ Copy-Item (Join-Path $Radice "LICENSE"), (Join-Path $Radice "THIRD_PARTY_LICENSE
 
 Passo "FFmpeg LGPL (build condivisa: serve anche a torchcodec)"
 $zip = Join-Path $Lavoro "ffmpeg.zip"
-Invoke-WebRequest $UrlFfmpeg -OutFile $zip
+$rel = Invoke-RestMethod "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest"
+$asset = $rel.assets | Where-Object { $_.name -match $ModelloFfmpeg } | Sort-Object name | Select-Object -Last 1
+if (-not $asset) { throw "FFmpeg 7.x LGPL condiviso non trovato tra i file di BtbN/FFmpeg-Builds" }
+Write-Host "  $($asset.name)"
+Invoke-WebRequest $asset.browser_download_url -OutFile $zip
 Write-Host "  SHA-256 FFmpeg: $((Get-FileHash $zip -Algorithm SHA256).Hash)"
 Expand-Archive $zip (Join-Path $Lavoro "ffmpeg")
 $sorgFf = Get-ChildItem (Join-Path $Lavoro "ffmpeg") -Directory | Select-Object -First 1
