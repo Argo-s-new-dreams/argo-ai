@@ -121,8 +121,24 @@ if (-not $kit) { throw "makeappx.exe non trovato: serve il Windows SDK" }
 $versione = (Select-String -Path (Join-Path $Radice "app\trascrittore.py") -Pattern '^VERSIONE = "([^"]+)"').Matches[0].Groups[1].Value
 $msix = Join-Path $Uscita "Argo-AI-$versione-x64.msix"
 $log = & $kit.FullName pack /d $Pkg /p $msix /o 2>&1
+$esito = $LASTEXITCODE
 $log | Where-Object { $_ -notmatch "^Processing |^\s*$" } | Out-Host
-if ($LASTEXITCODE -ne 0) { throw "makeappx non riuscito" }
+if ($esito -ne 0) {
+    Write-Host "  Ultimi file elaborati:"
+    $log | Where-Object { $_ -match "^Processing " } | Select-Object -Last 12 | ForEach-Object { "   $_".Substring(0, [Math]::Min(220, "   $_".Length)) } | Out-Host
+    & $Py -c @"
+import os, sys
+r = sys.argv[1]; lunghi = []; strani = []
+for c, d, f in os.walk(r):
+    for n in d + f:
+        rel = os.path.relpath(os.path.join(c, n), r)
+        if len(rel) > 200: lunghi.append(rel)
+        if not n.isascii() or any(ch in n for ch in '[]#{}~;,=+&@^$!\'`'): strani.append(rel)
+print('  percorsi > 200 caratteri:', len(lunghi)); [print('   ', x) for x in lunghi[:10]]
+print('  nomi con caratteri particolari:', len(strani)); [print('   ', x) for x in strani[:30]]
+"@ $Pkg
+    throw "makeappx non riuscito"
+}
 Write-Host ("  {0}  ({1:N0} MB)" -f $msix, ((Get-Item $msix).Length / 1MB))
 
 if ($FirmaDiProva) {
