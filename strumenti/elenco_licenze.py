@@ -25,7 +25,38 @@ def licenza(dist):
         return ", ".join(dict.fromkeys(classificatori))
     if testo:
         return testo.splitlines()[0][:60] + "…"
-    return "non dichiarata"
+    return dal_file(dist) or "non dichiarata"
+
+
+_FIRME = [  # frasi tipiche dei testi di licenza più comuni
+    ("Permission is hereby granted, free of charge", "MIT"),
+    ("Apache License", "Apache-2.0"),
+    ("GNU LESSER GENERAL PUBLIC LICENSE", "LGPL"),
+    ("GNU GENERAL PUBLIC LICENSE", "GPL"),
+    ("Mozilla Public License", "MPL-2.0"),
+    ("Redistribution and use in source and binary forms", "BSD"),
+]
+
+
+def dal_file(dist):
+    """Licenza riconosciuta dal file di licenza incluso nel pacchetto, quando i metadati non la dichiarano."""
+    nomi = list(dist.metadata.get_all("License-File") or [])
+    for f in dist.files or []:
+        base = str(f).replace("\\", "/").split("/")[-1].upper()
+        if base.startswith(("LICENSE", "LICENCE", "COPYING")):
+            nomi.append(str(f))
+    for nome in dict.fromkeys(nomi):
+        for percorso in (nome, f"licenses/{nome}"):
+            try:
+                testo = dist.read_text(percorso) or (dist.locate_file(percorso).read_text(encoding="utf-8", errors="replace"))
+            except Exception:
+                continue
+            for firma, lic in _FIRME:
+                if firma.lower() in testo.lower():
+                    if lic == "BSD":
+                        lic = "BSD-3-Clause" if "neither the name" in testo.lower() else "BSD-2-Clause"
+                    return lic + " (dal file di licenza)"
+    return None
 
 
 def sito(dist):
