@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261119.1720 · riferita all'app versione 20261119.1720*
+*Versione del manuale: 20261120.1152 · riferita all'app versione 20261120.1152*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -53,6 +53,8 @@ Argo usa due "motori", entrambi locali.
 - per scaricare i modelli la prima volta (WhisperX/pyannote da Hugging Face, LLM da Ollama).
 
 Dopo l'installazione il lavoro avviene offline.
+
+**Modelli e licenze.** Per allineare le parole all'audio in italiano, francese, tedesco e spagnolo, Argo usa i modelli wav2vec2 di Jonatas Grosman (licenza Apache-2.0, uso commerciale consentito), circa 1,2 GB per lingua scaricati una volta. Il predefinito di WhisperX per queste lingue, VoxPopuli, ha licenza non commerciale e non va bene per il lavoro. Licenze di tutti i componenti e modelli: [THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md). Chi usa Gemma (il modello consigliato per i testi) accetta i [Gemma Terms of Use](https://ai.google.dev/gemma/terms).
 
 La barra in basso nella finestra mostra **🔒 100% locale** finché Ollama punta a questo computer (`localhost`). Se nelle impostazioni indichi un server Ollama su un'altra macchina, il badge te lo segnala.
 
@@ -268,6 +270,7 @@ Video: `mp4`, `mov`, `mkv`, `webm`, `m4v`, `avi`, `wmv`: per esempio le registra
 | Interrotta | Fermata da te o dalla chiusura dell'app |
 
 - La coda viene salvata: se chiudi Argo, la ritrovi alla riapertura.
+- **Il computer resta sveglio** finché Argo lavora (trascrizione, registrazione e Live, relazioni, incontri da file, attrezzi con il modello linguistico): niente sospensione automatica per inattività; lo schermo può spegnersi lo stesso. Il **coperchio chiuso** o il **tasto di accensione** mandano comunque il computer in sospensione: se succede durante una trascrizione, Argo se ne accorge e la **rimette in coda da sola una volta**, ripartendo da capo appena il computer si risveglia. Per i lavori lunghi tieni il portatile aperto e alla corrente.
 - **Tasto destro** su una riga apre un menu con tutte le azioni: trascrizione, nomi, Word, verbale, Marca voci, rimetti in coda, cartella, rimuovi. **Canc** (o ⌫ sul Mac) rimuove le righe selezionate.
 - **■ Ferma coda** interrompe il file in lavorazione e chiude tutti i processi di WhisperX. Se premi subito di nuovo *Avvia*, Argo può chiederti di attendere qualche secondo che la chiusura finisca.
 - **Rimetti in coda** riporta in *In attesa* un file con errore o interrotto. Su una trascrizione completata ti chiede se rifare **solo i parlanti** o **tutta la trascrizione**. **Rimuovi** toglie il file dalla lista senza cancellarlo.
@@ -276,7 +279,7 @@ Video: `mp4`, `mov`, `mkv`, `webm`, `m4v`, `avi`, `wmv`: per esempio le registra
 
 Se la separazione delle voci non torna (per esempio ha trovato 2 persone ma erano 3), cambia il numero nella colonna **Partecipanti** anche su una riga *Completata*. Argo chiede conferma e **rifà solo la separazione dei parlanti**: il testo trascritto resta lo stesso, e ci vuole molto meno di una trascrizione completa. Alla fine la riga torna *Completata* con i nuovi parlanti; i nomi corretti a mano vanno riassegnati.
 
-> La prima trascrizione scarica i modelli (alcuni GB): è normale che ci metta di più.
+> La prima trascrizione scarica i modelli (alcuni GB, compreso il modello di allineamento della lingua, circa 1,2 GB): è normale che ci metta di più. Chi aggiorna da una versione precedente lo scarica alla prima trascrizione dopo l'aggiornamento.
 
 ### 5.4 Risultati
 
@@ -796,7 +799,9 @@ Un **template** dice come scrivere la relazione di un incontro: quali sezioni e 
 4. in **Come la voglio** scrivi le tue indicazioni, per esempio «Scrivi per il direttore commerciale: prima il valore economico», «Evidenzia concorrenti e obiezioni sul prezzo», «Frasi brevi, niente aggettivi»;
 5. premi **Salva template**, e se vuoi **★ Usa come predefinito**.
 
-Le tue indicazioni guidano stile e taglio, mai le regole di fedeltà: la relazione continua a usare solo ciò che è stato detto, fotografato o allegato. **Contatti, aziende e azioni vengono sempre estratti**, anche se il template non li mostra, perché servono all'invio a Dynamics e alla pagina Clienti. Il piè della relazione riporta il template usato.
+**Filtro etico.** Relazioni, verbali, riassunti della posta e schede dei clienti riportano **solo fatti utili al lavoro**: esigenze, problemi, processi, prodotti, cifre, decisioni, azioni. Non riportano questioni personali o private (salute, famiglia, opinioni politiche o religiose), giudizi o commenti sulle persone, pettegolezzi, parolacce, bestemmie, insulti o espressioni offensive, anche se nella conversazione ci sono stati: il modello scrive il contenuto di lavoro con parole neutre. Come rete di sicurezza, Argo toglie dal testo prodotto le parolacce più comuni rimaste e le sostituisce con «[…]». I recapiti di lavoro (biglietti da visita, mail e telefoni aziendali) restano. Traduzioni e dettatura non passano dal filtro: sono testi tuoi, resi fedelmente.
+
+Le tue indicazioni guidano stile e taglio, mai le regole di fedeltà né il filtro etico: la relazione continua a usare solo ciò che è stato detto, fotografato o allegato. **Contatti, aziende e azioni vengono sempre estratti**, anche se il template non li mostra, perché servono all'invio a Dynamics e alla pagina Clienti. Il piè della relazione riporta il template usato.
 
 ### 11.5 Microsoft 365 (facoltativo)
 
@@ -1028,6 +1033,7 @@ Il disinstallatore:
 | Il microfono non registra | Permessi negati | Vedi [§9](#9-dettatura) |
 | "Tratti troppo corti" in *Marca voci* | Meno di 10 secondi marcati per una persona | Marca altri tratti in cui parla solo lei |
 | L'impronta da *Marca voci* riconosce male | Nei tratti ci sono voci sovrapposte o rumore | Elimina la voce, rimarca solo tratti puliti, aggiungi un campione con *Registra voce* |
+| Trascrizione in **Errore** dopo che il computer è andato in sospensione (fino alla 1139) | La sospensione ferma WhisperX a metà | Aggiorna: dalla 1152 Argo tiene sveglio il computer mentre lavora e, se lo chiudi lo stesso, rimette la trascrizione in coda. Con il portatile chiuso il computer va comunque in sospensione: tienilo aperto e alla corrente |
 | Trascrizione molto lenta | CPU, modello `large-v3`, PC ARM | Passa a `large-v3-turbo` o `medium`; su NVIDIA usa CUDA |
 | Il Mac Intel non installa | Non supportato | Serve un Mac Apple Silicon o un PC Windows |
 | Righe *Interrotta* che non si riescono a rimuovere o rimettere in coda (versioni fino alla 1910) | Un'elaborazione fermata restava agganciata alla coda | Chiudi e riapri Argo, poi aggiorna alla 1930 o successiva |
@@ -1058,6 +1064,7 @@ Se un file va in **Errore**, il registro tecnico sotto la coda di *Trascrivi* (c
 - **Modalità Live = minimizzazione dei dati** (art. 5, par. 1, lett. c GDPR): l'audio esiste solo per il tempo necessario a trascriverlo. È la scelta consigliata per le riunioni di lavoro. Tieni comunque attiva la cifratura del disco (FileVault, BitLocker): sugli SSD la sovrascrittura di un file cancellato non garantisce che il dato sparisca fisicamente.
 - **Non conserva la voce, di base.** *Registra* parte in **Live**; **Archivia** è una scelta che fai ogni volta, con la conferma dell'informativa, e l'IT può toglierla (`"registrazione": "solo_live"`).
 - **Non profila gli interlocutori, di base.** Il riconoscimento delle voci è spento finché non lo attivi, e ogni voce si usa solo con il consenso registrato della persona (§6). Le impronte vocali sono dati biometrici (art. 9 GDPR): cancellale quando non servono più (**Elimina** nell'Anagrafe).
+- **Solo fatti di lavoro nei testi generati:** relazioni, verbali e riassunti non riportano questioni personali, giudizi sulle persone o linguaggio offensivo (filtro etico, §11.4ter).
 - **Documenti riservati:** l'indice contiene estratti testuali dei documenti. Proteggi il computer (cifratura del disco, account con password) come faresti con gli originali.
 
 ### AI Act (Regolamento UE 2024/1689)

@@ -503,6 +503,11 @@ def _mostra(tipo, messaggio, traccia):
     global _finestra_aperta
     if _finestra_aperta or QApplication.instance() is None:
         return
+    if os.environ.get("ARGO_PROVA_AVVIO"):  # prova automatica senza schermo: nessuna finestra da cliccare
+        print(f"ERRORE NON GESTITO: {tipo}: {messaggio}", file=sys.stderr, flush=True)
+        if _finestra_principale() is None:
+            QTimer.singleShot(0, QApplication.instance().quit)
+        return
     if time.time() - _ultimi.get(tipo + messaggio, 0) < 30:  # lo stesso errore a raffica: una finestra sola
         return
     _ultimi[tipo + messaggio] = time.time()

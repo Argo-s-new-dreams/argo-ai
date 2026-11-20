@@ -23,9 +23,11 @@ from PySide6.QtWidgets import (
 
 import esporta_word as word
 import cloud
+import etica
 import llm_locale as llm
 import risorse
 import tema
+import veglia
 import voci_core as core
 
 ESEMPI = Path(__file__).resolve().parent / "esempi"
@@ -141,7 +143,9 @@ class Lavoro(QThread):
     def run(self):
         cloud.imposta_attrezzo(self.attrezzo)
         try:
-            self.sig_fine.emit(self.fn(self))
+            with veglia.tieni(self.attrezzo or "attrezzo"):
+                risultato = self.fn(self)
+            self.sig_fine.emit(risultato)
         except Exception as e:
             self.sig_errore.emit(str(e))
 
@@ -204,7 +208,8 @@ class SchedaBase(QWidget):
         self.stato = QLabel("")
         self.stato.setWordWrap(True)
 
-    def avvia(self, fn, uscita=None, fine=None, pulsante=None):
+    def avvia(self, fn, uscita=None, fine=None, pulsante=None, pulisci=None):
+        """`pulisci`: funzione applicata al testo finale in `uscita` (filtro etico per verbali e sunti)."""
         if self.lavoro:
             return
         if uscita is not None:
@@ -219,6 +224,10 @@ class SchedaBase(QWidget):
             self.lavoro = None
             if pulsante:
                 pulsante.setText(self._testo_pulsante)
+            if pulisci and uscita is not None and isinstance(r, str) and r:
+                pulito = pulisci(visibile(r).strip())
+                if pulito != visibile(r).strip():
+                    uscita.setPlainText(pulito)
             dove = cloud.avviso(getattr(self, "ATTREZZO", None)) or "tutto in locale."
             self.stato.setText(f"Fatto in {time.time() - self.t0:.0f} s, {dove}")
             if fine:
@@ -320,7 +329,7 @@ MODELLI_VERBALE = {
 SISTEMA_VERBALE = (
     "Sei un assistente che redige verbali di riunione in italiano. Usa SOLO le informazioni presenti nella "
     "trascrizione. Se un dato manca (responsabile, data) scrivi 'non indicato'. Non inventare nomi, numeri o date. "
-    "Le righe della trascrizione hanno il formato [ora] Nome: testo.")
+    "Le righe della trascrizione hanno il formato [ora] Nome: testo." + etica.REGOLE)
 
 
 class SchedaVerbale(SchedaBase):
@@ -400,7 +409,7 @@ class SchedaVerbale(SchedaBase):
                                   {"role": "user", "content": f"{istruzione}\n\nAPPUNTI DALLE PARTI DELLA RIUNIONE:\n"
                                                               + "\n\n".join(appunti)}])
 
-        self.avvia(fn, self.uscita, pulsante=self.b_gen)
+        self.avvia(fn, self.uscita, pulsante=self.b_gen, pulisci=etica.pulisci)
 
     def salva(self):
         testo = self.uscita.toPlainText().strip()

@@ -50,8 +50,8 @@ def scrivi_verbale(lav, trascrizione):
     blocchi = llm.spezza(trascrizione, 9000)
     sistema = {"role": "system", "content": attrezzi.SISTEMA_VERBALE}
     if len(blocchi) == 1:
-        return attrezzi.chat_llm(lav, [sistema, {"role": "user", "content": f"{istruzione}\n\nTRASCRIZIONE:\n{trascrizione}"}],
-                                 mostra=False)
+        return attrezzi.etica.pulisci(attrezzi.chat_llm(lav, [sistema, {"role": "user", "content":
+                                      f"{istruzione}\n\nTRASCRIZIONE:\n{trascrizione}"}], mostra=False))
     appunti = []
     for i, b in enumerate(blocchi, 1):
         if lav.fermato():
@@ -60,8 +60,9 @@ def scrivi_verbale(lav, trascrizione):
         appunti.append(attrezzi.chat_llm(lav, [sistema, {"role": "user", "content":
                                          "Estrai in punti elenco: partecipanti, argomenti, decisioni, azioni (con "
                                          f"responsabile e scadenza se dette), punti aperti.\n\nPARTE {i}:\n{b}"}], mostra=False))
-    return attrezzi.chat_llm(lav, [sistema, {"role": "user", "content": f"{istruzione}\n\nAPPUNTI DALLE PARTI DELLA RIUNIONE:\n"
-                                                                     + "\n\n".join(appunti)}], mostra=False)
+    return attrezzi.etica.pulisci(attrezzi.chat_llm(lav, [sistema, {"role": "user", "content":
+                                      f"{istruzione}\n\nAPPUNTI DALLE PARTI DELLA RIUNIONE:\n" + "\n\n".join(appunti)}],
+                                      mostra=False))
 
 
 def scrivi_mail(lav, verbale, lingua="it", tono=TONI[0], destinatari="", note=""):
@@ -75,8 +76,9 @@ def scrivi_mail(lav, verbale, lingua="it", tono=TONI[0], destinatari="", note=""
         richiesta += f" La mail è indirizzata a: {destinatari.strip()}."
     if note.strip():
         richiesta += f" Indicazioni aggiuntive: {note.strip()}"
-    return attrezzi.chat_llm(lav, [{"role": "system", "content": "Sei un assistente che scrive mail di lavoro chiare."},
-                                   {"role": "user", "content": f"{richiesta}\n\nVERBALE:\n{verbale}"}], mostra=False)
+    return attrezzi.etica.pulisci(attrezzi.chat_llm(lav, [
+        {"role": "system", "content": "Sei un assistente che scrive mail di lavoro chiare." + attrezzi.etica.REGOLE},
+        {"role": "user", "content": f"{richiesta}\n\nVERBALE:\n{verbale}"}], mostra=False))
 
 
 def estrai_task(lav, verbale, data_riunione):

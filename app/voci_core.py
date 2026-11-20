@@ -387,7 +387,7 @@ def comando_whisperx(file_audio, n_parlanti, impostazioni, token):
     s = impostazioni
     device = s.get("device", "cpu")
     cmd = [
-        sys.executable, "-m", "whisperx", str(file_audio),
+        sys.executable, str(Path(__file__).resolve().parent / "whisperx_argo.py"), str(file_audio),
         "--model", s.get("model", "large-v3"),
         "--device", device,
         "--compute_type", "float16" if device == "cuda" else "int8",

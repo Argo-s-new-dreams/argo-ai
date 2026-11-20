@@ -1,0 +1,79 @@
+# Prova di avvio: a ogni modifica dell'app controlla che Argo parta davvero su Mac e su Windows.
+# 1. Controllo veloce del codice (ruff, solo errori gravi: sintassi, nomi non definiti, variabili locali usate
+#    prima di essere assegnate, come il QTimer che il 18/11/2026 impediva ad Argo di partire sul Mac).
+# 2. Avvio vero su macOS (Apple Silicon) e Windows x64 con le librerie di requisiti.lock (hash verificati):
+#    Argo deve arrivare alla finestra e chiudersi senza errori (strumenti/prova_avvio.py).
+name: Prova di avvio
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "strumenti/prova_avvio.py"
+      - "strumenti/elenco_licenze.py"
+      - ".github/workflows/prova-avvio.yml"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: prova-avvio-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  controllo:
+    name: Controllo del codice
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Sintassi
+        run: python -m compileall -q app strumenti
+      - name: Errori gravi (ruff)
+        run: |
+          pip install --quiet ruff
+          ruff check --select E9,F63,F7,F82 --target-version py312 app strumenti
+
+  avvio:
+    name: Avvio su ${{ matrix.nome }}
+    needs: controllo
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            nome: macOS
+            python: .venv/bin/python
+          - os: windows-latest
+            nome: Windows
+            python: .venv/Scripts/python.exe
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: app/requisiti.lock
+      - name: Ambiente Python 3.12 e librerie di requisiti.lock
+        shell: bash
+        run: |
+          uv venv --python 3.12 .venv
+          uv pip install --python ${{ matrix.python }} --require-hashes -r app/requisiti.lock
+      - name: Argo arriva alla finestra
+        shell: bash
+        run: ${{ matrix.python }} strumenti/prova_avvio.py
+      - name: Elenco delle licenze delle librerie
+        if: always()
+        shell: bash
+        run: ${{ matrix.python }} strumenti/elenco_licenze.py licenze-librerie-${{ matrix.nome }}.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: licenze-librerie-${{ matrix.nome }}
+          path: licenze-librerie-${{ matrix.nome }}.md

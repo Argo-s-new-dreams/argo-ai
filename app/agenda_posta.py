@@ -550,12 +550,13 @@ class SchedaPosta(SchedaM365):
                 rich = (f"Scrivi la risposta all'ultima mail, tono {tono}, nella stessa lingua della mail. Solo il corpo "
                         "della mail, senza oggetto e senza firma. Non inventare impegni, date o cifre."
                         + (f" Indicazioni di chi risponde: {istr}" if istr else ""))
-            return attrezzi.chat_llm(lav, [{"role": "system", "content": "Sei un assistente di posta preciso e sobrio."},
+            return attrezzi.chat_llm(lav, [{"role": "system", "content": "Sei un assistente di posta preciso e sobrio."
+                                                                         + attrezzi.etica.REGOLE},
                                            {"role": "user", "content": f"{rich}\n\nCONVERSAZIONE:\n{filo}"}])
 
         lav = attrezzi.Lavoro(fn, self)
         lav.sig_token.connect(lambda t: self.uscita.insertPlainText(t))
-        lav.sig_fine.connect(lambda r: (self.uscita.setPlainText(attrezzi.visibile(r).strip()), self._abilita(True),
+        lav.sig_fine.connect(lambda r: (self.uscita.setPlainText(attrezzi.etica.pulisci(attrezzi.visibile(r).strip())), self._abilita(True),
                                         self.l_stato.setText(
                                             "Fatto" + (", " + attrezzi.cloud.avviso("posta") if attrezzi.cloud.e_cloud("posta")
                                                        else ", in locale.") + " Rileggi prima di usarlo.")))

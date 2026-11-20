@@ -2,6 +2,25 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261120.1152: il computer resta sveglio mentre Argo lavora
+- **Niente sospensione automatica durante i lavori**: mentre Argo trascrive, registra o finisce la Live, scrive una relazione, crea un incontro da file o usa il modello linguistico, il computer non va in sospensione per inattività (Mac: `caffeinate`; Windows: `SetThreadExecutionState`). Lo schermo può spegnersi lo stesso; finito il lavoro, tutto torna come prima. Se Argo si chiude o si blocca, il blocco si toglie da solo.
+- **Sospensione lo stesso** (coperchio chiuso, tasto di accensione): Argo se ne accorge. Una trascrizione fallita per questo torna **In attesa** e riparte da capo una volta; se ricapita, la nota spiega cosa è successo. Negli incontri da file l'errore dice che il computer è andato in sospensione. Nel registro tecnico: «il computer è stato in sospensione per circa N min».
+- La prova di avvio automatica controlla anche il blocco della sospensione su macOS e Windows.
+- Manuale §5.3 e §15 aggiornati.
+
+## 20261120.1139: licenze verificate e allineamento con licenza commerciale
+- **Allineamento delle parole**: per italiano, francese, tedesco e spagnolo WhisperX usava di base i modelli **VoxPopuli** di torchaudio, con licenza **CC BY-NC 4.0 (non commerciale)**: non adatti a un uso di lavoro. Argo ora usa i modelli wav2vec2 XLSR-53 di Jonatas Grosman, **Apache-2.0** (`app/whisperx_argo.py`), sia nel Trascrittore sia nel Live, anche con il rilevamento automatico della lingua. L'inglese resta il modello di torchaudio, MIT. La prima trascrizione dopo l'aggiornamento scarica il nuovo modello, circa 1,2 GB per lingua, una volta sola.
+- **THIRD_PARTY_LICENSES.md riscritto**: cosa è incluso e cosa si scarica; Python (PSF), FFmpeg (installer e build LGPL del pacchetto Store, con i link ai sorgenti), Ollama, tutti i modelli con licenza e note (pyannote community-1 CC-BY-4.0, Gemma Terms of Use, BGE-M3 MIT, Qwen2.5-VL 7B Apache-2.0, Whisper MIT).
+- **Elenco delle licenze di tutte le librerie Python** (`strumenti/elenco_licenze.py`), prodotto dalla GitHub Action «Prova di avvio» su macOS e Windows; la stessa Action controlla ora i modelli di allineamento sul WhisperX vero.
+- Manuale §1 aggiornato.
+
+## 20261120.1111: filtro etico e prova automatica di avvio su Mac e Windows
+- **Filtro etico** su relazioni degli incontri, verbali (anche quelli da Agenda), mail di recap, riassunti e risposte della posta, schede dei clienti: solo fatti utili al lavoro. Niente questioni personali o private, giudizi sulle persone, pettegolezzi, parolacce, bestemmie, insulti o espressioni discriminatorie, anche se sono nella conversazione. Le regole arrivano al modello; in più un controllo finale toglie le parolacce più comuni rimaste («[…]») senza toccare parole normali come «cazzuola» o «Troia» (la città). Traduzioni e dettatura restano fedeli. Primo pezzo del «Secondo cervello».
+- **Prova di avvio automatica** (GitHub Action «Prova di avvio») a ogni modifica dell'app:
+  - controllo del codice con ruff sugli errori gravi: avrebbe fermato il problema del 18/11 (QTimer usato prima di essere assegnato);
+  - avvio vero su **macOS** e **Windows** con le librerie di `requisiti.lock`: Argo deve arrivare alla finestra e chiudersi senza errori. Si lancia anche a mano: `python strumenti/prova_avvio.py`.
+- In modalità di prova (`ARGO_PROVA_AVVIO`) gli errori finiscono nel registro invece di aprire una finestra da cliccare.
+
 ## 20261119.1720: la promessa, alla lettera
 - **Riconoscimento delle voci spento per tutti** finché non lo attivi (*Voci › Attiva il riconoscimento…* o *Impostazioni › Trascrizione e voci*). Da spento: parlanti «Parlante 1, 2…», nessuna impronta calcolata o conservata (WhisperX gira senza `--speaker_embeddings`), Live senza anagrafe, niente voci per l'iPhone.
 - **Consenso per ogni voce**, salvato con la data in `voci/<Nome>/consenso.json` e mostrato nella nuova colonna **Consenso**. Le voci salvate prima restano ma non si usano finché non confermi il consenso (all'attivazione o con **Conferma consenso…**). Senza consenso nessuna impronta viene salvata, nemmeno dalla Revisione.

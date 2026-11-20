@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import cloud
+import etica
 import llm_locale as llm
 import relazione_incontro as rel
 import ricerca_web as web
@@ -71,7 +72,8 @@ Ricerca eseguita il: <AAAA-MM-GG>
 ## 9. Dati non reperiti   (obbligatoria: cosa manca e come ottenerlo: domanda al cliente, documento, registro)
 (La sezione 10 «Elenco fonti consultate» la aggiunge Argo: non scriverla.)
 
-Un profilo con molte sezioni [DATO NON DISPONIBILE] è corretto; un profilo completo ma inventato è un danno."""
+Un profilo con molte sezioni [DATO NON DISPONIBILE] è corretto; un profilo completo ma inventato è un danno.""" \
+    + etica.REGOLE_PERSONE
 
 NOTA_FINALE = ("> Informazioni pubbliche non verificate presso l'azienda. Da confermare in sede di\n"
                "> discovery prima di qualsiasi uso in un documento destinato al cliente.")
@@ -267,6 +269,7 @@ def ricerca(nome, extra="", url_ollama=None, modello=None, stato=lambda _t: None
                       f"Data della ricerca: {oggi}\nAzienda: {nome} {extra}\n"
                       + (f"Candidato scelto dall'utente: {json.dumps(scelta_candidato, ensure_ascii=False)}\n" if scelta_candidato else "")
                       + f"\nFONTI:\n\n{blocco}", stop=stop)
+    profilo = etica.pulisci(profilo)
     avanzamento(85)
     tabella = ["## 10. Elenco fonti consultate", "", "| # | Fonte | URL | Data di consultazione | Livello |",
                "|---|---|---|---|---|"]
