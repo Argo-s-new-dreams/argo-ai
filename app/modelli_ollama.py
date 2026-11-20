@@ -53,22 +53,24 @@ def mancanti(chat, emb, dim=None):
     return da_scaricare
 
 
+def migliore(candidati, dim, preferiti=PREFERITI):
+    """Il modello migliore che sta nella RAM: ordine di preferenza, poi il più grande. None se nessuno ci sta."""
+    adatti = [n for n in candidati if dim.get(n) and risorse.modello_entra(dim[n])]
+
+    def rango(n):
+        return (next((i for i, p in enumerate(preferiti) if n.lower().startswith(p)), len(preferiti)), -dim.get(n, 0))
+    return min(adatti, key=rango) if adatti else None
+
+
 def adatta(s, chat, vision, dim):
     """Legge com'è fatto il computer: se il modello scelto per i testi o per le foto non sta nella RAM, passa al
     migliore installato che ci sta (ordine di preferenza, poi il più grande). Modifica s; ritorna cosa ha cambiato."""
     cambiati = []
-
-    def migliore(candidati):
-        adatti = [n for n in candidati if dim.get(n) and risorse.modello_entra(dim[n])]
-        rango = lambda n: (next((i for i, p in enumerate(PREFERITI) if n.lower().startswith(p)), len(PREFERITI)),
-                           -dim.get(n, 0))
-        return min(adatti, key=rango) if adatti else None
-
     for campo, candidati, ruolo in (("modello_chat", chat, "testi"), ("modello_vision", vision, "foto")):
         attuale = s.get(campo)
         if not attuale or not dim.get(attuale) or risorse.modello_entra(dim[attuale]):
             continue
-        nuovo = migliore([c for c in candidati if c != attuale])
+        nuovo = migliore([c for c in candidati if c != attuale], dim)
         if nuovo:
             s[campo] = nuovo
             cambiati.append(f"{ruolo}: {nuovo} al posto di {attuale}, troppo grande per {risorse.ram_gb():.0f} GB di RAM")

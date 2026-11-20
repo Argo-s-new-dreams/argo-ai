@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261120.1419"
+VERSIONE = "20261120.1854"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -46,8 +46,12 @@ import disinstalla  # noqa: E402
 import supporto  # noqa: E402
 import consenso_voci  # noqa: E402
 import veglia  # noqa: E402
+import adatta_computer  # noqa: E402
+import backup  # noqa: E402
+import backup_ui  # noqa: E402
 import secondo_cervello as cervello  # noqa: E402
 import secondo_cervello_ui as cervello_ui  # noqa: E402
+import cervello_base  # noqa: E402
 
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
@@ -378,6 +382,12 @@ class Finestra(QMainWindow):
         self.setCentralWidget(contenitore)
         self.tabs.setCurrentWidget(self.pag_coda)
         self.nav.seleziona(self.tabs.indexOf(self.pag_coda))
+        self.badge_cervello = QToolButton()  # 🧠 Secondo cervello attivo: un clic apre la sua pagina
+        self.badge_cervello.setAutoRaise(True)
+        self.badge_cervello.setCursor(Qt.PointingHandCursor)
+        self.badge_cervello.clicked.connect(lambda: self.vai_a(self.tab_cervello))
+        self.statusBar().addPermanentWidget(self.badge_cervello)
+        self.tab_cervello.cambiato.connect(self._aggiorna_badge)
         self.badge = QLabel()
         self.statusBar().addPermanentWidget(self.badge)
         self._aggiorna_badge()
@@ -972,6 +982,16 @@ class Finestra(QMainWindow):
                             attrezzi.oggi(), nota_ai=attrezzi.word.NOTA_TRASCRIZIONE)
 
     def _aggiorna_badge(self):
+        if hasattr(self, "badge_cervello"):
+            acceso = cervello.attivo()
+            self.badge_cervello.setVisible(acceso)
+            if acceso:
+                n = len(cervello_base.voci())
+                self.badge_cervello.setText(f"🧠 Secondo cervello attivo · {n} {'voce' if n == 1 else 'voci'} nella Base")
+                self.badge_cervello.setToolTip("Argo chiede con chi parli a ogni registrazione; i dati restano su "
+                                               "questo computer. Clic per aprire la pagina.")
+                self.badge_cervello.setStyleSheet(f"color: {tema.colori()['accento']};"
+                                                  " font-weight: 600; padding: 0 8px; border: none; background: transparent;")
         url = core.carica_impostazioni().get("ollama_url", "")
         nel_cloud = [cloud.NOMI_ATTREZZI[a] for a in cloud.NOMI_ATTREZZI if cloud.e_cloud(a)]
         if nel_cloud:  # almeno un attrezzo usa un modello cloud: il badge non può dire «100% locale»
@@ -980,6 +1000,13 @@ class Finestra(QMainWindow):
             self.badge.setStyleSheet(f"color: {tema.colori()['warn']}; font-weight: 600; padding-right: 8px;")
         elif llm_locale.e_locale(url) and m365.account():
             self.badge.setText("🔒 Locale · Microsoft 365 collegato: solo i risultati che confermi vanno su M365")
+            self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
+        elif llm_locale.e_locale(url) and (backup.nel_cloud(backup.cartella_backup()) or backup.condivisione_attiva()):
+            servizi = {backup.nel_cloud(backup.cartella_backup())} | (
+                {backup.nel_cloud(core.carica_impostazioni().get("condivisione_cartella", ""))}
+                if backup.condivisione_attiva() else set())
+            self.badge.setText("🔒 Locale · backup e configurazione anche in " + ", ".join(sorted(x for x in servizi if x)))
+            self.badge.setToolTip("Scelto in Impostazioni › Backup e più computer")
             self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
         elif llm_locale.e_locale(url):
             self.badge.setText("🔒 100% locale: audio e testi non lasciano questo computer")
@@ -1364,6 +1391,11 @@ class Finestra(QMainWindow):
         self.l_risorse.setText(risorse.descrizione(self.c_risorse.currentData()))
         f2.addRow("Uso del computer:", self.c_risorse)
         f2.addRow("", self.l_risorse)
+        self.b_adatta = QPushButton("🖥️ Adatta a questo computer…")
+        self.b_adatta.setToolTip("Legge processore, core, RAM e GPU di questo computer e propone modello di "
+                                 "trascrizione, uso del computer e modelli di Ollama adatti. Scegli tu cosa applicare.")
+        self.b_adatta.clicked.connect(self.adatta_al_computer)
+        f2.addRow("", self.b_adatta)
         lay.addWidget(g2)
 
         g3 = QGroupBox("Riconoscimento voci")
@@ -1577,6 +1609,7 @@ class Finestra(QMainWindow):
         lr.addWidget(self.editor_template)
 
         self.pannello_supporto = supporto.PannelloSupporto(self)
+        self.pannello_backup = backup_ui.PannelloBackup(self)
 
         # Pagina a argomenti (Stile Argo): colonna a sinistra, a destra solo l'argomento scelto
         self._categorie_imp = [
@@ -1590,6 +1623,8 @@ class Finestra(QMainWindow):
              [("m365", g6), ("dynamics", g7), ("web", g8)]),
             ("⚙️  Aspetto e aggiornamenti", "Tema chiaro o scuro, canale e aggiornamenti di Argo",
              [("aspetto", g5), ("aggiornamenti", g4), ("disinstalla", g9)]),
+            ("💾  Backup e più computer", "Backup ora, alla chiusura e programmati; ripristino anche da OneDrive e "
+             "Google Drive; configurazione condivisa tra Mac e Windows", self.pannello_backup.gruppi),
             ("🛟  Supporto", "Cosa è uscito da questo computer, chiedi supporto, modalità trace, registro e versione precedente",
              self.pannello_supporto.gruppi),
         ]
@@ -2051,6 +2086,91 @@ class Finestra(QMainWindow):
         ok, msg = core.verifica_token(tok)
         self.l_token.setText(("✅ " if ok else "❌ ") + msg)
 
+    def adatta_al_computer(self):
+        """Pulsante «Adatta a questo computer»: legge il computer (e Ollama, da un thread) e propone i cambi."""
+        if getattr(self, "_lav_adatta", None):
+            return
+        s = core.carica_impostazioni()
+        url = s.get("ollama_url") or llm_locale.DEFAULT_URL
+
+        def lavoro(_lav):
+            pc = adatta_computer.computer()
+            ollama = adatta_computer.leggi_ollama(url)
+            return pc, ollama, adatta_computer.proposte(s, pc, ollama)
+
+        self.b_adatta.setEnabled(False)
+        self.b_adatta.setText("Leggo com'è fatto il computer…")
+        lav = attrezzi.Lavoro(lavoro, self)
+        lav.sig_fine.connect(lambda r: self._mostra_adatta(*r, url))
+        lav.sig_errore.connect(lambda e: (self._fine_adatta(), QMessageBox.warning(self, "Adatta a questo computer", e)))
+        self._lav_adatta = lav
+        lav.start()
+
+    def _fine_adatta(self):
+        self._lav_adatta = None
+        self.b_adatta.setEnabled(True)
+        self.b_adatta.setText("🖥️ Adatta a questo computer…")
+
+    def _mostra_adatta(self, pc, ollama, proposte, url):
+        self._fine_adatta()
+        d = QDialog(self)
+        d.setWindowTitle("Adatta a questo computer")
+        d.setMinimumWidth(620)
+        lay = QVBoxLayout(d)
+        testa = QLabel(f"<b>Questo computer:</b> {adatta_computer.descrivi(pc)}"
+                       + ("" if ollama is not None else "<br>Ollama non risponde su questo computer: i modelli di "
+                          "Ollama non sono controllati."))
+        testa.setWordWrap(True)
+        lay.addWidget(testa)
+        caselle = []
+        if not proposte:
+            lay.addWidget(QLabel("✅ La configurazione è già adatta a questo computer."))
+        else:
+            lay.addWidget(QLabel("Cambi consigliati (togli la spunta a quelli che non vuoi):"))
+            for p in proposte:
+                if p["chiave"] == "scarica":
+                    testo = f"{p['ruolo']}: {p['nuovo']} — {p['motivo']}"
+                else:
+                    nuovo = risorse.NOMI.get(p["nuovo"], "Automatico") if p["chiave"] == "risorse" else p["nuovo"]
+                    nuovo = {"cuda": "GPU NVIDIA", "cpu": "CPU"}.get(nuovo, nuovo)
+                    testo = f"{p['ruolo']}: {p['attuale']} → {nuovo} — {p['motivo']}"
+                riga = QHBoxLayout()
+                cb = QCheckBox()
+                cb.setChecked(True)
+                etichetta = QLabel(testo)
+                etichetta.setWordWrap(True)
+                etichetta.mousePressEvent = lambda _e, c=cb: c.toggle()
+                riga.addWidget(cb, 0, Qt.AlignTop)
+                riga.addWidget(etichetta, 1)
+                caselle.append((cb, p))
+                lay.addLayout(riga)
+        bb = QDialogButtonBox(QDialogButtonBox.Close)
+        bb.button(QDialogButtonBox.Close).setText("Chiudi")
+        if proposte:
+            bb.addButton("Applica", QDialogButtonBox.AcceptRole)
+        bb.accepted.connect(d.accept)
+        bb.rejected.connect(d.reject)
+        lay.addWidget(bb)
+        if d.exec() != QDialog.Accepted:
+            return
+        scelte = [p for cb, p in caselle if cb.isChecked()]
+        s = core.carica_impostazioni()
+        for p in scelte:
+            if p["chiave"] != "scarica":
+                s[p["chiave"]] = p["nuovo"]
+        core.salva_impostazioni(s)
+        self.c_modello.setCurrentIndex(max(0, self.c_modello.findData(s.get("model"))))
+        self.c_device.setCurrentIndex(max(0, self.c_device.findData(s.get("device"))))
+        self.c_risorse.setCurrentIndex(max(0, self.c_risorse.findData(s.get("risorse", "auto"))))
+        attrezzi.segnale_modelli.cambiato.emit()
+        logging.getLogger("argo").info("adattato al computer (%s): %s", adatta_computer.descrivi(pc),
+                                       "; ".join(f"{p['chiave']}={p['nuovo']}" for p in scelte) or "nessun cambio")
+        self.statusBar().showMessage(f"Configurazione adattata a questo computer: {len(scelte)} cambi.", 10000)
+        da_scaricare = [p["nuovo"] for p in scelte if p["chiave"] == "scarica"]
+        if da_scaricare:
+            self._modelli_troppo_grandi = True
+            self._proponi_modelli(da_scaricare, url, True)
+
     def salva_impostazioni(self):
         imp = core.carica_impostazioni()
         imp.update(model=self.c_modello.currentData(), language=self.c_lingua.currentData(),
@@ -2087,6 +2207,8 @@ class Finestra(QMainWindow):
             self._lav_modelli.ferma()
             self._lav_modelli.wait(5000)
         self._salva_coda()
+        if not diagnostica.MODALITA_SICURA:  # backup alla chiusura e configurazione condivisa
+            _senza_errori(lambda: backup_ui.alla_chiusura(self))
         diagnostica.avvio_riuscito()  # chiusa dall'utente: l'avvio era andato a buon fine
         e.accept()
 
@@ -2121,14 +2243,28 @@ def main():
             scelta = "sicura"
         diagnostica.MODALITA_SICURA = scelta == "sicura"
     app.aboutToQuit.connect(diagnostica.chiusura)
+    condivisa_da = ""
+    if not diagnostica.MODALITA_SICURA:  # configurazione condivisa con gli altri computer: prima della finestra
+        try:
+            condivisa_da = backup.leggi_condivisa()
+            if condivisa_da:
+                tema.applica(app, core.carica_impostazioni().get("tema", "scuro"))
+        except Exception as e:
+            diagnostica.log.warning("configurazione condivisa non letta: %s", e)
     f = Finestra()
     f.show()
+    if condivisa_da:
+        f.statusBar().showMessage(f"Configurazione aggiornata da {condivisa_da} (cartella condivisa).", 15000)
     QTimer.singleShot(8000, diagnostica.avvio_riuscito)  # finestra rimasta aperta: avvio riuscito
     prova = os.environ.get("ARGO_PROVA_AVVIO", "")
     if prova.isdigit():  # prova automatica di avvio (GitHub Actions): Argo si chiude da solo dopo N secondi
         QTimer.singleShot(int(prova) * 1000, lambda: (diagnostica.avvio_riuscito(), app.quit()))
     if not diagnostica.MODALITA_SICURA:
         QTimer.singleShot(1500, f.prepara_ollama)  # Ollama acceso e modelli scelti (o proposti) già all'avvio
+        f._timer_backup = QTimer(f)  # backup programmati: controllo a un minuto dall'avvio e poi ogni mezz'ora
+        f._timer_backup.timeout.connect(lambda: _senza_errori(lambda: backup_ui.periodico(f)))
+        f._timer_backup.start(30 * 60 * 1000)
+        QTimer.singleShot(60 * 1000, lambda: _senza_errori(lambda: backup_ui.periodico(f)))
         if os.name == "nt" and not store.DA_STORE:  # Argo tra le app installate di Windows, anche per chi si aggiorna dall'app
             threading.Thread(target=lambda: _senza_errori(disinstalla.registra_windows), daemon=True).start()
         if (not store.DA_STORE and core.carica_impostazioni().get("controlla_aggiornamenti", True)

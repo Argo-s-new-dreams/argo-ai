@@ -89,6 +89,22 @@ def main():
     print("----- veglia -----\n" + (r4.stdout + r4.stderr).strip())
     if r4.returncode != 0:
         errori.append("il blocco della sospensione durante i lavori non funziona")
+    # Backup con chiavi cifrate e ripristino (backup.py), nella cartella dati temporanea della prova
+    controllo_backup = (
+        "import json, zipfile, voci_core as core, backup as b\n"
+        "core.salva_token('hf_prova_segreta')\n"
+        "b.imposta_password('password-di-prova')\n"
+        "f = b.crea('configurazione', core.APP_HOME / 'prova_backup')\n"
+        "assert b'hf_prova_segreta' not in zipfile.ZipFile(f).read('segreti.cifrati')\n"
+        "core.salva_token('hf_cambiato')\n"
+        "b.ripristina(f)\n"
+        "assert core.leggi_token() == 'hf_prova_segreta'\n"
+        "print('backup: creato, cifrato e ripristinato', f.name)\n")
+    r5 = subprocess.run([sys.executable, "-c", controllo_backup], cwd=APP, env=env, capture_output=True, text=True,
+                        encoding="utf-8", errors="replace", timeout=120)
+    print("----- backup -----\n" + (r5.stdout + r5.stderr).strip())
+    if r5.returncode != 0:
+        errori.append("backup e ripristino non funzionano")
     if codice is None:
         errori.append(f"Argo non si è chiuso entro {TEMPO_MASSIMO} s: forse aspetta una finestra modale")
     elif codice != 0:

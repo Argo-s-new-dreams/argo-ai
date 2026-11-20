@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261120.1419 · riferita all'app versione 20261120.1419*
+*Versione del manuale: 20261120.1854 · riferita all'app versione 20261120.1854*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -427,6 +427,8 @@ Una base di conoscenza che cresce a ogni incontro e ti aiuta nel lavoro: domande
 
 Arriva a blocchi. **In questa versione ci sono «Organizza»** (con chi parli in ogni incontro) **e «Distilla»** (i fatti di lavoro nella Base, anonimi). I suggerimenti prima e durante gli incontri arrivano nella prossima versione.
 
+Quando è attivo, nella barra in basso, accanto a «🔒 100% locale», compare **🧠 Secondo cervello attivo · N voci nella Base**: un clic apre la pagina.
+
 ### Con chi stai parlando?
 
 Con il Secondo cervello attivo, prima di ogni registrazione (*Registra*, Live o archivio) Argo chiede:
@@ -757,6 +759,7 @@ Contiene il token, il pulsante **Mostra** e **Salva e verifica**, più i link al
 | Calcolo su | CPU, GPU NVIDIA (CUDA) | Scegli GPU solo se hai una scheda NVIDIA con CUDA |
 | Parole chiave | Testo libero | Nomi propri, sigle, termini di settore |
 | Uso del computer | Automatico, Leggero, Bilanciato, Massima velocità | **Automatico**. Se il PC si blocca durante trascrizioni o riassunti, scegli **Leggero**: Argo usa meno core, priorità bassa, un lavoro pesante alla volta e libera la memoria di Ollama prima di trascrivere. È più lento, ma il computer resta utilizzabile |
+| **🖥️ Adatta a questo computer…** | (pulsante) | Legge sistema, processore, core, RAM e GPU NVIDIA e propone solo i cambi utili, ciascuno con il motivo: *Uso del computer* in Automatico se la scelta manuale non va d'accordo con il computer; *Calcolo su* GPU NVIDIA solo se c'è la scheda e PyTorch per CUDA; *large-v3-turbo* al posto di large-v3 sui computer con 4 core o meno o meno di 12 GB di RAM; i modelli di Ollama per testi, foto e documenti migliori tra quelli installati che stanno nella RAM (in profilo Leggero mai più grandi); se nessun modello per i testi ci sta, il download di quello consigliato. Togli la spunta a ciò che non vuoi e premi **Applica** |
 
 ### 11.3 Riconoscimento voci
 
@@ -939,6 +942,36 @@ Tutti gli attrezzi possono salvare il risultato in **Word (.docx)**. Argo chiede
 Il documento è un normale file Word: modificalo, cambia lo stile o togli la nota finale se non ti serve.
 
 ---
+
+### 11.7 Backup e più computer
+
+*Impostazioni › 💾 Backup e più computer.*
+
+**Due livelli di backup.**
+
+| Livello | Cosa contiene | Peso |
+| --- | --- | --- |
+| **Configurazione** | Impostazioni (template delle relazioni compresi), glossario | Pochi KB |
+| **Completo** | La configurazione più voci, incontri (con audio e foto), clienti, Secondo cervello, indice dei Documenti e code di lavoro | Anche GB |
+
+Le trascrizioni salvate accanto ai tuoi file audio non sono nella cartella di Argo e non entrano nel backup. Mai nei backup: abbinamenti con l'iPhone, registri, sessioni Live in corso.
+
+**Quando.** **💾 Backup configurazione ora** e **💾 Backup completo ora**; **Alla chiusura di Argo** (di base la configurazione: un istante); **Programmato** ogni giorno o ogni settimana (Argo controlla un minuto dopo l'avvio e poi ogni mezz'ora; il computer resta sveglio finché finisce). **Conserva gli ultimi** N backup di questo computer per livello (di base 10): quelli più vecchi si cancellano, quelli degli altri computer non si toccano.
+
+**Dove.** Di base *Documenti › Argo › Backup*. Nella tendina compaiono anche le cartelle di **OneDrive** e **Google Drive** se sul computer c'è l'app di sincronizzazione (OneDrive; Google Drive per desktop): Argo scrive lì e ci pensa l'app a portare i file nel cloud, senza altri accessi. Ogni backup salvato in una cartella cloud compare in *Cosa è uscito da questo computer*, e la barra in basso lo dice («🔒 Locale · backup e configurazione anche in OneDrive»). Il file si scrive prima in una cartella temporanea e poi si sposta: nella cartella sincronizzata non finisce mai a metà.
+
+**Chiavi e token, cifrati.** Con **Imposta password…** (almeno 8 caratteri) i backup portano anche token di Hugging Face, chiavi di Claude e Ollama Cloud e l'accesso a Microsoft 365, cifrati con AES-256-GCM (chiave da scrypt). La password non si salva: su questo computer resta solo la chiave che ne deriva (`.chiave_backup.json`, permessi 600, mai nei backup), così anche i backup automatici portano le chiavi. Su un altro computer Argo chiede la password. **Se la dimentichi, le chiavi nei backup non si recuperano.** Senza password, chiavi e token restano fuori e dopo un ripristino si reinseriscono.
+
+**Ripristino.** L'elenco mostra i backup della cartella scelta e delle cartelle di OneDrive e Google Drive, anche quelli fatti su altri computer (colonna *Computer*; 🔐 = con chiavi). **Ripristina…** (o **Da un file…**):
+
+1. Argo fa prima un **backup di sicurezza** dello stato attuale in *Documenti › Argo › Backup › Prima del ripristino*.
+2. Ripristina impostazioni, glossario e, per il completo, i dati. Da un altro computer arrivano solo le **impostazioni comuni**: modelli e indirizzo di Ollama, modello e calcolo della trascrizione, audio, uso del computer e cartelle restano quelli di qui (puoi spuntare «Anche le impostazioni del singolo computer»).
+3. Chiavi e token, se ci sono e se li vuoi: con la password, se il backup viene da un altro computer. Con la password sbagliata non si tocca nulla.
+4. Argo si riavvia.
+
+**Configurazione condivisa tra i tuoi computer (Mac e Windows).** Spunta **Condividi la configurazione tra i miei computer** e scegli la stessa cartella cloud su ogni computer (di base *OneDrive › Argo*). All'**avvio** Argo legge `configurazione-condivisa.json` e, se un altro computer l'ha cambiata, la applica prima di aprire la finestra; alla **chiusura** scrive la propria, se è cambiata. **⇅ Sincronizza ora** fa le due cose subito. Si condividono le impostazioni comuni, i template delle relazioni, il glossario e i collegamenti (per esempio l'ID dell'app Microsoft 365). Non si condividono mai: chiavi e token, modelli e indirizzo di Ollama, modello e calcolo della trascrizione, microfono e audio, uso del computer, cartelle, canale degli aggiornamenti. Se hai cambiato qualcosa su due computer, vince la modifica più recente e la configurazione di qui resta in un backup (*Prima della sincronizzazione*).
+
+**Criteri IT.** `"backup_nel_cloud": false` tiene backup e configurazione condivisa solo in cartelle di questo computer; `"condivisione_configurazione": false` toglie la configurazione condivisa.
 
 ## 12. Dove stanno i dati
 
