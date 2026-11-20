@@ -4,6 +4,7 @@ Nessuna dipendenza esterna: solo libreria standard + numpy. Tutto il traffico re
 """
 import json
 import re
+import socket
 import time
 import urllib.error
 import urllib.request
@@ -21,23 +22,58 @@ class ErroreLLM(RuntimeError):
     pass
 
 
-def _req(url, path, payload=None, timeout=600):
+_DIMENSIONI_NOTE = {}  # nome modello -> byte, aggiornato da dimensioni(): serve solo a spiegare gli errori
+
+TEMPO_BREVE = 30      # elenco e dettagli dei modelli: brevi, ma Ollama occupato a caricare un modello è lento
+
+
+def _scaduto(e):
+    """True se l'errore è un tempo scaduto (Ollama acceso ma non risponde), non un rifiuto (Ollama spento)."""
+    motivo = getattr(e, "reason", e)
+    return isinstance(motivo, (TimeoutError, socket.timeout)) or "timed out" in str(motivo).lower()
+
+
+def _spiega_scaduto(url, timeout, payload):
+    modello = (payload or {}).get("model") or ""
+    dim = _DIMENSIONI_NOTE.get(modello)
+    try:
+        import risorse
+        ram = risorse.ram_gb()
+    except Exception:
+        ram = 0
+    testo = (f"Ollama è acceso su {url} ma non ha risposto entro {timeout} s: di solito sta ancora caricando un "
+             "modello o il computer ha esaurito la memoria.")
+    if modello and dim and ram and dim / 1e9 > ram * 0.6:
+        testo += (f" Il modello {modello} occupa {f'{dim / 1e9:.1f}'.replace('.', ',')} GB su {ram:.0f} GB di RAM: è troppo grande per "
+                  "questo computer. Scegline uno più piccolo in Impostazioni › Modelli AI (per esempio gemma3:4b).")
+    else:
+        testo += " Aspetta un minuto e riprova; se succede sempre, scegli un modello più piccolo in Impostazioni › Modelli AI."
+    return testo
+
+
+def _req(url, path, payload=None, timeout=600, tentativi=1):
     data = json.dumps(payload).encode("utf-8") if payload is not None else None
     req = urllib.request.Request(url.rstrip("/") + path, data=data,
                                  headers={"Content-Type": "application/json"},
                                  method="POST" if data is not None else "GET")
-    inizio = time.monotonic()
-    try:
-        r = urllib.request.urlopen(req, timeout=timeout)
-        diagnostica.http(req.get_method(), req.full_url, r.status, inizio)
-        return r
-    except urllib.error.HTTPError as e:
-        diagnostica.http(req.get_method(), req.full_url, e.code, inizio)
-        corpo = e.read().decode("utf-8", "replace")[:300]
-        raise ErroreLLM(f"Ollama ha risposto {e.code}: {corpo}") from None
-    except Exception as e:
-        diagnostica.http(req.get_method(), req.full_url, type(e).__name__, inizio)
-        raise ErroreLLM(f"Ollama non raggiungibile su {url}: {e}. È avviato?") from None
+    for tentativo in range(1, tentativi + 1):
+        inizio = time.monotonic()
+        try:
+            r = urllib.request.urlopen(req, timeout=timeout)
+            diagnostica.http(req.get_method(), req.full_url, r.status, inizio)
+            return r
+        except urllib.error.HTTPError as e:
+            diagnostica.http(req.get_method(), req.full_url, e.code, inizio)
+            corpo = e.read().decode("utf-8", "replace")[:300]
+            raise ErroreLLM(f"Ollama ha risposto {e.code}: {corpo}") from None
+        except Exception as e:
+            diagnostica.http(req.get_method(), req.full_url, type(e).__name__, inizio)
+            if _scaduto(e):
+                if tentativo < tentativi:
+                    continue
+                raise ErroreLLM(_spiega_scaduto(url, timeout, payload)) from None
+            raise ErroreLLM(f"Ollama non risponde su {url} ({e}): è spento? Sul Mac avvialo dall'icona del lama "
+                            "nella barra dei menu, su Windows dal menu Start.") from None
 
 
 def _host(url):
@@ -51,8 +87,9 @@ def e_locale(url):
 
 def elenco_modelli(url=DEFAULT_URL):
     """Ritorna (modelli_chat, modelli_embedding) installati in Ollama."""
-    with _req(url, "/api/tags", timeout=10) as r:
+    with _req(url, "/api/tags", timeout=TEMPO_BREVE, tentativi=2) as r:
         dati = json.load(r)
+    _DIMENSIONI_NOTE.update({m.get("name", ""): int(m.get("size") or 0) for m in dati.get("models", [])})
     nomi = sorted(m.get("name", "") for m in dati.get("models", []))
     emb = [n for n in nomi if "embed" in n.lower() or n.lower().startswith(("bge", "e5", "gte"))]
     chat = [n for n in nomi if n not in emb]
@@ -62,8 +99,10 @@ def elenco_modelli(url=DEFAULT_URL):
 def dimensioni(url=DEFAULT_URL):
     """{nome modello: byte occupati sul disco} dei modelli installati in Ollama ({} se non risponde)."""
     try:
-        with _req(url, "/api/tags", timeout=10) as r:
-            return {m.get("name", ""): int(m.get("size") or 0) for m in json.load(r).get("models", [])}
+        with _req(url, "/api/tags", timeout=TEMPO_BREVE) as r:
+            trovate = {m.get("name", ""): int(m.get("size") or 0) for m in json.load(r).get("models", [])}
+        _DIMENSIONI_NOTE.update(trovate)
+        return trovate
     except Exception:
         return {}
 
