@@ -2,6 +2,12 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261120.1230: Secondo cervello, secondo blocco · Distilla e Base anonima
+- **✨ Distilla** (scheda *Incontri* della pagina Secondo cervello, anche **Distilla i nuovi**): il modello **locale** estrae da trascrizioni e relazioni solo fatti di lavoro: sintesi, temi, esigenze, problemi, come lavorano oggi, decisioni, domande che hanno funzionato, punti aperti. Testi lunghi a pezzi, poi uniti.
+- **Anonimizzazione irreversibile in tre passi**: nomi noti tolti prima che il modello legga (aziende del catalogo e loro parole distintive, siti, parlanti, partecipanti, voci; mail, telefoni, partite IVA), categorie al posto dei nomi nel testo del modello, controllo finale dei nomi rimasti. Software e tecnologie restano.
+- **Base**: ogni voce ha solo mese, categorie dell'azienda, funzioni e contenuti, senza alcun collegamento all'incontro. Si legge, si modifica (con nuovo controllo) e si elimina. Embedding con il modello dei Documenti, se c'è, per i suggerimenti del prossimo blocco.
+- Manuale §5quinquies e §12 aggiornati.
+
 ## 20261120.1206: Secondo cervello, primo blocco · «Con chi stai parlando?»
 - **Nuova pagina Secondo cervello**, facoltativa e **spenta di base**, con la spiegazione del metodo CODE. È la parte «Organizza»: la base anonimizzata e i suggerimenti arrivano nei prossimi blocchi.
 - **«Con chi stai parlando?»**: con il Secondo cervello attivo, prima di ogni registrazione Argo chiede l'azienda e le persone **per funzione** (ruolo, area, livello: mai nomi). Si può saltare. Per gli incontri dall'iPhone e i file in *Trascrivi* c'è la voce **🧠 Con chi stai parlando?…** nel menu del tasto destro. La scheda segue la registrazione quando diventa trascrizione.

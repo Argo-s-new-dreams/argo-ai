@@ -228,9 +228,9 @@ def _scollega(campo, id_):
 
 
 def svuota():
-    """Cancella cataloghi e schede degli incontri (gli incontri veri restano dove sono)."""
+    """Cancella cataloghi, schede degli incontri e base (gli incontri veri restano dove sono)."""
     with _lock:
-        for f in (FILE_AZIENDE, FILE_FUNZIONI, FILE_INCONTRI):
+        for f in (FILE_AZIENDE, FILE_FUNZIONI, FILE_INCONTRI, CARTELLA / "base.json", CARTELLA / "base_vettori.npz"):
             f.unlink(missing_ok=True)
 
 
