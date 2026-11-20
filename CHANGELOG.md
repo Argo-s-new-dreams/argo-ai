@@ -2,6 +2,13 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261120.1111: filtro etico e prova automatica di avvio su Mac e Windows
+- **Filtro etico** su relazioni degli incontri, verbali (anche quelli da Agenda), mail di recap, riassunti e risposte della posta, schede dei clienti: solo fatti utili al lavoro. Niente questioni personali o private, giudizi sulle persone, pettegolezzi, parolacce, bestemmie, insulti o espressioni discriminatorie, anche se sono nella conversazione. Le regole arrivano al modello; in più un controllo finale toglie le parolacce più comuni rimaste («[…]») senza toccare parole normali come «cazzuola» o «Troia» (la città). Traduzioni e dettatura restano fedeli. Primo pezzo del «Secondo cervello».
+- **Prova di avvio automatica** (GitHub Action «Prova di avvio») a ogni modifica dell'app:
+  - controllo del codice con ruff sugli errori gravi: avrebbe fermato il problema del 18/11 (QTimer usato prima di essere assegnato);
+  - avvio vero su **macOS** e **Windows** con le librerie di `requisiti.lock`: Argo deve arrivare alla finestra e chiudersi senza errori. Si lancia anche a mano: `python strumenti/prova_avvio.py`.
+- In modalità di prova (`ARGO_PROVA_AVVIO`) gli errori finiscono nel registro invece di aprire una finestra da cliccare.
+
 ## 20261119.1720: la promessa, alla lettera
 - **Riconoscimento delle voci spento per tutti** finché non lo attivi (*Voci › Attiva il riconoscimento…* o *Impostazioni › Trascrizione e voci*). Da spento: parlanti «Parlante 1, 2…», nessuna impronta calcolata o conservata (WhisperX gira senza `--speaker_embeddings`), Live senza anagrafe, niente voci per l'iPhone.
 - **Consenso per ogni voce**, salvato con la data in `voci/<Nome>/consenso.json` e mostrato nella nuova colonna **Consenso**. Le voci salvate prima restano ma non si usano finché non confermi il consenso (all'attivazione o con **Conferma consenso…**). Senza consenso nessuna impronta viene salvata, nemmeno dalla Revisione.

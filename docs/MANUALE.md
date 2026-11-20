@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261119.1720 · riferita all'app versione 20261119.1720*
+*Versione del manuale: 20261120.1111 · riferita all'app versione 20261120.1111*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -796,7 +796,9 @@ Un **template** dice come scrivere la relazione di un incontro: quali sezioni e 
 4. in **Come la voglio** scrivi le tue indicazioni, per esempio «Scrivi per il direttore commerciale: prima il valore economico», «Evidenzia concorrenti e obiezioni sul prezzo», «Frasi brevi, niente aggettivi»;
 5. premi **Salva template**, e se vuoi **★ Usa come predefinito**.
 
-Le tue indicazioni guidano stile e taglio, mai le regole di fedeltà: la relazione continua a usare solo ciò che è stato detto, fotografato o allegato. **Contatti, aziende e azioni vengono sempre estratti**, anche se il template non li mostra, perché servono all'invio a Dynamics e alla pagina Clienti. Il piè della relazione riporta il template usato.
+**Filtro etico.** Relazioni, verbali, riassunti della posta e schede dei clienti riportano **solo fatti utili al lavoro**: esigenze, problemi, processi, prodotti, cifre, decisioni, azioni. Non riportano questioni personali o private (salute, famiglia, opinioni politiche o religiose), giudizi o commenti sulle persone, pettegolezzi, parolacce, bestemmie, insulti o espressioni offensive, anche se nella conversazione ci sono stati: il modello scrive il contenuto di lavoro con parole neutre. Come rete di sicurezza, Argo toglie dal testo prodotto le parolacce più comuni rimaste e le sostituisce con «[…]». I recapiti di lavoro (biglietti da visita, mail e telefoni aziendali) restano. Traduzioni e dettatura non passano dal filtro: sono testi tuoi, resi fedelmente.
+
+Le tue indicazioni guidano stile e taglio, mai le regole di fedeltà né il filtro etico: la relazione continua a usare solo ciò che è stato detto, fotografato o allegato. **Contatti, aziende e azioni vengono sempre estratti**, anche se il template non li mostra, perché servono all'invio a Dynamics e alla pagina Clienti. Il piè della relazione riporta il template usato.
 
 ### 11.5 Microsoft 365 (facoltativo)
 
@@ -1058,6 +1060,7 @@ Se un file va in **Errore**, il registro tecnico sotto la coda di *Trascrivi* (c
 - **Modalità Live = minimizzazione dei dati** (art. 5, par. 1, lett. c GDPR): l'audio esiste solo per il tempo necessario a trascriverlo. È la scelta consigliata per le riunioni di lavoro. Tieni comunque attiva la cifratura del disco (FileVault, BitLocker): sugli SSD la sovrascrittura di un file cancellato non garantisce che il dato sparisca fisicamente.
 - **Non conserva la voce, di base.** *Registra* parte in **Live**; **Archivia** è una scelta che fai ogni volta, con la conferma dell'informativa, e l'IT può toglierla (`"registrazione": "solo_live"`).
 - **Non profila gli interlocutori, di base.** Il riconoscimento delle voci è spento finché non lo attivi, e ogni voce si usa solo con il consenso registrato della persona (§6). Le impronte vocali sono dati biometrici (art. 9 GDPR): cancellale quando non servono più (**Elimina** nell'Anagrafe).
+- **Solo fatti di lavoro nei testi generati:** relazioni, verbali e riassunti non riportano questioni personali, giudizi sulle persone o linguaggio offensivo (filtro etico, §11.4ter).
 - **Documenti riservati:** l'indice contiene estratti testuali dei documenti. Proteggi il computer (cifratura del disco, account con password) come faresti con gli originali.
 
 ### AI Act (Regolamento UE 2024/1689)

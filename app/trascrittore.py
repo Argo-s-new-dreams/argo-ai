@@ -12,7 +12,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261119.1720"
+VERSIONE = "20261120.1111"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -2072,6 +2072,9 @@ def main():
     f = Finestra()
     f.show()
     QTimer.singleShot(8000, diagnostica.avvio_riuscito)  # finestra rimasta aperta: avvio riuscito
+    prova = os.environ.get("ARGO_PROVA_AVVIO", "")
+    if prova.isdigit():  # prova automatica di avvio (GitHub Actions): Argo si chiude da solo dopo N secondi
+        QTimer.singleShot(int(prova) * 1000, lambda: (diagnostica.avvio_riuscito(), app.quit()))
     if not diagnostica.MODALITA_SICURA:
         QTimer.singleShot(1500, f.prepara_ollama)  # Ollama acceso e modelli scelti (o proposti) già all'avvio
         if os.name == "nt":  # Argo tra le app installate di Windows, anche per chi si aggiorna dall'app

@@ -16,6 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 import cloud
+import etica
 import llm_locale as llm
 import risorse
 import template_relazione as tpl
@@ -170,7 +171,7 @@ Le righe «📎 ALLEGATO» sono documenti aggiunti all'incontro (offerte, listin
 di dati e cita il documento quando ne riprendi cifre o nomi.
 Chi registra è la persona indicata come «Io» (o con il nome dell'utente): non è un contatto.
 Regole: usa solo informazioni presenti; nessun nome, recapito, cifra o data inventati; campi sconosciuti vuoti.
-Scrivi in italiano, in modo concreto e professionale."""
+Scrivi in italiano, in modo concreto e professionale.""" + etica.REGOLE
 
 SCHEMA = {
     "type": "object",
@@ -291,6 +292,7 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
     except json.JSONDecodeError:
         raise ErroreRelazione(f"Il modello {modello_testo} non ha restituito una relazione strutturata: prova un altro modello.") from None
 
+    relazione = etica.pulisci_dati(relazione)  # rete di sicurezza del filtro etico
     dati = carica(cartella)
     dati.update({
         "relazione": relazione,
