@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261120.1848"
+VERSIONE = "20261120.1854"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -45,6 +45,8 @@ import supporto  # noqa: E402
 import consenso_voci  # noqa: E402
 import veglia  # noqa: E402
 import adatta_computer  # noqa: E402
+import backup  # noqa: E402
+import backup_ui  # noqa: E402
 import secondo_cervello as cervello  # noqa: E402
 import secondo_cervello_ui as cervello_ui  # noqa: E402
 import cervello_base  # noqa: E402
@@ -997,6 +999,13 @@ class Finestra(QMainWindow):
         elif llm_locale.e_locale(url) and m365.account():
             self.badge.setText("🔒 Locale · Microsoft 365 collegato: solo i risultati che confermi vanno su M365")
             self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
+        elif llm_locale.e_locale(url) and (backup.nel_cloud(backup.cartella_backup()) or backup.condivisione_attiva()):
+            servizi = {backup.nel_cloud(backup.cartella_backup())} | (
+                {backup.nel_cloud(core.carica_impostazioni().get("condivisione_cartella", ""))}
+                if backup.condivisione_attiva() else set())
+            self.badge.setText("🔒 Locale · backup e configurazione anche in " + ", ".join(sorted(x for x in servizi if x)))
+            self.badge.setToolTip("Scelto in Impostazioni › Backup e più computer")
+            self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
         elif llm_locale.e_locale(url):
             self.badge.setText("🔒 100% locale: audio e testi non lasciano questo computer")
             self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
@@ -1589,6 +1598,7 @@ class Finestra(QMainWindow):
         lr.addWidget(self.editor_template)
 
         self.pannello_supporto = supporto.PannelloSupporto(self)
+        self.pannello_backup = backup_ui.PannelloBackup(self)
 
         # Pagina a argomenti (Stile Argo): colonna a sinistra, a destra solo l'argomento scelto
         self._categorie_imp = [
@@ -1602,6 +1612,8 @@ class Finestra(QMainWindow):
              [("m365", g6), ("dynamics", g7), ("web", g8)]),
             ("⚙️  Aspetto e aggiornamenti", "Tema chiaro o scuro, canale e aggiornamenti di Argo",
              [("aspetto", g5), ("aggiornamenti", g4), ("disinstalla", g9)]),
+            ("💾  Backup e più computer", "Backup ora, alla chiusura e programmati; ripristino anche da OneDrive e "
+             "Google Drive; configurazione condivisa tra Mac e Windows", self.pannello_backup.gruppi),
             ("🛟  Supporto", "Cosa è uscito da questo computer, chiedi supporto, modalità trace, registro e versione precedente",
              self.pannello_supporto.gruppi),
         ]
@@ -2181,6 +2193,8 @@ class Finestra(QMainWindow):
             self._lav_modelli.ferma()
             self._lav_modelli.wait(5000)
         self._salva_coda()
+        if not diagnostica.MODALITA_SICURA:  # backup alla chiusura e configurazione condivisa
+            _senza_errori(lambda: backup_ui.alla_chiusura(self))
         diagnostica.avvio_riuscito()  # chiusa dall'utente: l'avvio era andato a buon fine
         e.accept()
 
@@ -2215,14 +2229,28 @@ def main():
             scelta = "sicura"
         diagnostica.MODALITA_SICURA = scelta == "sicura"
     app.aboutToQuit.connect(diagnostica.chiusura)
+    condivisa_da = ""
+    if not diagnostica.MODALITA_SICURA:  # configurazione condivisa con gli altri computer: prima della finestra
+        try:
+            condivisa_da = backup.leggi_condivisa()
+            if condivisa_da:
+                tema.applica(app, core.carica_impostazioni().get("tema", "scuro"))
+        except Exception as e:
+            diagnostica.log.warning("configurazione condivisa non letta: %s", e)
     f = Finestra()
     f.show()
+    if condivisa_da:
+        f.statusBar().showMessage(f"Configurazione aggiornata da {condivisa_da} (cartella condivisa).", 15000)
     QTimer.singleShot(8000, diagnostica.avvio_riuscito)  # finestra rimasta aperta: avvio riuscito
     prova = os.environ.get("ARGO_PROVA_AVVIO", "")
     if prova.isdigit():  # prova automatica di avvio (GitHub Actions): Argo si chiude da solo dopo N secondi
         QTimer.singleShot(int(prova) * 1000, lambda: (diagnostica.avvio_riuscito(), app.quit()))
     if not diagnostica.MODALITA_SICURA:
         QTimer.singleShot(1500, f.prepara_ollama)  # Ollama acceso e modelli scelti (o proposti) già all'avvio
+        f._timer_backup = QTimer(f)  # backup programmati: controllo a un minuto dall'avvio e poi ogni mezz'ora
+        f._timer_backup.timeout.connect(lambda: _senza_errori(lambda: backup_ui.periodico(f)))
+        f._timer_backup.start(30 * 60 * 1000)
+        QTimer.singleShot(60 * 1000, lambda: _senza_errori(lambda: backup_ui.periodico(f)))
         if os.name == "nt":  # Argo tra le app installate di Windows, anche per chi si aggiorna dall'app
             threading.Thread(target=lambda: _senza_errori(disinstalla.registra_windows), daemon=True).start()
         if (core.carica_impostazioni().get("controlla_aggiornamenti", True)

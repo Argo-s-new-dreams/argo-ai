@@ -2,6 +2,16 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261120.1854: backup, ripristino e configurazione condivisa tra più computer
+- **Backup su richiesta, alla chiusura e programmati** (Impostazioni › 💾 Backup e più computer), in due livelli: *Configurazione* (impostazioni, template, glossario) e *Completo* (anche voci, incontri, clienti, Secondo cervello, indice dei Documenti). Di base, a ogni chiusura, un backup della configurazione in Documenti › Argo › Backup; si conservano gli ultimi 10 per livello.
+- **OneDrive e Google Drive** tramite le loro cartelle sincronizzate (app OneDrive e Google Drive per desktop), trovate da sole su Mac e Windows: nessun accesso nuovo. Ogni scrittura nel cloud compare in «Cosa è uscito da questo computer» e nella barra in basso.
+- **Chiavi e token cifrati nel backup** con una password scelta da te (AES-256-GCM, chiave da scrypt): la password non si salva, su un altro computer serve per ripristinarli. Senza password restano fuori.
+- **Ripristino** dall'elenco dei backup (anche di altri computer e dalle cartelle cloud) o da un file, sempre preceduto da un backup di sicurezza; da un altro computer arrivano solo le impostazioni comuni; poi Argo si riavvia.
+- **Configurazione condivisa tra Mac e Windows**: con la stessa cartella cloud, Argo la legge all'avvio e scrive la propria alla chiusura; modelli, Ollama, audio, prestazioni e cartelle restano di ogni computer. In caso di modifiche su due computer vince la più recente, l'altra resta in un backup.
+- **Nuovi criteri IT**: `backup_nel_cloud` e `condivisione_configurazione`.
+- Tolte due schermate di prova finite per errore nella versione precedente.
+- Manuale §11.7 e PRO.md aggiornati.
+
 ## 20261120.1848: «Adatta a questo computer» e Secondo cervello nella barra in basso
 - **🖥️ Adatta a questo computer…** (Impostazioni › Trascrizione): Argo legge sistema, processore, core, RAM e GPU NVIDIA e propone i cambi utili, con il motivo di ciascuno: uso del computer, calcolo su CPU o GPU, modello di trascrizione (large-v3-turbo sui computer leggeri) e modelli di Ollama per testi, foto e documenti (i migliori installati che stanno nella RAM, oppure il download di quello consigliato). Applichi solo quelli che lasci spuntati.
 - **🧠 Secondo cervello attivo · N voci nella Base** nella barra in basso, accanto a «🔒 100% locale», quando è acceso; un clic apre la pagina.

@@ -21,6 +21,9 @@ Chiavi riconosciute (tutte facoltative):
     "riconoscimento_voci": false             anagrafe voci disattivata: nessuna impronta nuova, nessun
                                              riconoscimento (le voci salvate restano, inutilizzate)
     "ricerca_web": false                     niente ricerca web nella pagina Clienti (scheda pubblica)
+    "backup_nel_cloud": false                backup e configurazione condivisa solo in cartelle di questo computer
+                                             (niente OneDrive, Google Drive, Dropbox, iCloud)
+    "condivisione_configurazione": false     niente configurazione condivisa tra più computer
     "secondo_cervello": false                Secondo cervello disattivato: nessun catalogo di aziende e funzioni,
                                              nessuna base per i suggerimenti
     "trace": true                            modalità trace sempre attiva su questo PC, per un'analisi del
@@ -32,7 +35,7 @@ import sys
 from pathlib import Path
 
 CHIAVI = {"canale_aggiornamenti", "aggiornamenti_dall_app", "registrazione", "modelli_cloud", "trace",
-          "riconoscimento_voci", "ricerca_web", "secondo_cervello"}
+          "riconoscimento_voci", "ricerca_web", "secondo_cervello", "backup_nel_cloud", "condivisione_configurazione"}
 
 
 def percorso():
@@ -62,7 +65,8 @@ def carica():
     if regola is not None and regola not in ("consentiti", "vietati") and not (
             isinstance(regola, list) and all(isinstance(x, str) for x in regola)):
         criteri.pop("modelli_cloud")
-    for chiave in ("aggiornamenti_dall_app", "trace", "riconoscimento_voci", "ricerca_web", "secondo_cervello"):
+    for chiave in ("aggiornamenti_dall_app", "trace", "riconoscimento_voci", "ricerca_web", "secondo_cervello",
+                   "backup_nel_cloud", "condivisione_configurazione"):
         if chiave in criteri and not isinstance(criteri[chiave], bool):
             criteri.pop(chiave)
     return criteri
