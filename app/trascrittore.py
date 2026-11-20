@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261120.1854"
+VERSIONE = "20261120.2033"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -21,7 +21,7 @@ import store  # noqa: E402  Argo dal Microsoft Store (MSIX): strumenti inclusi s
 store.prepara()
 
 from PySide6.QtCore import QPoint, QSize, Qt, QThread, QTimer, QUrl, Signal
-from PySide6.QtGui import QColor, QDesktopServices, QFont, QIcon, QKeySequence, QShortcut
+from PySide6.QtGui import QCursor, QColor, QDesktopServices, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
     QDoubleSpinBox, QFileDialog, QFormLayout, QFrame, QGroupBox, QHBoxLayout, QHeaderView, QInputDialog,
@@ -49,6 +49,7 @@ import veglia  # noqa: E402
 import adatta_computer  # noqa: E402
 import backup  # noqa: E402
 import backup_ui  # noqa: E402
+import esporta_trascrizione  # noqa: E402
 import secondo_cervello as cervello  # noqa: E402
 import secondo_cervello_ui as cervello_ui  # noqa: E402
 import cervello_base  # noqa: E402
@@ -545,7 +546,7 @@ class Finestra(QMainWindow):
         self.dettaglio = dettaglio.DettaglioTrascrizione()
         self.dettaglio.nomi.connect(self.rivedi_parlanti)
         self.dettaglio.marca.connect(lambda: (lambda j: j and self.marca_voci(j["file"]))(self._job_selezionato()))
-        self.dettaglio.word.connect(self.esporta_word)
+        self.dettaglio.word.connect(lambda: self._menu_scarica().exec(QCursor.pos()))
         self.dettaglio.verbale.connect(self.crea_verbale)
         self.dettaglio.apri.connect(self.apri_risultato)
         sp = QSplitter(Qt.Horizontal)
@@ -692,7 +693,7 @@ class Finestra(QMainWindow):
         if j["stato"] == "Completata":
             m.addAction("Apri trascrizione", self.apri_trascrizione if hasattr(self, "apri_trascrizione") else self.b_ris.click)
             m.addAction("✏️ Nomi dei parlanti…", self.rivedi_parlanti)
-            m.addAction("Esporta in Word", self.esporta_word)
+            m.addMenu(self._menu_scarica()).setText("⬇️ Scarica trascrizione")
             m.addAction("Crea verbale →", self.crea_verbale)
             m.addSeparator()
         m.addAction("🎧 Marca voci…", lambda: self.marca_voci(j["file"]))
@@ -968,18 +969,23 @@ class Finestra(QMainWindow):
         self.tab_verbale.carica(j["txt"])
         self.vai_a(self.tab_verbale)
 
-    def esporta_word(self):
+    def _sorgente_job(self):
+        """Per «⬇️ Scarica trascrizione»: (segmenti, nome, cartella, titolo) del file selezionato in coda."""
         j = self._job_selezionato()
         if not j:
-            return
+            return None
         if not (j.get("txt") and Path(j["txt"]).exists()):
             QMessageBox.information(self, "Non pronta", "Prima completa la trascrizione.")
-            return
+            return None
         txt = Path(j["txt"])
         nome = txt.stem.replace("_nomi", "")
-        attrezzi.salva_word(self, txt.read_text(encoding="utf-8", errors="replace"),
-                            txt.with_name(nome + "_trascrizione.docx"), f"Trascrizione: {nome}",
-                            attrezzi.oggi(), nota_ai=attrezzi.word.NOTA_TRASCRIZIONE)
+        return esporta_trascrizione.da_file(j.get("json") or txt), nome, txt.parent, f"Trascrizione: {nome}"
+
+    def _menu_scarica(self):
+        return esporta_trascrizione.menu(self, self._sorgente_job)
+
+    def esporta_word(self):
+        esporta_trascrizione.scarica(self, self._sorgente_job, ("docx",))
 
     def _aggiorna_badge(self):
         if hasattr(self, "badge_cervello"):

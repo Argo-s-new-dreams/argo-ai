@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261120.1854 · riferita all'app versione 20261120.1854*
+*Versione del manuale: 20261120.2033 · riferita all'app versione 20261120.2033*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -195,7 +195,7 @@ Registra riunioni in presenza e **call Teams**. Argo prende due sorgenti e le me
 1. Scegli la modalità e scrivi un titolo (facoltativo). Controlla le **sorgenti** (vedi sotto): con *Automatico* va bene quasi sempre.
 2. Premi **● Avvia**. Argo ti chiede di confermare che i partecipanti sono stati **informati**: una registrazione fatta con Argo, a differenza di quella di Teams, non avvisa nessuno. Con **Copia l'avviso** hai il testo da incollare nella chat della riunione.
 3. Durante la registrazione vedi i due livelli (microfono e audio del computer) e, in Live, il testo che compare blocco dopo blocco, con 20-45 secondi di ritardo.
-4. Premi **■ Ferma**. In Live, Argo finisce di trascrivere i blocchi rimasti e salva `data ora titolo (live)_nomi.txt` (più il `.json`) nella cartella delle registrazioni. Con **Apri nel Verbale →** passi subito al verbale.
+4. Premi **■ Ferma**. In Live, Argo finisce di trascrivere i blocchi rimasti e salva `data ora titolo (live)_nomi.txt` (più il `.json`) nella cartella delle registrazioni. Con **Apri nel Verbale →** passi subito al verbale; con **⬇️ Scarica ▾** salvi la trascrizione in Word o in WebVTT (§5.4).
 
 > **Usa le cuffie nelle call.** Senza cuffie il microfono riprende anche le voci che escono dagli altoparlanti, e le stesse frasi arrivano due volte con un piccolo ritardo.
 
@@ -301,7 +301,7 @@ Pulsanti disponibili sulla riga selezionata:
 - **Apri trascrizione**: apre il file `_nomi.txt`.
 - **✏️ Nomi dei parlanti…** (oppure doppio clic sulla riga completata): apre la revisione dei nomi (vedi sotto).
 - **Apri cartella**: apre la cartella del file.
-- **Esporta in Word**: crea `nomefile_trascrizione.docx`, con orari in grigio e nomi dei parlanti in grassetto, e lo apre.
+- **⬇️ Scarica trascrizione** (pulsante *⬇️ Scarica ▾* nel dettaglio, o tasto destro sulla riga): **Word (.docx)**, **sottotitoli WebVTT (.vtt)** oppure **Word e WebVTT** insieme in una cartella. Il Word ha un paragrafo per intervento, con l'orario e il nome del parlante in grassetto, e si apre da solo. Il WebVTT ha una riga di sottotitolo per frase con inizio e fine al millesimo di secondo e il parlante nel tag di voce `<v Nome>`; le frasi più lunghe di circa 7 secondi o 120 caratteri sono divise. Va bene per un lettore video, per Microsoft Stream o per caricarlo accanto alla registrazione. Lo stesso pulsante c'è in **Registra** dopo una Live e negli **Incontri** (*Salva ▾* e tasto destro).
 - **Crea verbale →**: passa la trascrizione alla scheda Verbale.
 
 ### 5.5 Nomi dei parlanti (revisione)

@@ -20,12 +20,13 @@ from PySide6.QtCore import QObject, QProcess, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 from PySide6.QtWidgets import (
     QButtonGroup, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, QLineEdit,
-    QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QRadioButton, QSlider, QVBoxLayout, QWidget,
+    QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QRadioButton, QSlider, QToolButton, QVBoxLayout, QWidget,
 )
 
 import cattura_audio as ca
 import criteri
 import diagnostica
+import esporta_trascrizione
 import live_core as live
 import secondo_cervello as cervello
 import secondo_cervello_ui as cervello_ui
@@ -151,15 +152,19 @@ class SchedaRegistra(QWidget):
         self.b_verbale.clicked.connect(self.apri_verbale)
         self.b_coda = QPushButton("Metti in coda in Trascrivi →")
         self.b_coda.clicked.connect(self.metti_in_coda)
+        self.b_scarica = QToolButton()  # trascrizione della Live in Word o WebVTT
+        self.b_scarica.setText("⬇️ Scarica ▾")
+        self.b_scarica.setPopupMode(QToolButton.InstantPopup)
+        self.b_scarica.setMenu(esporta_trascrizione.menu(self, self._sorgente_scarica))
         self.b_cartella = QPushButton("Apri cartella")
         self.b_cartella.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(
             Path(self.risultato).parent if self.risultato else cartella_registrazioni()))))
-        for b in (self.b_verbale, self.b_coda):
+        for b in (self.b_verbale, self.b_coda, self.b_scarica):
             b.hide()
         for b in (self.b_avvia, self.b_scarta, self.b_riavvia):
             bar.addWidget(b)
         bar.addWidget(self.e_titolo, 1)
-        for b in (self.b_verbale, self.b_coda, self.b_cartella):
+        for b in (self.b_verbale, self.b_scarica, self.b_coda, self.b_cartella):
             bar.addWidget(b)
 
         # ---- sorgenti: dispositivo, volume (anche durante la registrazione), livello
@@ -338,7 +343,7 @@ class SchedaRegistra(QWidget):
         self.testo.clear()
         tema.imposta_filigrana(self.testo, True)
         self.risultato = None
-        for b in (self.b_verbale, self.b_coda):
+        for b in (self.b_verbale, self.b_coda, self.b_scarica):
             b.hide()
         titolo = self.e_titolo.text().strip() or "Riunione"
         try:
@@ -588,6 +593,7 @@ class SchedaRegistra(QWidget):
                 cervello.aggiorna_riferimento(self._id_cervello, out)
             self.stato.setText(f"✅ Trascrizione salvata: {Path(out).name}. L'audio è stato cancellato.")
             self.b_verbale.show()
+            self.b_scarica.show()
         else:
             self.stato.setText("Sessione conclusa: non è stato trascritto alcun parlato. L'audio è stato cancellato.")
 
@@ -614,6 +620,13 @@ class SchedaRegistra(QWidget):
             if self.motore_pronto:
                 self.stato.setText(f"Blocchi da trascrivere: {attesa}" + (" (uno in corso)" if self.in_lavoro else "") +
                                    ". L'audio di ogni blocco viene cancellato appena il suo testo è salvato." + self.avviso)
+
+    def _sorgente_scarica(self):
+        if not self.risultato or not Path(self.risultato).exists():
+            return None
+        r = Path(self.risultato)
+        nome = r.stem.replace("_nomi", "")
+        return esporta_trascrizione.da_file(r), nome, r.parent, f"Trascrizione: {nome}"
 
     def apri_verbale(self):
         if self.finestra and self.risultato:
