@@ -99,12 +99,29 @@ print('OK Argo', trascrittore.VERSIONE, '| torch', torch.__version__, '| ffmpeg'
     Pop-Location
 }
 
+Passo "Nomi di file che MSIX non accetta (CON, AUX, NUL, COM1..., spazi o punti finali, caratteri riservati)"
+& $Py -c @"
+import os, re, sys
+riservati = re.compile(r'^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$', re.I)
+vietati = re.compile(r'[<>:"|?*%]')
+radice = sys.argv[1]; trovati = []
+for cart, dirs, files in os.walk(radice):
+    for n in dirs + files:
+        if riservati.match(n) or n.endswith((' ', '.')) or vietati.search(n):
+            trovati.append(os.path.relpath(os.path.join(cart, n), radice))
+for t in trovati:
+    print('  ', t)
+sys.exit(1 if trovati else 0)
+"@ $Pkg
+if ($LASTEXITCODE -ne 0) { throw "ci sono file con nomi non validi per MSIX (elenco sopra)" }
+
 Passo "Pacchetto MSIX"
 $kit = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\makeappx.exe" | Sort-Object FullName | Select-Object -Last 1
 if (-not $kit) { throw "makeappx.exe non trovato: serve il Windows SDK" }
 $versione = (Select-String -Path (Join-Path $Radice "app\trascrittore.py") -Pattern '^VERSIONE = "([^"]+)"').Matches[0].Groups[1].Value
 $msix = Join-Path $Uscita "Argo-AI-$versione-x64.msix"
-& $kit.FullName pack /d $Pkg /p $msix /o | Out-Host
+$log = & $kit.FullName pack /d $Pkg /p $msix /o 2>&1
+$log | Where-Object { $_ -notmatch "^Processing |^\s*$" } | Out-Host
 if ($LASTEXITCODE -ne 0) { throw "makeappx non riuscito" }
 Write-Host ("  {0}  ({1:N0} MB)" -f $msix, ((Get-Item $msix).Length / 1MB))
 
