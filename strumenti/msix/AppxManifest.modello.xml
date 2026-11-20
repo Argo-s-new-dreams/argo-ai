@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Manifesto del pacchetto MSIX di Argo per il Microsoft Store.
+     I segnaposto tra doppie graffe li riempie strumenti/msix/prepara_msix.py.
+     Nome, Editore e Nome editore arrivano da Partner Center (Identità del prodotto). -->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap10 rescap">
+
+  <Identity Name="{{NOME}}" Publisher="{{EDITORE}}" Version="{{VERSIONE}}" ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>Argo AI</DisplayName>
+    <PublisherDisplayName>{{NOME_EDITORE}}</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="it-IT" />
+  </Resources>
+
+  <Applications>
+    <!-- Python incluso nel pacchetto avvia Argo: il .pth in site-packages rende importabile la cartella app -->
+    <Application Id="Argo"
+                 Executable="python\pythonw.exe"
+                 uap10:Parameters="-m trascrittore"
+                 uap10:RuntimeBehavior="packagedClassicApp"
+                 uap10:TrustLevel="mediumIL">
+      <uap:VisualElements DisplayName="Argo AI"
+                          Description="Argo · Cassetta degli attrezzi AI: stenografa digitale locale"
+                          BackgroundColor="transparent"
+                          Square150x150Logo="Assets\Square150x150Logo.png"
+                          Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+    <DeviceCapability Name="microphone" />
+  </Capabilities>
+</Package>

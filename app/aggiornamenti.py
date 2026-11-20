@@ -118,7 +118,11 @@ def novita(changelog, versione_locale):
 
 
 def canale_effettivo(impostazioni, criteri_it=None):
-    """Il canale in uso: prima il criterio aziendale, poi la scelta dell'utente, poi il predefinito."""
+    """Il canale in uso: prima il Microsoft Store, poi il criterio aziendale, poi la scelta dell'utente,
+    poi il predefinito. Dallo Store gli aggiornamenti li installa lo Store («store»)."""
+    import store
+    if store.DA_STORE:
+        return "store"
     criteri_it = criteri_it or {}
     c = criteri_it.get("canale_aggiornamenti") or impostazioni.get("canale_aggiornamenti") or CANALE_PREDEFINITO
     return c if c in CANALI else CANALE_PREDEFINITO

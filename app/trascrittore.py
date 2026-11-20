@@ -13,6 +13,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 VERSIONE = "20261119.1720"
+import store  # noqa: E402  Argo dal Microsoft Store (MSIX): strumenti inclusi sul PATH, aggiornamenti dallo Store
+store.prepara()
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -1493,7 +1495,12 @@ class Finestra(QMainWindow):
         r4.addWidget(b_gh)
         r4.addWidget(self.l_agg, 1)
         f4.addLayout(r4)
-        if crit.get("aggiornamenti_dall_app") is False:
+        if store.DA_STORE:
+            for wdg in (self.cb_agg, self.b_agg, self.c_canale):
+                wdg.setEnabled(False)
+            self.l_agg.setText(store.MESSAGGIO_AGGIORNAMENTI)
+            self.l_agg.setWordWrap(True)
+        elif crit.get("aggiornamenti_dall_app") is False:
             for wdg in (self.cb_agg, self.b_agg, self.c_canale):
                 wdg.setEnabled(False)
             self.l_agg.setText("Gli aggiornamenti di Argo li distribuisce l'IT.")
@@ -1506,13 +1513,16 @@ class Finestra(QMainWindow):
         # Disinstallare Argo: senza scaricare niente
         g9 = QGroupBox("Disinstallare Argo")
         l9 = QVBoxLayout(g9)
-        if os.name == "nt":
+        if store.DA_STORE:
+            dove = ""
+        elif os.name == "nt":
             dove = ("Anche da Impostazioni di Windows › App › App installate › «Argo AI» › Disinstalla, "
                     "o dal menu Start › «Disinstalla Argo».")
         else:
             dove = ("Trascinare Argo AI nel Cestino non basta: resterebbe la cartella whisperx-env con i dati. "
                     "Usa questo pulsante.")
-        t9 = QLabel("Chiede conferma e propone un backup sulla Scrivania di voci, incontri, clienti, glossario e "
+        t9 = QLabel(store.MESSAGGIO_DISINSTALLA if store.DA_STORE else
+                    "Chiede conferma e propone un backup sulla Scrivania di voci, incontri, clienti, glossario e "
                     "impostazioni (senza token e chiavi), poi elimina Argo e la cartella whisperx-env. "
                     "Ollama, i suoi modelli e le cache dei modelli restano. " + dove)
         t9.setWordWrap(True)
@@ -1520,6 +1530,7 @@ class Finestra(QMainWindow):
         l9.addWidget(t9)
         b9 = QPushButton("Disinstalla Argo…")
         b9.clicked.connect(self.disinstalla)
+        b9.setVisible(not store.DA_STORE)
         r9 = QHBoxLayout()
         r9.addWidget(b9)
         r9.addStretch(1)
@@ -1887,7 +1898,7 @@ class Finestra(QMainWindow):
                              + ". Puoi cambiarli in Impostazioni › Ollama.", 20000)
 
     def controlla_aggiornamenti(self, manuale=False):
-        if getattr(self, "_lav_agg", None):
+        if getattr(self, "_lav_agg", None) or store.DA_STORE:
             return
         if criteri.carica().get("aggiornamenti_dall_app") is False:
             return
@@ -1950,6 +1961,9 @@ class Finestra(QMainWindow):
     def installa_aggiornamento(self):
         if self.worker or self.worker_voce:
             QMessageBox.information(self, "Aggiornamento", "Aspetta che finisca l'elaborazione in corso, poi riprova.")
+            return
+        if store.DA_STORE:
+            QMessageBox.information(self, "Aggiornamento", store.MESSAGGIO_AGGIORNAMENTI)
             return
         if criteri.carica().get("aggiornamenti_dall_app") is False:
             QMessageBox.information(self, "Aggiornamento", "Gli aggiornamenti di Argo li distribuisce l'IT.")
@@ -2074,9 +2088,9 @@ def main():
     QTimer.singleShot(8000, diagnostica.avvio_riuscito)  # finestra rimasta aperta: avvio riuscito
     if not diagnostica.MODALITA_SICURA:
         QTimer.singleShot(1500, f.prepara_ollama)  # Ollama acceso e modelli scelti (o proposti) già all'avvio
-        if os.name == "nt":  # Argo tra le app installate di Windows, anche per chi si aggiorna dall'app
+        if os.name == "nt" and not store.DA_STORE:  # Argo tra le app installate di Windows, anche per chi si aggiorna dall'app
             threading.Thread(target=lambda: _senza_errori(disinstalla.registra_windows), daemon=True).start()
-        if (core.carica_impostazioni().get("controlla_aggiornamenti", True)
+        if (not store.DA_STORE and core.carica_impostazioni().get("controlla_aggiornamenti", True)
                 and criteri.carica().get("aggiornamenti_dall_app") is not False):
             QTimer.singleShot(3000, f.controlla_aggiornamenti)
     sys.exit(app.exec())

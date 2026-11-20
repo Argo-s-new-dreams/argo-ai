@@ -1,0 +1,38 @@
+# Pacchetto Store: costruisce il pacchetto MSIX di Argo per il Microsoft Store (x64, gira anche su Windows ARM).
+# Parte a ogni tag Pro (vAAAAMMGG.HHMM), a mano da Actions, o a ogni push sul ramo store-msix (prove).
+# Il .msix "pulito" si carica in Partner Center (lo firma Microsoft); quello "-prova" + .cer serve a provarlo sul PC.
+# Identità del prodotto: variabili del repository MSIX_NOME, MSIX_EDITORE, MSIX_NOME_EDITORE (Partner Center).
+name: Pacchetto Store
+
+on:
+  push:
+    tags: ["v*"]
+    branches: ["store-msix"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  msix:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Costruisci il pacchetto MSIX
+        shell: pwsh
+        env:
+          MSIX_NOME: ${{ vars.MSIX_NOME }}
+          MSIX_EDITORE: ${{ vars.MSIX_EDITORE }}
+          MSIX_NOME_EDITORE: ${{ vars.MSIX_NOME_EDITORE }}
+        run: ./strumenti/msix/crea_msix.ps1 -Uscita dist -FirmaDiProva
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: argo-msix
+          path: dist/*
+          retention-days: 30
+          compression-level: 0
