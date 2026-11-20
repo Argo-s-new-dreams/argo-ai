@@ -12,7 +12,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261120.1152"
+VERSIONE = "20261120.1206"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -43,6 +43,8 @@ import disinstalla  # noqa: E402
 import supporto  # noqa: E402
 import consenso_voci  # noqa: E402
 import veglia  # noqa: E402
+import secondo_cervello as cervello  # noqa: E402
+import secondo_cervello_ui as cervello_ui  # noqa: E402
 
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
@@ -303,6 +305,7 @@ class Finestra(QMainWindow):
         self.tab_agenda = agenda_posta.SchedaAgenda(self)
         self.tab_posta = agenda_posta.SchedaPosta(self)
         self.tab_registra = registrazione.SchedaRegistra(self)
+        self.tab_cervello = cervello_ui.PaginaCervello(self)
         self.pag_coda = self._tab_coda()
         self.tab_documenti = attrezzi.SchedaDocumenti()
         self.tab_dettatura = attrezzi.SchedaDettatura()
@@ -330,6 +333,9 @@ class Finestra(QMainWindow):
                 self.tab_clienti, "Clienti",
                 "Dynamics 365 Sales: cerca il cliente o prepara la scheda pubblica; dalla call partecipanti, aziende, "
                 "relazione e task.")),
+            ("cervello", "Secondo cervello", "Cervello", self._pagina(
+                self.tab_cervello, "Secondo cervello",
+                "Con chi parli in ogni incontro: aziende catalogate e persone per funzione, solo su questo computer.")),
             ("ATTREZZI", None, None, None),
             ("posta", "Posta AI", "Posta", self.tab_posta),
             ("documenti", "Documenti riservati", "Documenti", self._pagina(
@@ -351,6 +357,8 @@ class Finestra(QMainWindow):
         self.nav = tema.NavLaterale([(c, e, br) for c, e, br, _w in pagine])
         self.nav.scelto.connect(self.tabs.setCurrentIndex)
         self.tabs.currentChanged.connect(self.nav.seleziona)
+        self.tabs.currentChanged.connect(
+            lambda i: self.tab_cervello.aggiorna() if self.tabs.widget(i) is self._pagine.get(id(self.tab_cervello)) else None)
         centro = QWidget()
         cl = QHBoxLayout(centro)
         cl.setContentsMargins(0, 0, 0, 0)
@@ -675,6 +683,9 @@ class Finestra(QMainWindow):
             m.addAction("Crea verbale →", self.crea_verbale)
             m.addSeparator()
         m.addAction("🎧 Marca voci…", lambda: self.marca_voci(j["file"]))
+        if cervello.attivo():
+            m.addAction("🧠 Con chi stai parlando?…",
+                        lambda: cervello_ui.collega(self, j["file"], Path(j["file"]).stem, "file"))
         m.addAction("Rimetti in coda", self.rimetti_in_coda)
         m.addAction("Apri cartella", self.b_cart.click)
         m.addSeparator()

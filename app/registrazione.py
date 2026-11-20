@@ -27,6 +27,8 @@ import cattura_audio as ca
 import criteri
 import diagnostica
 import live_core as live
+import secondo_cervello as cervello
+import secondo_cervello_ui as cervello_ui
 import tema
 import veglia
 import voci_core as core
@@ -294,6 +296,7 @@ class SchedaRegistra(QWidget):
 
     def _riprendi(self, s):
         self.sessione = s
+        self._id_cervello = (cervello.interlocutori_di(s.dir) or {}).get("id")
         self.modo = "live"
         self.chiusura = True
         self.coda = [str(f) for f in s.blocchi_in_attesa()]
@@ -326,6 +329,10 @@ class SchedaRegistra(QWidget):
             return
         if DialogoConsenso(modo, self).exec() != QDialog.Accepted:
             return
+        con_chi = None
+        if cervello.attivo():  # Secondo cervello: con chi si parla (si può saltare)
+            con_chi = cervello_ui.chiedi(self, self.e_titolo.text().strip() or "Riunione")
+        self._id_cervello = None
         self._salva_sorgenti()
         self.modo = modo
         self.testo.clear()
@@ -362,6 +369,10 @@ class SchedaRegistra(QWidget):
             avviso = (" ⚠️ Audio del computer non disponibile: registro solo il microfono, le voci degli altri "
                       f"partecipanti alla call non saranno incluse. ({self.mixer.avviso_sistema})")
         self.l_sorgenti.setText("Sorgenti: " + sorgenti + avviso)
+        if con_chi is not None:
+            rif = self.sessione.dir if modo == "live" else self.file_archivio
+            self._id_cervello = cervello.salva_interlocutori(rif, titolo, "live" if modo == "live" else "archivio",
+                                                             *con_chi)
         self.registrando = True
         self.b_avvia.setText("■ Ferma")
         for w in (self.r_live, self.r_arch, self.c_mic, self.c_sis, self.b_elenco, self.e_titolo):
@@ -573,6 +584,8 @@ class SchedaRegistra(QWidget):
     def _mostra_fine(self, out):
         if out:
             self.risultato = str(out)
+            if getattr(self, "_id_cervello", None):  # la scheda «con chi» segue la trascrizione salvata
+                cervello.aggiorna_riferimento(self._id_cervello, out)
             self.stato.setText(f"✅ Trascrizione salvata: {Path(out).name}. L'audio è stato cancellato.")
             self.b_verbale.show()
         else:

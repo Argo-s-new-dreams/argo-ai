@@ -2,6 +2,13 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261120.1206: Secondo cervello, primo blocco · «Con chi stai parlando?»
+- **Nuova pagina Secondo cervello**, facoltativa e **spenta di base**, con la spiegazione del metodo CODE. È la parte «Organizza»: la base anonimizzata e i suggerimenti arrivano nei prossimi blocchi.
+- **«Con chi stai parlando?»**: con il Secondo cervello attivo, prima di ogni registrazione Argo chiede l'azienda e le persone **per funzione** (ruolo, area, livello: mai nomi). Si può saltare. Per gli incontri dall'iPhone e i file in *Trascrivi* c'è la voce **🧠 Con chi stai parlando?…** nel menu del tasto destro. La scheda segue la registrazione quando diventa trascrizione.
+- **Catalogo aziende** (settore, dimensione, tipo di attività, area geografica, note) e **catalogo funzioni**, con modifica ed eliminazione. **🔎 Cataloga dal web** propone le categorie dalla scheda pubblica di *Clienti* o dalla ricerca web; le note passano dal filtro etico. Sulle persone nessuna ricerca.
+- **Nuovo criterio IT**: `"secondo_cervello": false` lo vieta.
+- Dati in `whisperx-env/secondo_cervello/`, solo su questo computer. Manuale §5quinquies, §12 e §16 e PRO.md aggiornati.
+
 ## 20261120.1152: il computer resta sveglio mentre Argo lavora
 - **Niente sospensione automatica durante i lavori**: mentre Argo trascrive, registra o finisce la Live, scrive una relazione, crea un incontro da file o usa il modello linguistico, il computer non va in sospensione per inattività (Mac: `caffeinate`; Windows: `SetThreadExecutionState`). Lo schermo può spegnersi lo stesso; finito il lavoro, tutto torna come prima. Se Argo si chiude o si blocca, il blocco si toglie da solo.
 - **Sospensione lo stesso** (coperchio chiuso, tasto di accensione): Argo se ne accorge. Una trascrizione fallita per questo torna **In attesa** e riparte da capo una volta; se ricapita, la nota spiega cosa è successo. Negli incontri da file l'errore dice che il computer è andato in sospensione. Nel registro tecnico: «il computer è stato in sospensione per circa N min».

@@ -93,5 +93,6 @@ Per aziende con molti utenti: Ollama e la trascrizione su un server in LAN con G
 - `registrazione`: `"completa"` (predefinito, Live e Archivia), `"solo_live"` (l'audio delle riunioni non viene mai conservato) oppure `"nessuna"` (pagina Registra disattivata).
 - `riconoscimento_voci`: `false` disattiva l'anagrafe voci: niente riconoscimento e niente impronte nuove (quelle salvate restano, inutilizzate). Di base il riconoscimento è spento e lo attiva l'utente, con il consenso voce per voce.
 - `ricerca_web`: `false` toglie la ricerca web della pagina Clienti (scheda pubblica con Ollama Web Search).
+- `secondo_cervello`: `false` toglie il Secondo cervello: niente cataloghi di aziende e funzioni, niente schede «con chi» sugli incontri (dalla 20261120.1206).
 - `trace`: `true` tiene accesa la modalità trace su quel PC (log più dettagliati, mai contenuti), per un'analisi del supporto. Va tolto a lavoro finito: finché c'è, l'utente non la può spegnere.
 - `modelli_cloud`: `"consentiti"` (predefinito), `"vietati"` (Argo usa solo Ollama locale e il riquadro *Modelli cloud* lo dice) oppure un elenco dei fornitori ammessi tra `"claude"` e `"ollama_cloud"`. Le scelte già fatte dall'utente su un fornitore non più ammesso tornano automaticamente in locale.

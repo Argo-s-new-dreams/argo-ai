@@ -44,6 +44,7 @@ DEFAULT_SETTINGS = {
     "registra_volume_sistema": 100,
     "risorse": "auto",  # Uso del computer: auto | leggero | bilanciato | massimo (vedi risorse.py)
     "riconoscimento_voci": False,  # anagrafe voci: spenta finché l'utente non la attiva (promessa di Argo)
+    "secondo_cervello": False,  # Secondo cervello (metodo CODE): spento finché l'utente non lo attiva
     "cartella_registrazioni": "",  # Agenda: dove salvare le registrazioni (vuoto = ~/Documents/Argo)  # all'avvio legge da GitHub solo il numero di versione
 }
 
