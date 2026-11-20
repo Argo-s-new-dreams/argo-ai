@@ -16,7 +16,7 @@ $ErrorActionPreference = "Stop"
 $Radice = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $Lavoro = Join-Path ([IO.Path]::GetTempPath()) "argo-msix"
 $Pkg = Join-Path $Lavoro "pacchetto"
-$ModelloFfmpeg = "^ffmpeg-n7\.\d+-latest-win64-lgpl-shared-7\.\d+\.zip$"  # FFmpeg 7.x LGPL condiviso (BtbN)
+$ModelloFfmpeg = "^ffmpeg-n8\.\d+-latest-win64-lgpl-shared-8\.\d+\.zip$"  # FFmpeg 8.x LGPL condiviso (BtbN)
 
 function Passo($testo) { Write-Host "`n== $testo" -ForegroundColor Cyan }
 
@@ -52,7 +52,7 @@ $rel = Invoke-RestMethod "https://api.github.com/repos/BtbN/FFmpeg-Builds/releas
 $asset = $rel.assets | Where-Object { $_.name -match $ModelloFfmpeg } | Sort-Object name | Select-Object -Last 1
 if (-not $asset) {
     $rel.assets.name | Where-Object { $_ -like "*win64-lgpl-shared*" } | ForEach-Object { Write-Host "  disponibile: $_" }
-    throw "FFmpeg 7.x LGPL condiviso non trovato tra i file di BtbN/FFmpeg-Builds"
+    throw "FFmpeg 8.x LGPL condiviso non trovato tra i file di BtbN/FFmpeg-Builds"
 }
 Write-Host "  $($asset.name)"
 Invoke-WebRequest $asset.browser_download_url -OutFile $zip
@@ -86,7 +86,12 @@ ff = shutil.which('ffmpeg')
 assert ff and 'strumenti' in ff, ff
 subprocess.run([ff, '-hide_banner', '-version'], check=True, capture_output=True)
 assert aggiornamenti.canale_effettivo({}) == 'store'
-print('OK Argo', trascrittore.VERSIONE, '| torch', torch.__version__, '| ffmpeg', ff)
+try:
+    import torchcodec.decoders  # carica le DLL di FFmpeg: serve a pyannote quando legge i file
+    tc = 'ok'
+except Exception as e:
+    tc = 'NON disponibile (%s)' % str(e)[:120]
+print('OK Argo', trascrittore.VERSIONE, '| torch', torch.__version__, '| ffmpeg', ff, '| torchcodec', tc)
 "@
     if ($LASTEXITCODE -ne 0) { throw "la prova di importazione non e' riuscita" }
 } finally {
