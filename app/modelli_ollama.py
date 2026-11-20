@@ -34,14 +34,45 @@ def _uguale(nome, voluto):
         or (":" not in voluto and nome.split(":")[0] == voluto)
 
 
-def mancanti(chat, emb):
-    """Modelli consigliati da scaricare: solo per i ruoli senza alcun modello installato."""
+PREFERITI = ("gemma3", "qwen3", "qwen2.5", "llama3", "mistral", "phi")
+
+
+def troppo_grandi(chat, dim):
+    """True se ci sono modelli per i testi ma nessuno sta nella RAM di questo computer."""
+    return bool(chat) and bool(dim) and not any(risorse.modello_entra(dim.get(n, 0)) for n in chat)
+
+
+def mancanti(chat, emb, dim=None):
+    """Modelli consigliati da scaricare: per i ruoli senza alcun modello installato, e un modello per i testi
+    adatto alla RAM quando quelli installati sono tutti troppo grandi."""
     da_scaricare = []
-    if not chat:
+    if not chat or (troppo_grandi(chat, dim or {}) and not any(_uguale(n, chat_consigliato()) for n in chat)):
         da_scaricare.append(chat_consigliato())
     if not emb:
         da_scaricare.append(EMBED_CONSIGLIATO)
     return da_scaricare
+
+
+def adatta(s, chat, vision, dim):
+    """Legge com'è fatto il computer: se il modello scelto per i testi o per le foto non sta nella RAM, passa al
+    migliore installato che ci sta (ordine di preferenza, poi il più grande). Modifica s; ritorna cosa ha cambiato."""
+    cambiati = []
+
+    def migliore(candidati):
+        adatti = [n for n in candidati if dim.get(n) and risorse.modello_entra(dim[n])]
+        rango = lambda n: (next((i for i, p in enumerate(PREFERITI) if n.lower().startswith(p)), len(PREFERITI)),
+                           -dim.get(n, 0))
+        return min(adatti, key=rango) if adatti else None
+
+    for campo, candidati, ruolo in (("modello_chat", chat, "testi"), ("modello_vision", vision, "foto")):
+        attuale = s.get(campo)
+        if not attuale or not dim.get(attuale) or risorse.modello_entra(dim[attuale]):
+            continue
+        nuovo = migliore([c for c in candidati if c != attuale])
+        if nuovo:
+            s[campo] = nuovo
+            cambiati.append(f"{ruolo}: {nuovo} al posto di {attuale}, troppo grande per {risorse.ram_gb():.0f} GB di RAM")
+    return cambiati
 
 
 def peso(nomi):

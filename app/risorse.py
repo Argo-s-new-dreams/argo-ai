@@ -61,6 +61,19 @@ def ram_gb():
         return 0
 
 
+def limite_modello_gb(margine=0.75):
+    """Dimensione massima (GB sul disco) di un modello di Ollama che sta nella RAM di questo computer insieme al
+    sistema e ad Argo; 0 se la RAM non si legge. 8 GB → 6 GB (gemma3:4b sì, gemma3:12b no); 16 GB → 12 GB."""
+    ram = ram_gb()
+    return ram * margine if ram else 0
+
+
+def modello_entra(byte, margine=0.75):
+    """True se un modello di quella dimensione sul disco sta nella RAM (o se non si sa)."""
+    limite = limite_modello_gb(margine)
+    return not limite or not byte or byte / 1e9 <= limite
+
+
 # ---------------------------------------------------------------- il profilo
 def _impostazione():
     try:

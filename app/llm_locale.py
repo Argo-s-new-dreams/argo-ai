@@ -43,7 +43,7 @@ def _spiega_scaduto(url, timeout, payload):
         ram = 0
     testo = (f"Ollama è acceso su {url} ma non ha risposto entro {timeout} s: di solito sta ancora caricando un "
              "modello o il computer ha esaurito la memoria.")
-    if modello and dim and ram and dim / 1e9 > ram * 0.6:
+    if modello and dim and ram and not risorse.modello_entra(dim):
         testo += (f" Il modello {modello} occupa {f'{dim / 1e9:.1f}'.replace('.', ',')} GB su {ram:.0f} GB di RAM: è troppo grande per "
                   "questo computer. Scegline uno più piccolo in Impostazioni › Modelli AI (per esempio gemma3:4b).")
     else:
@@ -113,7 +113,8 @@ def etichetta(nome, dimensioni_byte=None):
         return nome
     gb = dimensioni_byte / 1e9
     testo = f"{gb:.1f}" if gb >= 0.1 else f"{gb:.2f}"
-    return f"{nome} · {testo.replace('.', ',')} GB"
+    avviso = "" if risorse.modello_entra(dimensioni_byte) else " · ⚠️ troppo grande per questo computer"
+    return f"{nome} · {testo.replace('.', ',')} GB{avviso}"
 
 
 def chat(messaggi, modello, url=DEFAULT_URL, temperatura=0.3, on_token=None, stop=None, contesto=None,

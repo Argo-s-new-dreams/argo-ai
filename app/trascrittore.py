@@ -2,6 +2,7 @@
 Tutto gira in locale: l'audio non lascia il computer.
 """
 import json
+import logging
 import os
 import threading
 import re
@@ -12,7 +13,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261120.1411"
+VERSIONE = "20261120.1419"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -1806,6 +1807,7 @@ class Finestra(QMainWindow):
         def lavoro(lav):
             r = modelli_ollama.controlla(url, lav.stato, stop=lav.fermato)
             r["vision"] = self._vision_installati(url) if r["esito"] == "ok" else []
+            r["dim"] = llm_locale.dimensioni(url) if r["esito"] == "ok" and llm_locale.e_locale(url) else {}
             return r
 
         lav = attrezzi.Lavoro(lavoro, self)
@@ -1832,6 +1834,11 @@ class Finestra(QMainWindow):
             s["modello_vision"] = s["modello_chat"] if s.get("modello_chat") in r["vision"] else r["vision"][0]
             core.salva_impostazioni(s)
             scelti.append(f"foto: {s['modello_vision']}")
+        adattati = modelli_ollama.adatta(s, r["chat"], r.get("vision", []), r.get("dim") or {})
+        if adattati:  # il modello scelto non sta nella RAM di questo computer: si passa a uno che ci sta
+            core.salva_impostazioni(s)
+            logging.getLogger("argo").info("modelli adattati al computer: %s", "; ".join(adattati))
+            scelti += adattati
         attrezzi.segnale_modelli.cambiato.emit()  # aggiorna gli elenchi delle Impostazioni
         return scelti
 
@@ -1853,7 +1860,8 @@ class Finestra(QMainWindow):
         if scelti:
             self.statusBar().showMessage("Modelli scelti in automatico: " + ", ".join(scelti)
                                          + ". Puoi cambiarli in Impostazioni › Ollama.", 15000)
-        da_scaricare = modelli_ollama.mancanti(r["chat"], r["emb"])
+        da_scaricare = modelli_ollama.mancanti(r["chat"], r["emb"], r.get("dim"))
+        self._modelli_troppo_grandi = modelli_ollama.troppo_grandi(r["chat"], r.get("dim") or {})
         if not da_scaricare:
             if forzato:
                 QMessageBox.information(self, "Modelli già presenti",
@@ -1861,7 +1869,8 @@ class Finestra(QMainWindow):
                                         "Per aggiungerne altri usa «Scarica un modello».")
             return
         s = core.carica_impostazioni()
-        if not forzato and s.get("modelli_consigliati_rifiutati"):
+        chiave = "modello_leggero_rifiutato" if self._modelli_troppo_grandi else "modelli_consigliati_rifiutati"
+        if not forzato and s.get(chiave):
             return
         self._proponi_modelli(da_scaricare, url, forzato)
 
@@ -1872,7 +1881,10 @@ class Finestra(QMainWindow):
         box = QMessageBox(self)
         box.setWindowTitle("Modelli per l'AI locale")
         box.setIcon(QMessageBox.Question)
-        box.setText("Per gli attrezzi AI di Argo servono questi modelli, che in Ollama mancano:\n\n"
+        premessa = (f"I modelli per i testi installati in Ollama sono troppo grandi per i {risorse.ram_gb():.0f} GB di "
+                    "RAM di questo computer: relazioni e verbali andrebbero in errore o sarebbero lentissimi.\n\n"
+                    if getattr(self, "_modelli_troppo_grandi", False) else "")
+        box.setText(premessa + "Per gli attrezzi AI di Argo servono questi modelli, che in Ollama mancano:\n\n"
                     + "\n".join(righe)
                     + f"\n\nTotale circa {modelli_ollama.peso(nomi):.1f} GB, una volta sola. Restano su questo "
                     "computer: nessun testo esce. Li scarico adesso? Poi li scelgo io, e tu potrai cambiarli "
@@ -1884,7 +1896,8 @@ class Finestra(QMainWindow):
         if box.clickedButton() is not si:
             if not forzato:
                 s = core.carica_impostazioni()
-                s["modelli_consigliati_rifiutati"] = True
+                s["modello_leggero_rifiutato" if getattr(self, "_modelli_troppo_grandi", False)
+                  else "modelli_consigliati_rifiutati"] = True
                 core.salva_impostazioni(s)
             self.statusBar().showMessage("Puoi scaricarli quando vuoi: Impostazioni › Ollama › "
                                          "«Scarica modelli consigliati».", 15000)
@@ -1893,7 +1906,8 @@ class Finestra(QMainWindow):
         def lavoro(lav):
             fatti = modelli_ollama.scarica(nomi, url, lav.stato, lav.fermato)
             chat, emb = llm_locale.elenco_modelli(url)
-            return {"esito": "ok", "chat": chat, "emb": emb, "vision": self._vision_installati(url), "fatti": fatti}
+            return {"esito": "ok", "chat": chat, "emb": emb, "vision": self._vision_installati(url), "fatti": fatti,
+                    "dim": llm_locale.dimensioni(url) if llm_locale.e_locale(url) else {}}
 
         lav = attrezzi.Lavoro(lavoro, self)
         lav.sig_stato.connect(self._stato_download)
