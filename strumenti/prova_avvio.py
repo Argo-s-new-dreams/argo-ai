@@ -57,6 +57,22 @@ def main():
         print("----- uscita del processo (ultime 60 righe) -----\n" + "\n".join(uscita.splitlines()[-60:]))
 
     errori = []
+    # Modelli di allineamento con licenza commerciale (whisperx_argo.py) sul WhisperX vero
+    controllo = ("import whisperx_argo as w; w.applica(); import whisperx.alignment as a; "
+                 "assert all(l not in a.DEFAULT_ALIGN_MODELS_TORCH for l in w.MODELLI_ALLINEAMENTO), "
+                 "'VoxPopuli ancora tra i predefiniti'; "
+                 "assert all(a.DEFAULT_ALIGN_MODELS_HF.get(l) == m for l, m in w.MODELLI_ALLINEAMENTO.items()); "
+                 "print('allineamento: ' + ', '.join(l + ' = ' + m for l, m in w.MODELLI_ALLINEAMENTO.items()))")
+    r2 = subprocess.run([sys.executable, "-c", controllo], cwd=APP, env=env, capture_output=True, text=True,
+                        encoding="utf-8", errors="replace")
+    print("----- modelli di allineamento -----\n" + (r2.stdout + r2.stderr).strip())
+    if r2.returncode != 0:
+        errori.append("i modelli di allineamento non sono quelli con licenza commerciale")
+    r3 = subprocess.run([sys.executable, str(APP / "whisperx_argo.py"), "--help"], cwd=APP, env=env,
+                        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
+    if r3.returncode != 0 or "--align_model" not in r3.stdout:
+        errori.append("whisperx_argo.py non avvia la riga di comando di WhisperX")
+        print((r3.stdout + r3.stderr)[-2000:])
     if codice is None:
         errori.append(f"Argo non si è chiuso entro {TEMPO_MASSIMO} s: forse aspetta una finestra modale")
     elif codice != 0:

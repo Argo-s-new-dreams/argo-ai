@@ -2,6 +2,12 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261120.1139: licenze verificate e allineamento con licenza commerciale
+- **Allineamento delle parole**: per italiano, francese, tedesco e spagnolo WhisperX usava di base i modelli **VoxPopuli** di torchaudio, con licenza **CC BY-NC 4.0 (non commerciale)**: non adatti a un uso di lavoro. Argo ora usa i modelli wav2vec2 XLSR-53 di Jonatas Grosman, **Apache-2.0** (`app/whisperx_argo.py`), sia nel Trascrittore sia nel Live, anche con il rilevamento automatico della lingua. L'inglese resta il modello di torchaudio, MIT. La prima trascrizione dopo l'aggiornamento scarica il nuovo modello, circa 1,2 GB per lingua, una volta sola.
+- **THIRD_PARTY_LICENSES.md riscritto**: cosa è incluso e cosa si scarica; Python (PSF), FFmpeg (installer e build LGPL del pacchetto Store, con i link ai sorgenti), Ollama, tutti i modelli con licenza e note (pyannote community-1 CC-BY-4.0, Gemma Terms of Use, BGE-M3 MIT, Qwen2.5-VL 7B Apache-2.0, Whisper MIT).
+- **Elenco delle licenze di tutte le librerie Python** (`strumenti/elenco_licenze.py`), prodotto dalla GitHub Action «Prova di avvio» su macOS e Windows; la stessa Action controlla ora i modelli di allineamento sul WhisperX vero.
+- Manuale §1 aggiornato.
+
 ## 20261120.1111: filtro etico e prova automatica di avvio su Mac e Windows
 - **Filtro etico** su relazioni degli incontri, verbali (anche quelli da Agenda), mail di recap, riassunti e risposte della posta, schede dei clienti: solo fatti utili al lavoro. Niente questioni personali o private, giudizi sulle persone, pettegolezzi, parolacce, bestemmie, insulti o espressioni discriminatorie, anche se sono nella conversazione. Le regole arrivano al modello; in più un controllo finale toglie le parolacce più comuni rimaste («[…]») senza toccare parole normali come «cazzuola» o «Troia» (la città). Traduzioni e dettatura restano fedeli. Primo pezzo del «Secondo cervello».
 - **Prova di avvio automatica** (GitHub Action «Prova di avvio») a ogni modifica dell'app:

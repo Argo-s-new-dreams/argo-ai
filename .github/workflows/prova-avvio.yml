@@ -11,6 +11,7 @@ on:
     paths:
       - "app/**"
       - "strumenti/prova_avvio.py"
+      - "strumenti/elenco_licenze.py"
       - ".github/workflows/prova-avvio.yml"
   pull_request:
   workflow_dispatch:
@@ -67,3 +68,12 @@ jobs:
       - name: Argo arriva alla finestra
         shell: bash
         run: ${{ matrix.python }} strumenti/prova_avvio.py
+      - name: Elenco delle licenze delle librerie
+        if: always()
+        shell: bash
+        run: ${{ matrix.python }} strumenti/elenco_licenze.py licenze-librerie-${{ matrix.nome }}.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: licenze-librerie-${{ matrix.nome }}
+          path: licenze-librerie-${{ matrix.nome }}.md

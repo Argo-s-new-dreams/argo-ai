@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261120.1111 · riferita all'app versione 20261120.1111*
+*Versione del manuale: 20261120.1139 · riferita all'app versione 20261120.1139*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -53,6 +53,8 @@ Argo usa due "motori", entrambi locali.
 - per scaricare i modelli la prima volta (WhisperX/pyannote da Hugging Face, LLM da Ollama).
 
 Dopo l'installazione il lavoro avviene offline.
+
+**Modelli e licenze.** Per allineare le parole all'audio in italiano, francese, tedesco e spagnolo, Argo usa i modelli wav2vec2 di Jonatas Grosman (licenza Apache-2.0, uso commerciale consentito), circa 1,2 GB per lingua scaricati una volta. Il predefinito di WhisperX per queste lingue, VoxPopuli, ha licenza non commerciale e non va bene per il lavoro. Licenze di tutti i componenti e modelli: [THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md). Chi usa Gemma (il modello consigliato per i testi) accetta i [Gemma Terms of Use](https://ai.google.dev/gemma/terms).
 
 La barra in basso nella finestra mostra **🔒 100% locale** finché Ollama punta a questo computer (`localhost`). Se nelle impostazioni indichi un server Ollama su un'altra macchina, il badge te lo segnala.
 
@@ -276,7 +278,7 @@ Video: `mp4`, `mov`, `mkv`, `webm`, `m4v`, `avi`, `wmv`: per esempio le registra
 
 Se la separazione delle voci non torna (per esempio ha trovato 2 persone ma erano 3), cambia il numero nella colonna **Partecipanti** anche su una riga *Completata*. Argo chiede conferma e **rifà solo la separazione dei parlanti**: il testo trascritto resta lo stesso, e ci vuole molto meno di una trascrizione completa. Alla fine la riga torna *Completata* con i nuovi parlanti; i nomi corretti a mano vanno riassegnati.
 
-> La prima trascrizione scarica i modelli (alcuni GB): è normale che ci metta di più.
+> La prima trascrizione scarica i modelli (alcuni GB, compreso il modello di allineamento della lingua, circa 1,2 GB): è normale che ci metta di più. Chi aggiorna da una versione precedente lo scarica alla prima trascrizione dopo l'aggiornamento.
 
 ### 5.4 Risultati
 

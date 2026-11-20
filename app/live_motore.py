@@ -56,6 +56,8 @@ def main():
                               language=lingua, asr_options=opzioni, threads=n_core)
     manda(tipo="stato", msg="Carico il modello di allineamento delle parole…")
     try:
+        import whisperx_argo
+        whisperx_argo.applica()  # modelli di allineamento con licenza commerciale (vedi whisperx_argo.py)
         allinea, meta_allinea = whisperx.load_align_model(language_code=lingua, device=device)
     except Exception as e:  # senza allineamento si lavora per frasi: meno preciso ma funziona
         allinea, meta_allinea = None, None
