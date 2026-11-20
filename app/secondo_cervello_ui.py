@@ -341,6 +341,8 @@ def _id_selezionato(t):
 
 
 class PaginaCervello(QWidget):
+    cambiato = Signal()  # acceso/spento o Base cambiata: la barra in basso si aggiorna
+
     def __init__(self, finestra=None, parent=None):
         super().__init__(parent)
         self.finestra = finestra
@@ -483,6 +485,7 @@ class PaginaCervello(QWidget):
         self.schede.setTabText(self.schede.indexOf(self._scheda_base), f"Base ({self.t_base.rowCount()})")
         for t in (self.t_incontri, self.t_aziende, self.t_funzioni, self.t_base):
             t.resizeColumnsToContents()
+        self.cambiato.emit()
         self.t_base.setColumnWidth(2, 600)
 
     def cambia(self):

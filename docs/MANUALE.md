@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261120.1419 · riferita all'app versione 20261120.1419*
+*Versione del manuale: 20261120.1848 · riferita all'app versione 20261120.1848*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -427,6 +427,8 @@ Una base di conoscenza che cresce a ogni incontro e ti aiuta nel lavoro: domande
 
 Arriva a blocchi. **In questa versione ci sono «Organizza»** (con chi parli in ogni incontro) **e «Distilla»** (i fatti di lavoro nella Base, anonimi). I suggerimenti prima e durante gli incontri arrivano nella prossima versione.
 
+Quando è attivo, nella barra in basso, accanto a «🔒 100% locale», compare **🧠 Secondo cervello attivo · N voci nella Base**: un clic apre la pagina.
+
 ### Con chi stai parlando?
 
 Con il Secondo cervello attivo, prima di ogni registrazione (*Registra*, Live o archivio) Argo chiede:
@@ -757,6 +759,7 @@ Contiene il token, il pulsante **Mostra** e **Salva e verifica**, più i link al
 | Calcolo su | CPU, GPU NVIDIA (CUDA) | Scegli GPU solo se hai una scheda NVIDIA con CUDA |
 | Parole chiave | Testo libero | Nomi propri, sigle, termini di settore |
 | Uso del computer | Automatico, Leggero, Bilanciato, Massima velocità | **Automatico**. Se il PC si blocca durante trascrizioni o riassunti, scegli **Leggero**: Argo usa meno core, priorità bassa, un lavoro pesante alla volta e libera la memoria di Ollama prima di trascrivere. È più lento, ma il computer resta utilizzabile |
+| **🖥️ Adatta a questo computer…** | (pulsante) | Legge sistema, processore, core, RAM e GPU NVIDIA e propone solo i cambi utili, ciascuno con il motivo: *Uso del computer* in Automatico se la scelta manuale non va d'accordo con il computer; *Calcolo su* GPU NVIDIA solo se c'è la scheda e PyTorch per CUDA; *large-v3-turbo* al posto di large-v3 sui computer con 4 core o meno o meno di 12 GB di RAM; i modelli di Ollama per testi, foto e documenti migliori tra quelli installati che stanno nella RAM (in profilo Leggero mai più grandi); se nessun modello per i testi ci sta, il download di quello consigliato. Togli la spunta a ciò che non vuoi e premi **Applica** |
 
 ### 11.3 Riconoscimento voci
 

@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261120.1419"
+VERSIONE = "20261120.1848"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -44,8 +44,10 @@ import disinstalla  # noqa: E402
 import supporto  # noqa: E402
 import consenso_voci  # noqa: E402
 import veglia  # noqa: E402
+import adatta_computer  # noqa: E402
 import secondo_cervello as cervello  # noqa: E402
 import secondo_cervello_ui as cervello_ui  # noqa: E402
+import cervello_base  # noqa: E402
 
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
@@ -376,6 +378,12 @@ class Finestra(QMainWindow):
         self.setCentralWidget(contenitore)
         self.tabs.setCurrentWidget(self.pag_coda)
         self.nav.seleziona(self.tabs.indexOf(self.pag_coda))
+        self.badge_cervello = QToolButton()  # 🧠 Secondo cervello attivo: un clic apre la sua pagina
+        self.badge_cervello.setAutoRaise(True)
+        self.badge_cervello.setCursor(Qt.PointingHandCursor)
+        self.badge_cervello.clicked.connect(lambda: self.vai_a(self.tab_cervello))
+        self.statusBar().addPermanentWidget(self.badge_cervello)
+        self.tab_cervello.cambiato.connect(self._aggiorna_badge)
         self.badge = QLabel()
         self.statusBar().addPermanentWidget(self.badge)
         self._aggiorna_badge()
@@ -970,6 +978,16 @@ class Finestra(QMainWindow):
                             attrezzi.oggi(), nota_ai=attrezzi.word.NOTA_TRASCRIZIONE)
 
     def _aggiorna_badge(self):
+        if hasattr(self, "badge_cervello"):
+            acceso = cervello.attivo()
+            self.badge_cervello.setVisible(acceso)
+            if acceso:
+                n = len(cervello_base.voci())
+                self.badge_cervello.setText(f"🧠 Secondo cervello attivo · {n} {'voce' if n == 1 else 'voci'} nella Base")
+                self.badge_cervello.setToolTip("Argo chiede con chi parli a ogni registrazione; i dati restano su "
+                                               "questo computer. Clic per aprire la pagina.")
+                self.badge_cervello.setStyleSheet(f"color: {tema.colori()['accento']};"
+                                                  " font-weight: 600; padding: 0 8px; border: none; background: transparent;")
         url = core.carica_impostazioni().get("ollama_url", "")
         nel_cloud = [cloud.NOMI_ATTREZZI[a] for a in cloud.NOMI_ATTREZZI if cloud.e_cloud(a)]
         if nel_cloud:  # almeno un attrezzo usa un modello cloud: il badge non può dire «100% locale»
@@ -1362,6 +1380,11 @@ class Finestra(QMainWindow):
         self.l_risorse.setText(risorse.descrizione(self.c_risorse.currentData()))
         f2.addRow("Uso del computer:", self.c_risorse)
         f2.addRow("", self.l_risorse)
+        self.b_adatta = QPushButton("🖥️ Adatta a questo computer…")
+        self.b_adatta.setToolTip("Legge processore, core, RAM e GPU di questo computer e propone modello di "
+                                 "trascrizione, uso del computer e modelli di Ollama adatti. Scegli tu cosa applicare.")
+        self.b_adatta.clicked.connect(self.adatta_al_computer)
+        f2.addRow("", self.b_adatta)
         lay.addWidget(g2)
 
         g3 = QGroupBox("Riconoscimento voci")
@@ -2036,6 +2059,91 @@ class Finestra(QMainWindow):
         QApplication.processEvents()
         ok, msg = core.verifica_token(tok)
         self.l_token.setText(("✅ " if ok else "❌ ") + msg)
+
+    def adatta_al_computer(self):
+        """Pulsante «Adatta a questo computer»: legge il computer (e Ollama, da un thread) e propone i cambi."""
+        if getattr(self, "_lav_adatta", None):
+            return
+        s = core.carica_impostazioni()
+        url = s.get("ollama_url") or llm_locale.DEFAULT_URL
+
+        def lavoro(_lav):
+            pc = adatta_computer.computer()
+            ollama = adatta_computer.leggi_ollama(url)
+            return pc, ollama, adatta_computer.proposte(s, pc, ollama)
+
+        self.b_adatta.setEnabled(False)
+        self.b_adatta.setText("Leggo com'è fatto il computer…")
+        lav = attrezzi.Lavoro(lavoro, self)
+        lav.sig_fine.connect(lambda r: self._mostra_adatta(*r, url))
+        lav.sig_errore.connect(lambda e: (self._fine_adatta(), QMessageBox.warning(self, "Adatta a questo computer", e)))
+        self._lav_adatta = lav
+        lav.start()
+
+    def _fine_adatta(self):
+        self._lav_adatta = None
+        self.b_adatta.setEnabled(True)
+        self.b_adatta.setText("🖥️ Adatta a questo computer…")
+
+    def _mostra_adatta(self, pc, ollama, proposte, url):
+        self._fine_adatta()
+        d = QDialog(self)
+        d.setWindowTitle("Adatta a questo computer")
+        d.setMinimumWidth(620)
+        lay = QVBoxLayout(d)
+        testa = QLabel(f"<b>Questo computer:</b> {adatta_computer.descrivi(pc)}"
+                       + ("" if ollama is not None else "<br>Ollama non risponde su questo computer: i modelli di "
+                          "Ollama non sono controllati."))
+        testa.setWordWrap(True)
+        lay.addWidget(testa)
+        caselle = []
+        if not proposte:
+            lay.addWidget(QLabel("✅ La configurazione è già adatta a questo computer."))
+        else:
+            lay.addWidget(QLabel("Cambi consigliati (togli la spunta a quelli che non vuoi):"))
+            for p in proposte:
+                if p["chiave"] == "scarica":
+                    testo = f"{p['ruolo']}: {p['nuovo']} — {p['motivo']}"
+                else:
+                    nuovo = risorse.NOMI.get(p["nuovo"], "Automatico") if p["chiave"] == "risorse" else p["nuovo"]
+                    nuovo = {"cuda": "GPU NVIDIA", "cpu": "CPU"}.get(nuovo, nuovo)
+                    testo = f"{p['ruolo']}: {p['attuale']} → {nuovo} — {p['motivo']}"
+                riga = QHBoxLayout()
+                cb = QCheckBox()
+                cb.setChecked(True)
+                etichetta = QLabel(testo)
+                etichetta.setWordWrap(True)
+                etichetta.mousePressEvent = lambda _e, c=cb: c.toggle()
+                riga.addWidget(cb, 0, Qt.AlignTop)
+                riga.addWidget(etichetta, 1)
+                caselle.append((cb, p))
+                lay.addLayout(riga)
+        bb = QDialogButtonBox(QDialogButtonBox.Close)
+        bb.button(QDialogButtonBox.Close).setText("Chiudi")
+        if proposte:
+            bb.addButton("Applica", QDialogButtonBox.AcceptRole)
+        bb.accepted.connect(d.accept)
+        bb.rejected.connect(d.reject)
+        lay.addWidget(bb)
+        if d.exec() != QDialog.Accepted:
+            return
+        scelte = [p for cb, p in caselle if cb.isChecked()]
+        s = core.carica_impostazioni()
+        for p in scelte:
+            if p["chiave"] != "scarica":
+                s[p["chiave"]] = p["nuovo"]
+        core.salva_impostazioni(s)
+        self.c_modello.setCurrentIndex(max(0, self.c_modello.findData(s.get("model"))))
+        self.c_device.setCurrentIndex(max(0, self.c_device.findData(s.get("device"))))
+        self.c_risorse.setCurrentIndex(max(0, self.c_risorse.findData(s.get("risorse", "auto"))))
+        attrezzi.segnale_modelli.cambiato.emit()
+        logging.getLogger("argo").info("adattato al computer (%s): %s", adatta_computer.descrivi(pc),
+                                       "; ".join(f"{p['chiave']}={p['nuovo']}" for p in scelte) or "nessun cambio")
+        self.statusBar().showMessage(f"Configurazione adattata a questo computer: {len(scelte)} cambi.", 10000)
+        da_scaricare = [p["nuovo"] for p in scelte if p["chiave"] == "scarica"]
+        if da_scaricare:
+            self._modelli_troppo_grandi = True
+            self._proponi_modelli(da_scaricare, url, True)
 
     def salva_impostazioni(self):
         imp = core.carica_impostazioni()

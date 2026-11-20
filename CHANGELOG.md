@@ -2,6 +2,11 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261120.1848: «Adatta a questo computer» e Secondo cervello nella barra in basso
+- **🖥️ Adatta a questo computer…** (Impostazioni › Trascrizione): Argo legge sistema, processore, core, RAM e GPU NVIDIA e propone i cambi utili, con il motivo di ciascuno: uso del computer, calcolo su CPU o GPU, modello di trascrizione (large-v3-turbo sui computer leggeri) e modelli di Ollama per testi, foto e documenti (i migliori installati che stanno nella RAM, oppure il download di quello consigliato). Applichi solo quelli che lasci spuntati.
+- **🧠 Secondo cervello attivo · N voci nella Base** nella barra in basso, accanto a «🔒 100% locale», quando è acceso; un clic apre la pagina.
+- Manuale §5quinquies e §11 aggiornati.
+
 ## 20261120.1419: modelli adatti al computer su cui gira Argo
 - **Argo legge la RAM** e capisce quali modelli di Ollama ci stanno (fino a tre quarti della RAM: con 8 GB `gemma3:4b` sì, `gemma3:12b` no; con 16 GB entrambi).
 - **All'avvio, se il modello scelto per i testi o per le foto è troppo grande**, Argo passa da solo al migliore installato che ci sta e lo scrive in basso nella finestra (e nel registro tecnico). Se nessuno ci sta, propone di scaricare `gemma3:4b` spiegando perché, anche a chi aveva risposto «Non ora» ai modelli consigliati.
