@@ -19,6 +19,8 @@ def licenza(dist):
         return espr
     classificatori = [c.split("::")[-1].strip() for c in (m.get_all("Classifier") or []) if c.startswith("License ::")]
     testo = (m.get("License") or "").strip()
+    if testo.upper() in ("UNKNOWN", "NONE", "LICENSE"):
+        testo = ""
     if testo and len(testo) <= 60 and "\n" not in testo:
         return testo
     if classificatori:
