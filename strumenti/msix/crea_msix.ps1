@@ -46,7 +46,9 @@ Copy-Item (Join-Path $Radice "LICENSE"), (Join-Path $Radice "THIRD_PARTY_LICENSE
 
 Passo "FFmpeg LGPL (build condivisa: serve anche a torchcodec)"
 $zip = Join-Path $Lavoro "ffmpeg.zip"
-$rel = Invoke-RestMethod "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest"
+$intest = @{}
+if ($env:GH_TOKEN) { $intest["Authorization"] = "Bearer $env:GH_TOKEN" }  # sui runner condivisi senza token si supera il limite
+$rel = Invoke-RestMethod "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest" -Headers $intest
 $asset = $rel.assets | Where-Object { $_.name -match $ModelloFfmpeg } | Sort-Object name | Select-Object -Last 1
 if (-not $asset) {
     $rel.assets.name | Where-Object { $_ -like "*win64-lgpl-shared*" } | ForEach-Object { Write-Host "  disponibile: $_" }
