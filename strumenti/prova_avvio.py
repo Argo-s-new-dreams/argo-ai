@@ -73,6 +73,22 @@ def main():
     if r3.returncode != 0 or "--align_model" not in r3.stdout:
         errori.append("whisperx_argo.py non avvia la riga di comando di WhisperX")
         print((r3.stdout + r3.stderr)[-2000:])
+    # Blocco della sospensione durante i lavori (veglia.py): caffeinate sul Mac, SetThreadExecutionState su Windows
+    controllo_veglia = (
+        "import sys, time, veglia\n"
+        "with veglia.tieni('prova'):\n"
+        "    time.sleep(1)\n"
+        "    if sys.platform == 'darwin':\n"
+        "        assert veglia._mac is not None and veglia._mac.poll() is None, 'caffeinate non attivo'\n"
+        "    elif sys.platform == 'win32':\n"
+        "        assert veglia._win is not None and veglia._win[0].is_alive(), 'thread di veglia non attivo'\n"
+        "assert veglia._mac is None and veglia._win is None and not veglia.attivi(), 'blocco non rilasciato'\n"
+        "print('veglia: blocco della sospensione preso e rilasciato')\n")
+    r4 = subprocess.run([sys.executable, "-c", controllo_veglia], cwd=APP, env=env, capture_output=True, text=True,
+                        encoding="utf-8", errors="replace", timeout=60)
+    print("----- veglia -----\n" + (r4.stdout + r4.stderr).strip())
+    if r4.returncode != 0:
+        errori.append("il blocco della sospensione durante i lavori non funziona")
     if codice is None:
         errori.append(f"Argo non si è chiuso entro {TEMPO_MASSIMO} s: forse aspetta una finestra modale")
     elif codice != 0:

@@ -28,6 +28,7 @@ import criteri
 import diagnostica
 import live_core as live
 import tema
+import veglia
 import voci_core as core
 
 QUI = Path(__file__).resolve().parent
@@ -302,6 +303,7 @@ class SchedaRegistra(QWidget):
         self.b_avvia.setEnabled(False)
         self.b_scarta.show()
         self.timer.start(300)
+        self._aggiorna_veglia()
         self._avvia_motore()
 
     # ------------------------------------------------------------ avvio e arresto
@@ -365,6 +367,7 @@ class SchedaRegistra(QWidget):
         for w in (self.r_live, self.r_arch, self.c_mic, self.c_sis, self.b_elenco, self.e_titolo):
             w.setEnabled(False)
         self.timer.start(200)
+        self._aggiorna_veglia()
         if modo == "live":
             self._avvia_motore()
 
@@ -405,6 +408,7 @@ class SchedaRegistra(QWidget):
                                f"({live.mmss(self.mixer.secondi)}).")
             self.b_coda.show()
             self.mixer = None
+            self._aggiorna_veglia()
             return
         for blocco, voce in self.tagliatore.svuota():
             self._consegna(blocco, voce)
@@ -414,6 +418,13 @@ class SchedaRegistra(QWidget):
         self.b_avvia.setEnabled(False)
         self.b_scarta.show()
         self._prossimo()
+
+    def _aggiorna_veglia(self):
+        """Mentre registra o finisce di trascrivere la Live, il computer non va in sospensione da solo."""
+        if self.occupata():
+            veglia.trattieni("registrazione")
+        else:
+            veglia.lascia("registrazione")
 
     def _sblocca(self):
         consentite = modalita_consentite()
@@ -438,6 +449,7 @@ class SchedaRegistra(QWidget):
             self.sessione.elimina()
             self.sessione = None
         self.tagliatore = None
+        self._aggiorna_veglia()
 
     # ------------------------------------------------------------ motore di trascrizione (processo separato)
     def _avvia_motore(self):
@@ -555,6 +567,7 @@ class SchedaRegistra(QWidget):
         self._sblocca()
         self.l_rec.setText("")
         self.l_rec.hide()
+        veglia.lascia("registrazione")
         self._mostra_fine(s.concludi() if s else None)
 
     def _mostra_fine(self, out):
@@ -618,3 +631,4 @@ class SchedaRegistra(QWidget):
                 for blocco, voce in self.tagliatore.svuota():
                     self._consegna(blocco, voce)
         self._ferma_motore()
+        veglia.lascia("registrazione")

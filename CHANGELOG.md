@@ -2,6 +2,12 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261120.1152: il computer resta sveglio mentre Argo lavora
+- **Niente sospensione automatica durante i lavori**: mentre Argo trascrive, registra o finisce la Live, scrive una relazione, crea un incontro da file o usa il modello linguistico, il computer non va in sospensione per inattività (Mac: `caffeinate`; Windows: `SetThreadExecutionState`). Lo schermo può spegnersi lo stesso; finito il lavoro, tutto torna come prima. Se Argo si chiude o si blocca, il blocco si toglie da solo.
+- **Sospensione lo stesso** (coperchio chiuso, tasto di accensione): Argo se ne accorge. Una trascrizione fallita per questo torna **In attesa** e riparte da capo una volta; se ricapita, la nota spiega cosa è successo. Negli incontri da file l'errore dice che il computer è andato in sospensione. Nel registro tecnico: «il computer è stato in sospensione per circa N min».
+- La prova di avvio automatica controlla anche il blocco della sospensione su macOS e Windows.
+- Manuale §5.3 e §15 aggiornati.
+
 ## 20261120.1139: licenze verificate e allineamento con licenza commerciale
 - **Allineamento delle parole**: per italiano, francese, tedesco e spagnolo WhisperX usava di base i modelli **VoxPopuli** di torchaudio, con licenza **CC BY-NC 4.0 (non commerciale)**: non adatti a un uso di lavoro. Argo ora usa i modelli wav2vec2 XLSR-53 di Jonatas Grosman, **Apache-2.0** (`app/whisperx_argo.py`), sia nel Trascrittore sia nel Live, anche con il rilevamento automatico della lingua. L'inglese resta il modello di torchaudio, MIT. La prima trascrizione dopo l'aggiornamento scarica il nuovo modello, circa 1,2 GB per lingua, una volta sola.
 - **THIRD_PARTY_LICENSES.md riscritto**: cosa è incluso e cosa si scarica; Python (PSF), FFmpeg (installer e build LGPL del pacchetto Store, con i link ai sorgenti), Ollama, tutti i modelli con licenza e note (pyannote community-1 CC-BY-4.0, Gemma Terms of Use, BGE-M3 MIT, Qwen2.5-VL 7B Apache-2.0, Whisper MIT).

@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261120.1139 · riferita all'app versione 20261120.1139*
+*Versione del manuale: 20261120.1152 · riferita all'app versione 20261120.1152*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -270,6 +270,7 @@ Video: `mp4`, `mov`, `mkv`, `webm`, `m4v`, `avi`, `wmv`: per esempio le registra
 | Interrotta | Fermata da te o dalla chiusura dell'app |
 
 - La coda viene salvata: se chiudi Argo, la ritrovi alla riapertura.
+- **Il computer resta sveglio** finché Argo lavora (trascrizione, registrazione e Live, relazioni, incontri da file, attrezzi con il modello linguistico): niente sospensione automatica per inattività; lo schermo può spegnersi lo stesso. Il **coperchio chiuso** o il **tasto di accensione** mandano comunque il computer in sospensione: se succede durante una trascrizione, Argo se ne accorge e la **rimette in coda da sola una volta**, ripartendo da capo appena il computer si risveglia. Per i lavori lunghi tieni il portatile aperto e alla corrente.
 - **Tasto destro** su una riga apre un menu con tutte le azioni: trascrizione, nomi, Word, verbale, Marca voci, rimetti in coda, cartella, rimuovi. **Canc** (o ⌫ sul Mac) rimuove le righe selezionate.
 - **■ Ferma coda** interrompe il file in lavorazione e chiude tutti i processi di WhisperX. Se premi subito di nuovo *Avvia*, Argo può chiederti di attendere qualche secondo che la chiusura finisca.
 - **Rimetti in coda** riporta in *In attesa* un file con errore o interrotto. Su una trascrizione completata ti chiede se rifare **solo i parlanti** o **tutta la trascrizione**. **Rimuovi** toglie il file dalla lista senza cancellarlo.
@@ -1032,6 +1033,7 @@ Il disinstallatore:
 | Il microfono non registra | Permessi negati | Vedi [§9](#9-dettatura) |
 | "Tratti troppo corti" in *Marca voci* | Meno di 10 secondi marcati per una persona | Marca altri tratti in cui parla solo lei |
 | L'impronta da *Marca voci* riconosce male | Nei tratti ci sono voci sovrapposte o rumore | Elimina la voce, rimarca solo tratti puliti, aggiungi un campione con *Registra voce* |
+| Trascrizione in **Errore** dopo che il computer è andato in sospensione (fino alla 1139) | La sospensione ferma WhisperX a metà | Aggiorna: dalla 1152 Argo tiene sveglio il computer mentre lavora e, se lo chiudi lo stesso, rimette la trascrizione in coda. Con il portatile chiuso il computer va comunque in sospensione: tienilo aperto e alla corrente |
 | Trascrizione molto lenta | CPU, modello `large-v3`, PC ARM | Passa a `large-v3-turbo` o `medium`; su NVIDIA usa CUDA |
 | Il Mac Intel non installa | Non supportato | Serve un Mac Apple Silicon o un PC Windows |
 | Righe *Interrotta* che non si riescono a rimuovere o rimettere in coda (versioni fino alla 1910) | Un'elaborazione fermata restava agganciata alla coda | Chiudi e riapri Argo, poi aggiorna alla 1930 o successiva |

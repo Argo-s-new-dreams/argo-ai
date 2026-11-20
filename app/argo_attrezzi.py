@@ -27,6 +27,7 @@ import etica
 import llm_locale as llm
 import risorse
 import tema
+import veglia
 import voci_core as core
 
 ESEMPI = Path(__file__).resolve().parent / "esempi"
@@ -142,7 +143,9 @@ class Lavoro(QThread):
     def run(self):
         cloud.imposta_attrezzo(self.attrezzo)
         try:
-            self.sig_fine.emit(self.fn(self))
+            with veglia.tieni(self.attrezzo or "attrezzo"):
+                risultato = self.fn(self)
+            self.sig_fine.emit(risultato)
         except Exception as e:
             self.sig_errore.emit(str(e))
 

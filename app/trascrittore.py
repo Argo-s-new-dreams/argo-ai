@@ -12,7 +12,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261120.1139"
+VERSIONE = "20261120.1152"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -42,6 +42,7 @@ import cloud  # noqa: E402
 import disinstalla  # noqa: E402
 import supporto  # noqa: E402
 import consenso_voci  # noqa: E402
+import veglia  # noqa: E402
 
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma",
              ".mp4", ".mov", ".mkv", ".webm", ".m4v", ".avi", ".wmv"}
@@ -95,8 +96,9 @@ class ProcessWorker(QThread):
         self.interrotto = False
 
     def run(self):
-        # profilo Leggero: un lavoro pesante alla volta, e la RAM di Ollama liberata prima di trascrivere
-        with risorse.turno(on_attesa=self.riga.emit):
+        # niente sospensione automatica finché lavora; profilo Leggero: un lavoro pesante alla volta,
+        # e la RAM di Ollama liberata prima di trascrivere
+        with veglia.tieni("trascrizione"), risorse.turno(on_attesa=self.riga.emit):
             if self.interrotto:  # «Ferma» premuto mentre aspettava il turno
                 self.finito.emit(-1)
                 return
@@ -849,12 +851,20 @@ class Finestra(QMainWindow):
                 try:
                     out, mappa, _, _ = core.identifica(fj)
                     nomi = sorted(set(mappa.values()))
+                    job.pop("ripresa_sospensione", None)
                     job.update(stato="Completata", progresso=100, json=str(fj), txt=str(out),
                                nota=f"{minuti} min - " + ", ".join(nomi))
                 except Exception as e:
                     job.update(stato="Errore", nota=f"identificazione voci: {e}")
+            elif veglia.sospeso_dal(self.t_inizio) and not job.get("ripresa_sospensione"):
+                # il computer ha dormito (coperchio chiuso, tasto di accensione): si riparte da capo, una volta
+                job.update(stato="In attesa", progresso=0, ripresa_sospensione=True,
+                           nota="ripresa dopo la sospensione del computer")
+                diagnostica.coda_processo(getattr(self, "_log_job", []),
+                                          motivo=f"codice di uscita {codice} dopo una sospensione: rimessa in coda")
             else:
                 job.update(stato="Errore", nota=self._spiega_errore(), progresso=0)
+                job.pop("ripresa_sospensione", None)
                 diagnostica.coda_processo(getattr(self, "_log_job", []), motivo=f"codice di uscita {codice}")
         if job["stato"] == "Completata":
             diagnostica.log.info("trascrizione: completata in %d min · parlanti %d", minuti,
@@ -870,6 +880,9 @@ class Finestra(QMainWindow):
 
     def _spiega_errore(self):
         log = "\n".join(getattr(self, "_log_job", []))
+        if veglia.sospeso_dal(self.t_inizio):
+            return ("il computer è andato in sospensione due volte durante la trascrizione: "
+                    "tienilo acceso e alla corrente, poi rimetti in coda")
         if "401" in log and "huggingface" in log.lower():
             return "token Hugging Face non valido (verifica nelle Impostazioni)"
         if "403" in log or "gated" in log.lower():

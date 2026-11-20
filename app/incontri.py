@@ -8,6 +8,7 @@ import re
 import json
 import sys
 import threading
+import time
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, QTimer, QUrl, Signal
@@ -29,6 +30,7 @@ import ponte as pt
 import relazione_incontro as rel
 import tema
 import template_relazione as tpl
+import veglia
 import voci_core as core
 
 FILE_CODA = core.APP_HOME / "incontri_coda.json"
@@ -78,7 +80,8 @@ class LavoroRelazione(QObject):
         self._passi = 1
         cartella, sessione, url, testo, vision = self.argomenti
         try:
-            with diagnostica.misura("relazione incontro", modello=testo, foto=vision or None):
+            with veglia.tieni("relazione"), diagnostica.misura("relazione incontro", modello=testo,
+                                                               foto=vision or None):
                 rel.scrivi_relazione(cartella, sessione, url, testo, vision, stato=self._stato_trace,
                                      stop=lambda: self._stop, avanzamento=self.sig_avanzamento.emit,
                                      template=self.template)
@@ -128,13 +131,18 @@ class LavoroFile(QObject):
             if self._stop:
                 break
             prefisso = f"[{n} di {totale}] " if totale > 1 else ""
+            inizio = time.time()
             try:
-                with diagnostica.misura("incontro da file", operazione=op[0],
+                with veglia.tieni("incontro da file"), diagnostica.misura("incontro da file", operazione=op[0],
                                         file=diagnostica.descrivi_file(op[1]) if op[0] == "nuovo" else f"{len(op[2])} file"):
                     self._esegui(op, prefisso)
             except Exception as e:
                 nome = Path(op[1]).name if op[0] == "nuovo" else "incontro"
-                self.sig_errore.emit(nome, "Interrotto" if self._stop else str(e))
+                errore = "Interrotto" if self._stop else str(e)
+                if not self._stop and veglia.sospeso_dal(inizio):
+                    errore = ("il computer è andato in sospensione durante il lavoro (coperchio chiuso o tasto di "
+                              "accensione): riprova tenendolo acceso. Dettaglio: " + errore)
+                self.sig_errore.emit(nome, errore)
         self.sig_fine.emit()
 
     def _esegui(self, op, prefisso):
