@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261120.1206 · riferita all'app versione 20261120.1206*
+*Versione del manuale: 20261120.1230 · riferita all'app versione 20261120.1230*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -425,7 +425,7 @@ Non è un client di posta completo: è un **assistente** accanto a Outlook. Most
 
 Una base di conoscenza che cresce a ogni incontro e ti aiuta nel lavoro: domande da fare e temi da toccare, prima e durante le interviste. Segue il metodo **CODE**: *cattura, organizza, distilla, esprimi*. È **facoltativo e spento** finché non lo attivi dalla pagina **Secondo cervello**; l'IT può vietarlo (`"secondo_cervello": false`).
 
-Arriva a blocchi. **In questa versione c'è la parte «Organizza»**: con chi parli in ogni incontro. La base anonimizzata e i suggerimenti arrivano nelle prossime versioni.
+Arriva a blocchi. **In questa versione ci sono «Organizza»** (con chi parli in ogni incontro) **e «Distilla»** (i fatti di lavoro nella Base, anonimi). I suggerimenti prima e durante gli incontri arrivano nella prossima versione.
 
 ### Con chi stai parlando?
 
@@ -448,11 +448,26 @@ La pagina **Secondo cervello** ha tre schede:
 
 **🔎 Cataloga dal web** (nella scheda di un'azienda) propone le categorie: usa la scheda pubblica già preparata nella pagina *Clienti*, se c'è, altrimenti la ricerca web (serve la chiave in *Impostazioni › Collegamenti › Ricerca web*; l'uscita compare in *Cosa è uscito da questo computer*). Il modello sceglie solo tra le categorie ammesse e scrive «Non nota» se le fonti non bastano. Le note passano dal filtro etico. **Controlla sempre prima di salvare.** Sulle persone non si cerca mai nulla.
 
+### Distilla e la Base
+
+Nella scheda **Incontri**, **✨ Distilla** lavora sugli incontri selezionati, **✨ Distilla i nuovi** su tutti quelli catalogati non ancora nella Base. Serve il testo: per un file in *Trascrivi* la trascrizione con i nomi (`…_nomi.txt`), per la Live la trascrizione salvata, per un incontro dall'iPhone relazione e trascrizione. Il computer resta sveglio finché lavora; **■ Ferma** si ferma dopo il passo in corso.
+
+Il **modello su questo computer** (Ollama, mai un modello cloud) estrae: sintesi, temi, esigenze, problemi, come lavorano oggi, decisioni, **domande che hanno funzionato** (riformulate in modo generale) e punti aperti. Le trascrizioni lunghe si distillano a pezzi e poi si uniscono.
+
+**Anonimizzazione irreversibile, in tre passi:**
+
+1. Prima che il modello legga, Argo toglie i nomi che conosce: azienda dell'incontro e tutte quelle del catalogo (anche le parole distintive, «Rossi Valvole Srl» → anche «Rossi» e «Valvole»), siti, parlanti della trascrizione (diventano «Persona 1, 2…»), partecipanti e voci dell'anagrafe; poi mail, telefoni, siti e partite IVA.
+2. Il modello scrive al posto dei nomi le categorie («un'azienda manifatturiera», «il responsabile IT»). Nomi di software, tecnologie e standard restano (per esempio Microsoft 365, SAP, ISO 9001).
+3. Sul risultato Argo ripete il controllo dei nomi noti e chiede di nuovo al modello se restano nomi propri di persone, aziende, enti o località più piccole di una regione: quelli trovati diventano «[…]». Poi il filtro etico.
+
+Ogni voce della **Base** contiene solo: mese, categorie dell'azienda, funzioni e contenuti. Nessun titolo, percorso o identificativo dell'incontro: da una voce non si risale all'incontro. Solo la scheda dell'incontro, nell'archivio locale, ricorda che è già stato distillato (colonna **Base**); distillarlo di nuovo sostituisce la voce. Nella scheda **Base** puoi leggere, **modificare** (Argo ripassa anonimizzazione e filtro etico) ed **eliminare** ogni voce. Se c'è il modello per i Documenti (bge-m3), Argo calcola anche l'embedding che servirà ai suggerimenti.
+
 ### Regole
 
 - Tutto resta **su questo computer**, in `whisperx-env/secondo_cervello/` (§12).
-- Nella base per i suggerimenti, che arriva dopo, entreranno **solo fatti utili al lavoro**, anonimizzati in modo **irreversibile**: niente nomi di persone o aziende, niente questioni personali, giudizi sulle persone o espressioni non rispettose.
-- **Spegni…** chiede se tenere o cancellare cataloghi e schede. Gli incontri e le trascrizioni restano comunque dove sono.
+- Nella Base entrano **solo fatti utili al lavoro**, anonimizzati in modo **irreversibile**: niente nomi di persone o aziende, niente questioni personali, giudizi sulle persone o espressioni non rispettose.
+- Il controllo dei nomi è automatico e prudente, ma non infallibile: **rileggi le voci** prima di usarle con altri.
+- **Spegni…** chiede se tenere o cancellare cataloghi, schede e Base. Gli incontri e le trascrizioni restano comunque dove sono.
 
 ## 6. Voci (anagrafe voci)
 
@@ -944,7 +959,7 @@ Puoi spostarla impostando la variabile d'ambiente `TRASCRITTORE_HOME`.
 | `glossario.csv` | Glossario di traduzione |
 | `log/` | Registro di Argo (§11.6): solo dati tecnici, al massimo circa 20 MB |
 | `app_precedente/`, `app_scartata/` | La versione di prima, salvata a ogni aggiornamento dall'app, e quella lasciata quando torni indietro (§11.6) |
-| `secondo_cervello/` | Solo se attivi il Secondo cervello (§5quinquies): `aziende.json`, `funzioni.json` (ruoli, mai nomi), `incontri.json` (con chi in ogni incontro) |
+| `secondo_cervello/` | Solo se attivi il Secondo cervello (§5quinquies): `aziende.json`, `funzioni.json` (ruoli, mai nomi), `incontri.json` (con chi in ogni incontro), `base.json` e `base_vettori.npz` (la Base anonima e i suoi embedding) |
 | `live/<sessione>/` | Solo durante una sessione Live: blocchi audio in attesa di trascrizione e testo già trascritto. Si svuota da sola a fine sessione |
 
 Trascrizioni e verbali vengono salvati **accanto ai file audio**, non in questa cartella. I modelli scaricati stanno nelle cache di Hugging Face e di Ollama.

@@ -8,22 +8,24 @@ from pathlib import Path
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QFrame, QHBoxLayout, QHeaderView, QLabel,
-    QLineEdit, QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton, QTableWidget,
-    QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
+    QLineEdit, QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton, QSplitter, QTableWidget,
+    QTableWidgetItem, QTabWidget, QTextBrowser, QVBoxLayout, QWidget,
 )
 
+import cervello_base as base
 import secondo_cervello as sc
+import veglia
 
 SPIEGAZIONE = (
     "<b>Il Secondo cervello</b> fa crescere a ogni incontro una base di conoscenza che poi ti aiuta: domande da fare "
     "e temi da toccare, prima e durante le interviste (metodo CODE: cattura, organizza, distilla, esprimi).<br><br>"
-    "<b>Per ora c'è la parte «Organizza»</b>: all'inizio di un incontro Argo ti chiede <b>con chi stai parlando</b>. "
-    "Le aziende finiscono in un catalogo (settore, dimensione, attività, area), compilato a mano o con la ricerca "
-    "web. Le persone <b>non</b> si catalogano per nome: solo per <b>funzione</b> (ruolo, area, livello), e su di "
-    "loro non si cerca nulla sul web.<br><br>"
-    "Tutto resta <b>su questo computer</b>. La base per i suggerimenti, che arriva nelle prossime versioni, sarà "
-    "anonimizzata in modo irreversibile e conterrà solo fatti utili al lavoro: mai questioni personali, giudizi "
-    "sulle persone o espressioni non rispettose.")
+    "<b>Organizza</b>: all'inizio di un incontro Argo ti chiede <b>con chi stai parlando</b>. Le aziende finiscono in "
+    "un catalogo (settore, dimensione, attività, area); le persone <b>non</b> si catalogano per nome, solo per "
+    "<b>funzione</b>, e su di loro non si cerca nulla sul web.<br>"
+    "<b>Distilla</b>: dagli incontri catalogati il modello locale estrae solo fatti utili al lavoro e li salva nella "
+    "<b>Base</b>, anonimizzati in modo <b>irreversibile</b>: niente nomi, niente collegamento all'incontro, niente "
+    "questioni personali o giudizi sulle persone.<br>"
+    "Tutto resta <b>su questo computer</b>. I suggerimenti prima e durante gli incontri arrivano nella prossima versione.")
 
 
 class _Lavoro(QObject):
@@ -34,6 +36,7 @@ class _Lavoro(QObject):
     def __init__(self, fn, parent=None):
         super().__init__(parent)
         self.fn = fn
+        self.fermato = False
 
     def start(self):
         threading.Thread(target=self._run, daemon=True, name="argo-cervello").start()
@@ -363,11 +366,53 @@ class PaginaCervello(QWidget):
         # incontri
         w = QWidget()
         wl = QVBoxLayout(w)
-        self.t_incontri = _tabella(["Data", "Titolo", "Da", "Azienda", "Persone (funzioni)"])
+        self.t_incontri = _tabella(["Data", "Titolo", "Da", "Azienda", "Persone (funzioni)", "Base"])
+        self.t_incontri.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.t_incontri.doubleClicked.connect(self.modifica_incontro)
         wl.addWidget(self.t_incontri, 1)
-        wl.addLayout(self._comandi([("Modifica…", self.modifica_incontro), ("Togli la scheda", self.togli_incontro)]))
+        riga = QHBoxLayout()
+        self.l_lavoro = QLabel("")
+        self.l_lavoro.setProperty("ruolo", "tenue")
+        self.l_lavoro.setWordWrap(True)
+        riga.addWidget(self.l_lavoro, 1)
+        self.b_distilla = QPushButton("✨ Distilla")
+        self.b_distilla.setToolTip("Estrae i fatti di lavoro dagli incontri selezionati e li salva, anonimi, nella Base. "
+                                   "Solo con il modello su questo computer.")
+        self.b_distilla.clicked.connect(lambda: self.distilla(False))
+        self.b_nuovi = QPushButton("✨ Distilla i nuovi")
+        self.b_nuovi.setToolTip("Tutti gli incontri catalogati non ancora nella Base")
+        self.b_nuovi.clicked.connect(lambda: self.distilla(True))
+        self.b_ferma = QPushButton("■ Ferma")
+        self.b_ferma.hide()
+        self.b_ferma.clicked.connect(self.ferma)
+        for b in (self.b_distilla, self.b_nuovi, self.b_ferma):
+            riga.addWidget(b)
+        for testo, azione in (("Modifica…", self.modifica_incontro), ("Togli la scheda", self.togli_incontro)):
+            b = QPushButton(testo)
+            b.clicked.connect(azione)
+            riga.addWidget(b)
+        wl.addLayout(riga)
         self.schede.addTab(w, "Incontri")
+        # base
+        w = QWidget()
+        wl = QVBoxLayout(w)
+        nota = QLabel("Solo fatti di lavoro, anonimi: categoria dell'azienda, funzioni, mese. Nessun nome e nessun "
+                      "collegamento all'incontro di origine. Puoi correggere o eliminare ogni voce.")
+        nota.setProperty("ruolo", "tenue")
+        nota.setWordWrap(True)
+        wl.addWidget(nota)
+        div = QSplitter(Qt.Vertical)
+        self.t_base = _tabella(["Mese", "Contesto", "Sintesi"])
+        self.t_base.itemSelectionChanged.connect(self._mostra_voce)
+        self.t_base.doubleClicked.connect(self.modifica_voce)
+        div.addWidget(self.t_base)
+        self.v_base = QTextBrowser()
+        div.addWidget(self.v_base)
+        div.setSizes([260, 240])
+        wl.addWidget(div, 1)
+        wl.addLayout(self._comandi([("Modifica…", self.modifica_voce), ("Elimina", self.elimina_voce)]))
+        self.schede.addTab(w, "Base")
+        self._scheda_base = w
         # aziende
         w = QWidget()
         wl = QVBoxLayout(w)
@@ -422,7 +467,8 @@ class PaginaCervello(QWidget):
                                     Path(i.get("riferimento", "")).name, sc.ORIGINI.get(i.get("origine"), ""),
                                     (aziende.get(i.get("azienda")) or {}).get("nome", ""),
                                     "; ".join(sc.descrivi_funzione(funzioni.get(f)) for f in i.get("funzioni", [])
-                                              if funzioni.get(f))], i["id"])
+                                              if funzioni.get(f)),
+                                    "✓" if i.get("base") and base.voce(i["base"]) else ""], i["id"])
         self.t_aziende.setRowCount(0)
         for a in aziende.values():
             _riga(self.t_aziende, [a.get("nome"), a.get("settore"), a.get("dimensione"), a.get("tipo_attivita"),
@@ -430,16 +476,23 @@ class PaginaCervello(QWidget):
         self.t_funzioni.setRowCount(0)
         for f in funzioni.values():
             _riga(self.t_funzioni, [f.get("ruolo"), f.get("area"), f.get("livello"), uso_f.get(f["id"], 0)], f["id"])
-        for t in (self.t_incontri, self.t_aziende, self.t_funzioni):
+        self.t_base.setRowCount(0)
+        for v in sorted(base.voci(), key=lambda x: x.get("mese", ""), reverse=True):
+            _riga(self.t_base, [v.get("mese"), base.descrivi(v), (v.get("contenuti") or {}).get("sintesi", "")], v["id"])
+        self.v_base.clear()
+        self.schede.setTabText(self.schede.indexOf(self._scheda_base), f"Base ({self.t_base.rowCount()})")
+        for t in (self.t_incontri, self.t_aziende, self.t_funzioni, self.t_base):
             t.resizeColumnsToContents()
+        self.t_base.setColumnWidth(2, 600)
 
     def cambia(self):
         if not sc.attivo():
             sc.imposta(True)
         else:
             box = QMessageBox(QMessageBox.Question, "Spegnere il Secondo cervello?",
-                              "Spento, Argo non chiede più con chi parli. Cosa faccio dei cataloghi e delle schede "
-                              "degli incontri? Gli incontri e le trascrizioni restano dove sono.", parent=self)
+                              "Spento, Argo non chiede più con chi parli. Cosa faccio dei cataloghi, delle schede "
+                              "degli incontri e della Base? Gli incontri e le trascrizioni restano dove sono.",
+                              parent=self)
             b_tieni = box.addButton("Spegni e tieni i dati", QMessageBox.AcceptRole)
             b_canc = box.addButton("Spegni e cancella tutto", QMessageBox.DestructiveRole)
             box.addButton("Annulla", QMessageBox.RejectRole)
@@ -467,6 +520,98 @@ class PaginaCervello(QWidget):
         if id_ and QMessageBox.question(self, "Togliere la scheda?", "Tolgo solo azienda e funzioni collegate a "
                                         "questo incontro; l'incontro resta.") == QMessageBox.Yes:
             sc.elimina_interlocutori(id_)
+            self.aggiorna()
+
+    # -- distillazione
+    def distilla(self, nuovi):
+        if getattr(self, "_lavoro", None):
+            return
+        if nuovi:
+            schede = [i for i in sc.incontri() if not (i.get("base") and base.voce(i["base"]))]
+        else:
+            righe = sorted({x.row() for x in self.t_incontri.selectedIndexes()})
+            ids = [self.t_incontri.item(r, 0).data(Qt.UserRole) for r in righe if self.t_incontri.item(r, 0)]
+            schede = [sc.interlocutori_di(i) for i in ids if sc.interlocutori_di(i)]
+        if not schede:
+            QMessageBox.information(self, "Distilla", "Nessun incontro da distillare." if nuovi else
+                                    "Seleziona uno o più incontri.")
+            return
+        rifare = [s for s in schede if s.get("base") and base.voce(s["base"])]
+        if rifare and QMessageBox.question(self, "Distillare di nuovo?", f"{len(rifare)} incontri sono già nella Base: "
+                                           "la voce vecchia viene sostituita. Procedo?") != QMessageBox.Yes:
+            return
+        lavoro = _Lavoro(lambda stato: self._distilla_tutti(schede, stato), self)
+        self._lavoro = lavoro
+        lavoro.sig_stato.connect(self.l_lavoro.setText)
+        lavoro.sig_fine.connect(self._fine_distilla)
+        lavoro.sig_errore.connect(self._fine_distilla)
+        for b in (self.b_distilla, self.b_nuovi):
+            b.setEnabled(False)
+        self.b_ferma.show()
+        lavoro.start()
+
+    def _distilla_tutti(self, schede, stato):
+        fatti, errori = 0, []
+        with veglia.tieni("secondo cervello"):
+            for n, s in enumerate(schede, 1):
+                if self._lavoro.fermato:
+                    break
+                prefisso = f"[{n} di {len(schede)}] " if len(schede) > 1 else ""
+                try:
+                    base.distilla(s, stato=lambda testo: stato(prefisso + testo), stop=lambda: self._lavoro.fermato)
+                    fatti += 1
+                except Exception as e:
+                    errori.append(f"«{s.get('titolo') or 'incontro'}»: {e}")
+        esito = f"Nella Base: {fatti} incontri." if fatti else "Nessun incontro aggiunto alla Base."
+        return esito + ("\n" + "\n".join(errori) if errori else "")
+
+    def _fine_distilla(self, esito):
+        self._lavoro = None
+        for b in (self.b_distilla, self.b_nuovi):
+            b.setEnabled(True)
+        self.b_ferma.hide()
+        self.l_lavoro.setText(str(esito).split("\n")[0])
+        if "\n" in str(esito):
+            QMessageBox.information(self, "Distilla", str(esito))
+        self.aggiorna()
+
+    def ferma(self):
+        if getattr(self, "_lavoro", None):
+            self._lavoro.fermato = True
+            self.l_lavoro.setText("Mi fermo dopo il passo in corso…")
+
+    # -- base
+    def _mostra_voce(self):
+        v = base.voce(_id_selezionato(self.t_base))
+        self.v_base.setMarkdown(f"*{v.get('mese', '')} · {base.descrivi(v)}*\n\n" + base.in_testo(v) if v else "")
+
+    def modifica_voce(self, *_):
+        v = base.voce(_id_selezionato(self.t_base))
+        if not v:
+            return
+        d = QDialog(self)
+        d.setWindowTitle("Voce della Base")
+        d.resize(640, 520)
+        lay = QVBoxLayout(d)
+        nota = QLabel("Correggi o togli le voci; mantieni i titoli «## …» e i trattini. Al salvataggio Argo ripassa "
+                      "l'anonimizzazione e il filtro etico.")
+        nota.setWordWrap(True)
+        lay.addWidget(nota)
+        e = QPlainTextEdit(base.in_testo(v))
+        lay.addWidget(e, 1)
+        bb = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        bb.accepted.connect(d.accept)
+        bb.rejected.connect(d.reject)
+        lay.addWidget(bb)
+        if d.exec() == QDialog.Accepted:
+            base.modifica_voce(v["id"], e.toPlainText())
+            self.aggiorna()
+
+    def elimina_voce(self):
+        id_ = _id_selezionato(self.t_base)
+        if id_ and QMessageBox.question(self, "Eliminare la voce?", "La voce sparisce dalla Base. L'incontro di "
+                                        "origine resta e si può distillare di nuovo.") == QMessageBox.Yes:
+            base.elimina_voce(id_)
             self.aggiorna()
 
     # -- aziende
