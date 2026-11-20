@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261120.1152 · riferita all'app versione 20261120.1152*
+*Versione del manuale: 20261120.1206 · riferita all'app versione 20261120.1206*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -21,7 +21,7 @@ Audio, documenti e testi non vengono mai inviati a servizi cloud.
 2. [Requisiti](#2-requisiti)
 3. [Installazione](#3-installazione)
 4. [Primo avvio e configurazione](#4-primo-avvio-e-configurazione) · [L'interfaccia](#4bis-linterfaccia) · [Registra](#4ter-registra)
-5. [Trascrittore](#5-trascrittore) · [Incarichi](#5bis-incarichi) · [Agenda](#5ter-agenda) · [Posta AI](#5quater-posta-ai)
+5. [Trascrittore](#5-trascrittore) · [Incarichi](#5bis-incarichi) · [Agenda](#5ter-agenda) · [Posta AI](#5quater-posta-ai) · [Secondo cervello](#5quinquies-secondo-cervello)
 6. [Anagrafe voci](#6-anagrafe-voci)
 7. [Verbale](#7-verbale)
 8. [Documenti riservati](#8-documenti-riservati)
@@ -420,6 +420,39 @@ Non è un client di posta completo: è un **assistente** accanto a Outlook. Most
 | **Segna come letta** · **Apri in Outlook** | Come in Outlook. Gli allegati si aprono in Outlook. |
 
 **Privacy:** il testo delle mail arriva dal tuo tenant Microsoft 365 al tuo computer e viene elaborato dal **modello locale** (Ollama). Non passa da nessun servizio AI esterno e Argo non conserva le mail su disco. La lettura è **disattivata** finché non la attivi.
+
+## 5quinquies. Secondo cervello
+
+Una base di conoscenza che cresce a ogni incontro e ti aiuta nel lavoro: domande da fare e temi da toccare, prima e durante le interviste. Segue il metodo **CODE**: *cattura, organizza, distilla, esprimi*. È **facoltativo e spento** finché non lo attivi dalla pagina **Secondo cervello**; l'IT può vietarlo (`"secondo_cervello": false`).
+
+Arriva a blocchi. **In questa versione c'è la parte «Organizza»**: con chi parli in ogni incontro. La base anonimizzata e i suggerimenti arrivano nelle prossime versioni.
+
+### Con chi stai parlando?
+
+Con il Secondo cervello attivo, prima di ogni registrazione (*Registra*, Live o archivio) Argo chiede:
+
+- **Azienda**: scegli dal catalogo o creane una nuova. Puoi anche lasciare «nessuna o non lo so».
+- **Persone, per funzione**: ruolo, area e livello (per esempio *Responsabile IT · Informatica · Responsabile*). **Niente nomi**: le persone si catalogano per funzione, non per identità.
+
+Puoi sempre premere **Salta** e completare dopo. Per gli incontri dall'iPhone e i file in *Trascrivi* lo stesso dialogo si apre dal menu del tasto destro: **🧠 Con chi stai parlando?…**. Se un file registrato in archivio finisce in coda, la scheda lo segue; per la Live passa alla trascrizione salvata.
+
+### I cataloghi
+
+La pagina **Secondo cervello** ha tre schede:
+
+| Scheda | Cosa contiene |
+| --- | --- |
+| **Incontri** | Gli incontri catalogati: data, titolo, da dove arriva, azienda e funzioni. **Modifica…** riapre il dialogo; **Togli la scheda** scollega azienda e funzioni (l'incontro resta) |
+| **Aziende** | Nome, sito, settore, dimensione, tipo di attività, area geografica, note, e in quanti incontri compare |
+| **Funzioni** | Ruolo, area, livello, e in quanti incontri compare. Una funzione uguale a una già presente non si duplica |
+
+**🔎 Cataloga dal web** (nella scheda di un'azienda) propone le categorie: usa la scheda pubblica già preparata nella pagina *Clienti*, se c'è, altrimenti la ricerca web (serve la chiave in *Impostazioni › Collegamenti › Ricerca web*; l'uscita compare in *Cosa è uscito da questo computer*). Il modello sceglie solo tra le categorie ammesse e scrive «Non nota» se le fonti non bastano. Le note passano dal filtro etico. **Controlla sempre prima di salvare.** Sulle persone non si cerca mai nulla.
+
+### Regole
+
+- Tutto resta **su questo computer**, in `whisperx-env/secondo_cervello/` (§12).
+- Nella base per i suggerimenti, che arriva dopo, entreranno **solo fatti utili al lavoro**, anonimizzati in modo **irreversibile**: niente nomi di persone o aziende, niente questioni personali, giudizi sulle persone o espressioni non rispettose.
+- **Spegni…** chiede se tenere o cancellare cataloghi e schede. Gli incontri e le trascrizioni restano comunque dove sono.
 
 ## 6. Voci (anagrafe voci)
 
@@ -911,6 +944,7 @@ Puoi spostarla impostando la variabile d'ambiente `TRASCRITTORE_HOME`.
 | `glossario.csv` | Glossario di traduzione |
 | `log/` | Registro di Argo (§11.6): solo dati tecnici, al massimo circa 20 MB |
 | `app_precedente/`, `app_scartata/` | La versione di prima, salvata a ogni aggiornamento dall'app, e quella lasciata quando torni indietro (§11.6) |
+| `secondo_cervello/` | Solo se attivi il Secondo cervello (§5quinquies): `aziende.json`, `funzioni.json` (ruoli, mai nomi), `incontri.json` (con chi in ogni incontro) |
 | `live/<sessione>/` | Solo durante una sessione Live: blocchi audio in attesa di trascrizione e testo già trascritto. Si svuota da sola a fine sessione |
 
 Trascrizioni e verbali vengono salvati **accanto ai file audio**, non in questa cartella. I modelli scaricati stanno nelle cache di Hugging Face e di Ollama.
@@ -1064,6 +1098,7 @@ Se un file va in **Errore**, il registro tecnico sotto la coda di *Trascrivi* (c
 - **Modalità Live = minimizzazione dei dati** (art. 5, par. 1, lett. c GDPR): l'audio esiste solo per il tempo necessario a trascriverlo. È la scelta consigliata per le riunioni di lavoro. Tieni comunque attiva la cifratura del disco (FileVault, BitLocker): sugli SSD la sovrascrittura di un file cancellato non garantisce che il dato sparisca fisicamente.
 - **Non conserva la voce, di base.** *Registra* parte in **Live**; **Archivia** è una scelta che fai ogni volta, con la conferma dell'informativa, e l'IT può toglierla (`"registrazione": "solo_live"`).
 - **Non profila gli interlocutori, di base.** Il riconoscimento delle voci è spento finché non lo attivi, e ogni voce si usa solo con il consenso registrato della persona (§6). Le impronte vocali sono dati biometrici (art. 9 GDPR): cancellale quando non servono più (**Elimina** nell'Anagrafe).
+- **Secondo cervello, facoltativo e spento di base** (§5quinquies): le aziende si catalogano per categoria, le persone solo per funzione (mai nomi, mai ricerche sul web). Resta tutto sul computer; l'IT può vietarlo.
 - **Solo fatti di lavoro nei testi generati:** relazioni, verbali e riassunti non riportano questioni personali, giudizi sulle persone o linguaggio offensivo (filtro etico, §11.4ter).
 - **Documenti riservati:** l'indice contiene estratti testuali dei documenti. Proteggi il computer (cifratura del disco, account con password) come faresti con gli originali.
 

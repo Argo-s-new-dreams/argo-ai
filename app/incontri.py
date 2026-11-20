@@ -28,6 +28,8 @@ import llm_locale as llm
 import diagnostica
 import ponte as pt
 import relazione_incontro as rel
+import secondo_cervello as cervello
+import secondo_cervello_ui as cervello_ui
 import tema
 import template_relazione as tpl
 import veglia
@@ -258,6 +260,12 @@ class EditorTemplate(QWidget):
     def _id_corrente(self):
         it = self.elenco.currentItem()
         return it.data(Qt.UserRole) if it else None
+
+    def con_chi(self):
+        cartella, d = self._corrente()
+        if cartella:
+            titolo = rel.carica(cartella).get("relazione", {}).get("titolo") or (d or {}).get("titolo", "")
+            cervello_ui.collega(self, cartella, titolo, "incontro")
 
     def _mostra(self, _riga):
         t = tpl.trova(self._id_corrente())
@@ -959,6 +967,8 @@ class SchedaIncontri(QWidget):
         m = QMenu(self)
         m.addAction("✨ Scrivi relazione", self.scrivi_relazione)
         m.addAction("📎 Aggiungi file…", self.aggiungi_file)
+        if cervello.attivo():
+            m.addAction("🧠 Con chi stai parlando?…", self.con_chi)
         if any(c.name in self.coda for c, _d in self._selezionati()):
             m.addAction("Togli dalla coda", self.togli_dalla_coda)
         m.addSeparator()
