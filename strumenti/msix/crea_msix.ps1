@@ -48,7 +48,10 @@ Passo "FFmpeg LGPL (build condivisa: serve anche a torchcodec)"
 $zip = Join-Path $Lavoro "ffmpeg.zip"
 $rel = Invoke-RestMethod "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest"
 $asset = $rel.assets | Where-Object { $_.name -match $ModelloFfmpeg } | Sort-Object name | Select-Object -Last 1
-if (-not $asset) { throw "FFmpeg 7.x LGPL condiviso non trovato tra i file di BtbN/FFmpeg-Builds" }
+if (-not $asset) {
+    $rel.assets.name | Where-Object { $_ -like "*win64-lgpl-shared*" } | ForEach-Object { Write-Host "  disponibile: $_" }
+    throw "FFmpeg 7.x LGPL condiviso non trovato tra i file di BtbN/FFmpeg-Builds"
+}
 Write-Host "  $($asset.name)"
 Invoke-WebRequest $asset.browser_download_url -OutFile $zip
 Write-Host "  SHA-256 FFmpeg: $((Get-FileHash $zip -Algorithm SHA256).Hash)"
