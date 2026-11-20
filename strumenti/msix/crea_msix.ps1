@@ -99,6 +99,11 @@ print('OK Argo', trascrittore.VERSIONE, '| torch', torch.__version__, '| ffmpeg'
     Pop-Location
 }
 
+Passo "Cartelle superflue che MSIX non accetta"
+# python-docx: la cartella sorgente del modello contiene [Content_Types].xml, nome riservato in MSIX.
+# A Argo serve solo templates\default.docx, che resta.
+Remove-Item (Join-Path $Pkg "python\Lib\site-packages\docx\templates\default-docx-template") -Recurse -Force -ErrorAction SilentlyContinue
+
 Passo "Nomi di file che MSIX non accetta (CON, AUX, NUL, COM1..., spazi o punti finali, caratteri riservati)"
 & $Py -c @"
 import os, re, sys
@@ -107,7 +112,9 @@ vietati = re.compile(r'[<>:"|?*%]')
 radice = sys.argv[1]; trovati = []
 for cart, dirs, files in os.walk(radice):
     for n in dirs + files:
-        if riservati.match(n) or n.endswith((' ', '.')) or vietati.search(n):
+        if (riservati.match(n) or n.endswith((' ', '.')) or vietati.search(n)
+                or n.lower() in ('[content_types].xml', 'appxblockmap.xml', 'appxsignature.p7x', 'appxmetadata')
+                or (n.lower() == 'appxmanifest.xml' and cart != radice)):
             trovati.append(os.path.relpath(os.path.join(cart, n), radice))
 for t in trovati:
     print('  ', t)
