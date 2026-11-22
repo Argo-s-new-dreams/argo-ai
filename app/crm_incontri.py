@@ -7,6 +7,7 @@ Per ogni contatto della relazione Argo cerca in Dynamics contatti, lead e accoun
 L'utente può cambiare destinazione, correggere i dati o saltare il contatto. Poi: nota con la relazione,
 foto allegate, azioni come attività. Esito salvato nell'incontro (argo-crm.json) con i link ai record.
 """
+from lingua import tr
 import json
 import mimetypes
 from datetime import datetime
@@ -42,9 +43,9 @@ class _BloccoContatto(QGroupBox):
         self.contatto = dict(contatto)
         lay = QVBoxLayout(self)
         riga = QHBoxLayout()
-        riga.addWidget(QLabel("Destinazione:"))
+        riga.addWidget(QLabel(tr('Destinazione:')))
         self.destinazione = QComboBox()
-        self.destinazione.addItem("⏳ Cerco in Dynamics…", None)
+        self.destinazione.addItem(tr('⏳ Cerco in Dynamics…'), None)
         self.destinazione.setEnabled(False)
         riga.addWidget(self.destinazione, 1)
         lay.addLayout(riga)
@@ -60,10 +61,10 @@ class _BloccoContatto(QGroupBox):
     def proponi(self, trovati):
         """Riempie le destinazioni con i risultati della ricerca e sceglie la più sensata."""
         self.destinazione.clear()
-        self.destinazione.addItem("➕ Nuovo lead", ("nuovo", None))
+        self.destinazione.addItem(tr('➕ Nuovo lead'), ("nuovo", None))
         for tipo, id_record, descrizione in trovati:
             self.destinazione.addItem(f"{ICONE[tipo]}: {descrizione}", (tipo, id_record))
-        self.destinazione.addItem("⏭ Salta questo contatto", ("salta", None))
+        self.destinazione.addItem(tr('⏭ Salta questo contatto'), ("salta", None))
         tipi = [d[0] for d in trovati]
         email = (self.contatto.get("email") or "").lower()
         scelta = 0
@@ -98,12 +99,10 @@ class DialogoCRM(QDialog):
         self.sessione = sessione
         dati = rel.carica(cartella)
         self.relazione = dati.get("relazione") or {}
-        self.setWindowTitle("Invia a Dynamics 365 Sales")
+        self.setWindowTitle(tr('Invia a Dynamics 365 Sales'))
         self.resize(720, 760)
         lay = QVBoxLayout(self)
-        intro = QLabel(f"<b>{self.relazione.get('titolo', sessione.get('titolo', ''))}</b><br>"
-                       f"Ambiente: {crm.ambiente()}. Su Dynamics va solo ciò che confermi qui: "
-                       "mai l'audio, mai le impronte vocali.")
+        intro = QLabel(tr("<b>{get}</b><br>Ambiente: {ambiente}. Su Dynamics va solo ciò che confermi qui: mai l'audio, mai le impronte vocali.", get=self.relazione.get('titolo', sessione.get('titolo', '')), ambiente=crm.ambiente()))
         intro.setWordWrap(True)
         lay.addWidget(intro)
 
@@ -119,34 +118,34 @@ class DialogoCRM(QDialog):
         scorri.setWidget(contenitore)
         lay.addWidget(scorri, 1)
 
-        opzioni = QGroupBox("Cosa allegare a ogni destinazione")
+        opzioni = QGroupBox(tr('Cosa allegare a ogni destinazione'))
         ol = QVBoxLayout(opzioni)
-        self.cb_nota = QCheckBox("Relazione come nota")
+        self.cb_nota = QCheckBox(tr('Relazione come nota'))
         self.cb_nota.setChecked(True)
         n_foto = len(self.sessione.get("foto", []))
-        self.cb_foto = QCheckBox(f"Foto come allegati ({n_foto})")
+        self.cb_foto = QCheckBox(tr('Foto come allegati ({n_foto})', n_foto=n_foto))
         self.cb_foto.setChecked(n_foto > 0)
         self.cb_foto.setEnabled(n_foto > 0)
         n_azioni = len(self.relazione.get("azioni") or [])
-        self.cb_azioni = QCheckBox(f"Azioni come attività ({n_azioni}), solo sulla prima destinazione")
+        self.cb_azioni = QCheckBox(tr('Azioni come attività ({n_azioni}), solo sulla prima destinazione', n_azioni=n_azioni))
         self.cb_azioni.setChecked(n_azioni > 0)
         self.cb_azioni.setEnabled(n_azioni > 0)
         for cb in (self.cb_nota, self.cb_foto, self.cb_azioni):
             ol.addWidget(cb)
         lay.addWidget(opzioni)
 
-        self.l_stato = QLabel("Cerco contatti, lead e account già presenti…")
+        self.l_stato = QLabel(tr('Cerco contatti, lead e account già presenti…'))
         self.l_stato.setWordWrap(True)
         self.l_stato.setProperty("ruolo", "tenue")
         lay.addWidget(self.l_stato)
         riga = QHBoxLayout()
-        self.b_invia = QPushButton("☁️ Invia a Dynamics")
+        self.b_invia = QPushButton(tr('☁️ Invia a Dynamics'))
         self.b_invia.setProperty("primario", True)
         self.b_invia.setEnabled(False)
         self.b_invia.clicked.connect(self.invia)
         riga.addWidget(self.b_invia)
         riga.addStretch()
-        b_annulla = QPushButton("Annulla")
+        b_annulla = QPushButton(tr('Annulla'))
         b_annulla.clicked.connect(self.reject)
         riga.addWidget(b_annulla)
         lay.addLayout(riga)
@@ -180,8 +179,7 @@ class DialogoCRM(QDialog):
         for b in self.blocchi:
             b.proponi([])
         self.b_invia.setEnabled(True)
-        self.l_stato.setText(f"⚠️ Ricerca dei duplicati non riuscita: {errore} "
-                             "Puoi comunque creare nuovi lead, ma controlla prima in Dynamics.")
+        self.l_stato.setText(tr('⚠️ Ricerca dei duplicati non riuscita: {errore} Puoi comunque creare nuovi lead, ma controlla prima in Dynamics.', errore=errore))
 
     # -- invio
     def _foto(self):
@@ -197,7 +195,7 @@ class DialogoCRM(QDialog):
             if tipo != "salta":
                 scelte.append((tipo, id_record, b.valori()))
         if not scelte:
-            QMessageBox.information(self, "Niente da inviare", "Tutti i contatti sono impostati su «Salta».")
+            QMessageBox.information(self, tr('Niente da inviare'), tr('Tutti i contatti sono impostati su «Salta».'))
             return
         testo = (self.cartella / rel.FILE_TESTO).read_text(encoding="utf-8") if (self.cartella / rel.FILE_TESTO).exists() else ""
         titolo = self.relazione.get("titolo") or self.sessione.get("titolo", "Incontro")
@@ -246,10 +244,10 @@ class DialogoCRM(QDialog):
             "record": record, "storico": storico}, ensure_ascii=False, indent=2), encoding="utf-8")
         elenco = "<br>".join(f"• <a href='{r['link']}'>{r['nome'] or r['tipo']}</a> ({r['tipo']})" for r in record)
         box = QMessageBox(self)
-        box.setWindowTitle("Inviato a Dynamics 365")
+        box.setWindowTitle(tr('Inviato a Dynamics 365'))
         box.setTextFormat(Qt.RichText)
         box.setTextInteractionFlags(Qt.TextBrowserInteraction)
-        box.setText(f"Fatto. Record aggiornati:<br>{elenco}")
+        box.setText(tr('Fatto. Record aggiornati:<br>{elenco}', elenco=elenco))
         box.exec()
         self.accept()
 
@@ -257,5 +255,4 @@ class DialogoCRM(QDialog):
         self.lavoro = None
         self.b_invia.setEnabled(True)
         self.l_stato.setText(f"⚠️ {errore}")
-        QMessageBox.warning(self, "Invio non riuscito", f"{errore}\n\nI record già creati restano in Dynamics: "
-                            "controllali prima di riprovare.")
+        QMessageBox.warning(self, tr('Invio non riuscito'), tr('{errore}\n\nI record già creati restano in Dynamics: controllali prima di riprovare.', errore=errore))

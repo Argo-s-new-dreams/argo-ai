@@ -3,6 +3,7 @@
 Ponte (abbinamento con QR, ricezione dei pacchetti), elenco degli incontri, relazione con Ollama
 (trascrizione + foto, anche con un modello vision). Prossima tappa: Dynamics 365 Sales.
 """
+from lingua import tr
 import io
 import re
 import json
@@ -189,8 +190,8 @@ class EditorTemplate(QWidget):
             bott.addWidget(b)
             setattr(self, "b_" + testo.lower(), b)
         sx.addLayout(bott)
-        self.b_predefinito = QPushButton("★ Usa come predefinito")
-        self.b_predefinito.setToolTip("Il template proposto in Incontri e usato da Clienti › Dalla call")
+        self.b_predefinito = QPushButton(tr('★ Usa come predefinito'))
+        self.b_predefinito.setToolTip(tr('Il template proposto in Incontri e usato da Clienti › Dalla call'))
         self.b_predefinito.clicked.connect(self.rendi_predefinito)
         sx.addWidget(self.b_predefinito)
         lay.addLayout(sx)
@@ -202,36 +203,31 @@ class EditorTemplate(QWidget):
         dx.addWidget(self.l_nota)
         f = QFormLayout()
         self.e_nome = QLineEdit()
-        f.addRow("Nome:", self.e_nome)
+        f.addRow(tr('Nome:'), self.e_nome)
         self.e_descrizione = QLineEdit()
-        self.e_descrizione.setPlaceholderText("Quando usarlo, in una riga")
-        f.addRow("Descrizione:", self.e_descrizione)
+        self.e_descrizione.setPlaceholderText(tr('Quando usarlo, in una riga'))
+        f.addRow(tr('Descrizione:'), self.e_descrizione)
         self.c_lunghezza = QComboBox()
         for k, (nome, _guida) in tpl.LUNGHEZZE.items():
             self.c_lunghezza.addItem(nome, k)
-        f.addRow("Lunghezza:", self.c_lunghezza)
+        f.addRow(tr('Lunghezza:'), self.c_lunghezza)
         self.l_sezioni = QListWidget()
         self.l_sezioni.setDragDropMode(QAbstractItemView.InternalMove)
-        self.l_sezioni.setToolTip("Spunta le sezioni da mostrare e trascinale per cambiare l'ordine")
+        self.l_sezioni.setToolTip(tr("Spunta le sezioni da mostrare e trascinale per cambiare l'ordine"))
         self.l_sezioni.setMinimumHeight(250)
-        f.addRow("Sezioni:", self.l_sezioni)
-        nota_sez = QLabel("Spunta le sezioni e trascinale nell'ordine che vuoi. Contatti, aziende e azioni vengono "
-                          "comunque estratti per Dynamics e Clienti, anche se non li mostri.")
+        f.addRow(tr('Sezioni:'), self.l_sezioni)
+        nota_sez = QLabel(tr("Spunta le sezioni e trascinale nell'ordine che vuoi. Contatti, aziende e azioni vengono comunque estratti per Dynamics e Clienti, anche se non li mostri."))
         nota_sez.setWordWrap(True)
         nota_sez.setProperty("ruolo", "tenue")
         f.addRow("", nota_sez)
         self.e_istruzioni = QPlainTextEdit()
         self.e_istruzioni.setPlaceholderText(
-            "Come la vuoi, in parole tue. Per esempio:\n"
-            "• Scrivi per il direttore commerciale: prima il valore economico, poi il resto.\n"
-            "• Tono diretto, frasi brevi, niente aggettivi.\n"
-            "• Evidenzia sempre i concorrenti citati e le obiezioni sul prezzo.\n"
-            "• Le azioni al futuro, con il nome di chi le fa.")
+            tr('Come la vuoi, in parole tue. Per esempio:\n• Scrivi per il direttore commerciale: prima il valore economico, poi il resto.\n• Tono diretto, frasi brevi, niente aggettivi.\n• Evidenzia sempre i concorrenti citati e le obiezioni sul prezzo.\n• Le azioni al futuro, con il nome di chi le fa.'))
         self.e_istruzioni.setMinimumHeight(140)
-        f.addRow("Come la voglio:", self.e_istruzioni)
+        f.addRow(tr('Come la voglio:'), self.e_istruzioni)
         dx.addLayout(f)
         riga = QHBoxLayout()
-        self.b_salva = QPushButton("Salva template")
+        self.b_salva = QPushButton(tr('Salva template'))
         self.b_salva.setProperty("primario", True)
         self.b_salva.clicked.connect(self.salva)
         riga.addWidget(self.b_salva)
@@ -302,8 +298,8 @@ class EditorTemplate(QWidget):
         self.b_salva.setEnabled(not standard)
         self.b_elimina.setEnabled(not standard)
         self.b_predefinito.setEnabled(t["id"] != tpl.predefinito()["id"])
-        self.l_nota.setText("🔒 Template standard di Argo: per cambiarlo premi «Duplica» e modifica la copia."
-                            if standard else "✎ Template tuo: modificalo e premi «Salva template».")
+        self.l_nota.setText(tr('🔒 Template standard di Argo: per cambiarlo premi «Duplica» e modifica la copia.')
+                            if standard else tr('✎ Template tuo: modificalo e premi «Salva template».'))
         self.l_esito.setText("")
 
     def _dal_modulo(self):
@@ -316,11 +312,11 @@ class EditorTemplate(QWidget):
     def salva(self):
         dati = self._dal_modulo()
         if not dati["sezioni"]:
-            QMessageBox.information(self, "Nessuna sezione", "Spunta almeno una sezione.")
+            QMessageBox.information(self, tr('Nessuna sezione'), tr('Spunta almeno una sezione.'))
             return
         t = tpl.salva(dati)
         self.ricarica(t["id"])
-        self.l_esito.setText(f"Salvato «{t['nome']}».")
+        self.l_esito.setText(tr('Salvato «{nome}».', nome=t['nome']))
         self.cambiato.emit()
 
     def nuovo(self):
@@ -342,8 +338,7 @@ class EditorTemplate(QWidget):
         t = tpl.trova(self._id_corrente())
         if not t or t.get("standard"):
             return
-        if QMessageBox.question(self, "Elimina template", f"Eliminare il template «{t['nome']}»? "
-                                "Le relazioni già scritte non cambiano.") != QMessageBox.Yes:
+        if QMessageBox.question(self, tr('Elimina template'), tr('Eliminare il template «{nome}»? Le relazioni già scritte non cambiano.', nome=t['nome'])) != QMessageBox.Yes:
             return
         tpl.elimina(t["id"])
         self.ricarica()
@@ -366,10 +361,9 @@ class DialogoAbbina(QDialog):
     def __init__(self, ponte, parent=None):
         super().__init__(parent)
         self.ponte = ponte
-        self.setWindowTitle("Collega un iPhone")
+        self.setWindowTitle(tr('Collega un iPhone'))
         lay = QVBoxLayout(self)
-        testo = QLabel("Su iPhone apri <b>Argo › Impostazioni › Argo sul computer › Collega</b> e inquadra il codice.<br>"
-                       "Il codice vale 5 minuti e una sola volta. iPhone e computer devono essere sulla stessa rete.")
+        testo = QLabel(tr('Su iPhone apri <b>Argo › Impostazioni › Argo sul computer › Collega</b> e inquadra il codice.<br>Il codice vale 5 minuti e una sola volta. iPhone e computer devono essere sulla stessa rete.'))
         testo.setWordWrap(True)
         lay.addWidget(testo)
         self.qr = QLabel()
@@ -381,9 +375,9 @@ class DialogoAbbina(QDialog):
         self.stato.setWordWrap(True)
         lay.addWidget(self.stato)
         riga = QHBoxLayout()
-        b_nuovo = QPushButton("Nuovo codice")
+        b_nuovo = QPushButton(tr('Nuovo codice'))
         b_nuovo.clicked.connect(self._mostra)
-        b_chiudi = QPushButton("Chiudi")
+        b_chiudi = QPushButton(tr('Chiudi'))
         b_chiudi.clicked.connect(self.accept)
         riga.addWidget(b_nuovo)
         riga.addStretch()
@@ -395,7 +389,7 @@ class DialogoAbbina(QDialog):
         try:
             import segno
         except ImportError:
-            self.stato.setText("Manca la libreria «segno» per il QR: rilancia l'installer di Argo.")
+            self.stato.setText(tr("Manca la libreria «segno» per il QR: rilancia l'installer di Argo."))
             return
         contenuto = self.ponte.contenuto_qr()
         buf = io.BytesIO()
@@ -405,11 +399,10 @@ class DialogoAbbina(QDialog):
         # Sempre intero e nitido: ridimensionato senza sfumature
         self.qr.setPixmap(pix.scaled(340, 340, Qt.KeepAspectRatio, Qt.FastTransformation))
         indirizzi = ", ".join(pt.indirizzi_locali())
-        self.stato.setText(f"In ascolto su {indirizzi} · porta {self.ponte.porta}. "
-                           "Al primo collegamento il sistema potrebbe chiedere di consentire le connessioni in entrata.")
+        self.stato.setText(tr('In ascolto su {indirizzi} · porta {porta}. Al primo collegamento il sistema potrebbe chiedere di consentire le connessioni in entrata.', indirizzi=indirizzi, porta=self.ponte.porta))
 
     def abbinato(self, nome):
-        self.stato.setText(f"✅ {nome} collegato. Puoi chiudere questa finestra.")
+        self.stato.setText(tr('✅ {nome} collegato. Puoi chiudere questa finestra.', nome=nome))
         self.qr.clear()
 
 
@@ -428,25 +421,23 @@ class SchedaIncontri(QWidget):
         lay = QVBoxLayout(self)
         bar = QHBoxLayout()
         # Stile Argo: un solo pulsante principale per pagina («Scrivi relazione»); il collegamento è secondario.
-        self.b_collega = QPushButton("📱 Collega iPhone…")
+        self.b_collega = QPushButton(tr('📱 Collega iPhone…'))
         self.b_collega.clicked.connect(self.collega)
         bar.addWidget(self.b_collega)
         self.b_dispositivi = QToolButton()
-        self.b_dispositivi.setText("iPhone collegati ▾")
+        self.b_dispositivi.setText(tr('iPhone collegati ▾'))
         self.b_dispositivi.setPopupMode(QToolButton.InstantPopup)
         bar.addWidget(self.b_dispositivi)
-        b_importa = QPushButton("Importa pacchetto…")
-        b_importa.setToolTip("Un pacchetto Argo (.zip) arrivato per altra via, es. AirDrop o mail")
+        b_importa = QPushButton(tr('Importa pacchetto…'))
+        b_importa.setToolTip(tr('Un pacchetto Argo (.zip) arrivato per altra via, es. AirDrop o mail'))
         b_importa.clicked.connect(self.importa_file)
         bar.addWidget(b_importa)
-        self.b_nuovo = QPushButton("🎙 Nuovo da audio/video…")
-        self.b_nuovo.setToolTip("Crea un incontro da una registrazione o da un video (anche più file, uno per incontro): "
-                                "trascrizione, parlanti e voci note sul computer, poi la relazione come per l'iPhone. "
-                                "Puoi anche trascinare i file su questa pagina.")
+        self.b_nuovo = QPushButton(tr('🎙 Nuovo da audio/video…'))
+        self.b_nuovo.setToolTip(tr("Crea un incontro da una registrazione o da un video (anche più file, uno per incontro): trascrizione, parlanti e voci note sul computer, poi la relazione come per l'iPhone. Puoi anche trascinare i file su questa pagina."))
         self.b_nuovo.clicked.connect(self.nuovo_da_media)
         bar.addWidget(self.b_nuovo)
         bar.addStretch()
-        self.b_cartella = QPushButton("Apri cartella")
+        self.b_cartella = QPushButton(tr('Apri cartella'))
         self.b_cartella.clicked.connect(self.apri_cartella)
         bar.addWidget(self.b_cartella)
         lay.addLayout(bar)
@@ -466,7 +457,7 @@ class SchedaIncontri(QWidget):
         self.pb_file.setFixedHeight(8)
         self.pb_file.setTextVisible(False)
         rf.addWidget(self.pb_file)
-        b_ferma_file = QPushButton("■ Ferma")
+        b_ferma_file = QPushButton(tr('■ Ferma'))
         b_ferma_file.clicked.connect(self.ferma_file)
         rf.addWidget(b_ferma_file)
         self.riga_file.setVisible(False)
@@ -476,37 +467,34 @@ class SchedaIncontri(QWidget):
 
         # Barra dei comandi (Stile Argo): azione principale per prima, poi le scelte
         comandi = QHBoxLayout()
-        self.b_relazione = QPushButton("✨ Scrivi relazione")
+        self.b_relazione = QPushButton(tr('✨ Scrivi relazione'))
         self.b_relazione.setProperty("primario", True)
-        self.b_relazione.setToolTip("Mette in coda gli incontri selezionati: Ollama in locale (o il modello cloud scelto) scrive per ciascuno la "
-                                    "relazione (trascrizione con i nomi + foto) con contatti, aziende, opportunità e azioni")
+        self.b_relazione.setToolTip(tr('Mette in coda gli incontri selezionati: Ollama in locale (o il modello cloud scelto) scrive per ciascuno la relazione (trascrizione con i nomi + foto) con contatti, aziende, opportunità e azioni'))
         self.b_relazione.clicked.connect(self.scrivi_relazione)
         comandi.addWidget(self.b_relazione)
-        self.b_ferma = QPushButton("■ Ferma coda")
+        self.b_ferma = QPushButton(tr('■ Ferma coda'))
         self.b_ferma.setVisible(False)
         self.b_ferma.clicked.connect(self.ferma_coda)
         comandi.addWidget(self.b_ferma)
-        self.b_riprendi = QPushButton("▶ Riprendi coda")
+        self.b_riprendi = QPushButton(tr('▶ Riprendi coda'))
         self.b_riprendi.setVisible(False)
-        self.b_riprendi.setToolTip("Riprende gli incontri rimasti in coda (anche dopo la chiusura di Argo)")
+        self.b_riprendi.setToolTip(tr('Riprende gli incontri rimasti in coda (anche dopo la chiusura di Argo)'))
         self.b_riprendi.clicked.connect(self.riprendi_coda)
         comandi.addWidget(self.b_riprendi)
         comandi.addSpacing(12)
-        self.l_template = QLabel("Template:")
+        self.l_template = QLabel(tr('Template:'))
         comandi.addWidget(self.l_template)
         self.c_template = QComboBox()
         self.c_template.setSizeAdjustPolicy(QComboBox.AdjustToContents)
-        self.c_template.setToolTip("Come scrivere la relazione: sezioni, lunghezza e indicazioni. "
-                                   "Si creano e si modificano in Impostazioni › Relazioni.")
+        self.c_template.setToolTip(tr('Come scrivere la relazione: sezioni, lunghezza e indicazioni. Si creano e si modificano in Impostazioni › Relazioni.'))
         comandi.addWidget(self.c_template)
         self.carica_template()
         comandi.addSpacing(12)
-        self.l_foto = QLabel("Foto:")
+        self.l_foto = QLabel(tr('Foto:'))
         comandi.addWidget(self.l_foto)
         self.c_vision = QComboBox()
         self.c_vision.setSizeAdjustPolicy(QComboBox.AdjustToContents)
-        self.c_vision.setToolTip("Un modello vision di Ollama guarda anche le foto (prodotti, stand, schemi); "
-                                 "senza, si usa il testo letto dall'iPhone")
+        self.c_vision.setToolTip(tr("Un modello vision di Ollama guarda anche le foto (prodotti, stand, schemi); senza, si usa il testo letto dall'iPhone"))
         self.c_vision.currentIndexChanged.connect(lambda _i: self._salva_vision(self._vision_scelto()))
         comandi.addWidget(self.c_vision)
         comandi.addStretch()
@@ -557,37 +545,35 @@ class SchedaIncontri(QWidget):
         self.l_lavoro.setProperty("ruolo", "tenue")
         self.l_lavoro.setWordWrap(True)
         salva.addWidget(self.l_lavoro, 1)
-        self.b_allega = QPushButton("📎 Aggiungi file…")
-        self.b_allega.setToolTip("Aggiunge all'incontro foto (descritte dal modello vision), documenti PDF/Word/testo "
-                                 "(letti dalla relazione) e altri audio o video (trascritti in coda all'incontro)")
+        self.b_allega = QPushButton(tr('📎 Aggiungi file…'))
+        self.b_allega.setToolTip(tr("Aggiunge all'incontro foto (descritte dal modello vision), documenti PDF/Word/testo (letti dalla relazione) e altri audio o video (trascritti in coda all'incontro)"))
         self.b_allega.clicked.connect(self.aggiungi_file)
         salva.addWidget(self.b_allega)
-        self.b_modifica = QPushButton("✏️ Modifica")
+        self.b_modifica = QPushButton(tr('✏️ Modifica'))
         self.b_modifica.setCheckable(True)
-        self.b_modifica.setToolTip("Passa dal testo impaginato al Markdown da correggere, e ritorno")
+        self.b_modifica.setToolTip(tr('Passa dal testo impaginato al Markdown da correggere, e ritorno'))
         self.b_modifica.toggled.connect(self._modalita_modifica)
         salva.addWidget(self.b_modifica)
-        self.b_salva_mod = QPushButton("Salva modifiche")
+        self.b_salva_mod = QPushButton(tr('Salva modifiche'))
         self.b_salva_mod.setEnabled(False)
         self.b_salva_mod.clicked.connect(self.salva_modifiche)
         salva.addWidget(self.b_salva_mod)
-        self.b_crm = QPushButton("☁️ Invia a Dynamics…")
-        self.b_crm.setToolTip("Dynamics 365 Sales: nuovo lead o aggancio a contatti/account esistenti, con relazione, "
-                              "foto e azioni. Scegli tu caso per caso.")
+        self.b_crm = QPushButton(tr('☁️ Invia a Dynamics…'))
+        self.b_crm.setToolTip(tr('Dynamics 365 Sales: nuovo lead o aggancio a contatti/account esistenti, con relazione, foto e azioni. Scegli tu caso per caso.'))
         self.b_crm.clicked.connect(self.invia_crm)
         salva.addWidget(self.b_crm)
         self.b_salva = QToolButton()
-        self.b_salva.setText("Salva ▾")
+        self.b_salva.setText(tr('Salva ▾'))
         self.b_salva.setPopupMode(QToolButton.InstantPopup)
         ms = QMenu(self.b_salva)
-        ms.addAction("Relazione in Word (.docx)…").triggered.connect(lambda: self.esporta("docx"))
-        ms.addAction("Relazione in Markdown (.md)…").triggered.connect(lambda: self.esporta("md"))
+        ms.addAction(tr('Relazione in Word (.docx)…')).triggered.connect(lambda: self.esporta("docx"))
+        ms.addAction(tr('Relazione in Markdown (.md)…')).triggered.connect(lambda: self.esporta("md"))
         ms.addSeparator()
-        ms.addAction("Trascrizione in Word (.docx)…").triggered.connect(
+        ms.addAction(tr('Trascrizione in Word (.docx)…')).triggered.connect(
             lambda: esporta_trascrizione.scarica(self, self._sorgente_trascrizione, ("docx",)))
-        ms.addAction("Trascrizione in WebVTT (.vtt)…").triggered.connect(
+        ms.addAction(tr('Trascrizione in WebVTT (.vtt)…')).triggered.connect(
             lambda: esporta_trascrizione.scarica(self, self._sorgente_trascrizione, ("vtt",)))
-        ms.addAction("Trascrizione in Word e WebVTT…").triggered.connect(
+        ms.addAction(tr('Trascrizione in Word e WebVTT…')).triggered.connect(
             lambda: esporta_trascrizione.scarica(self, self._sorgente_trascrizione, ("docx", "vtt")))
         self.b_salva.setMenu(ms)
         salva.addWidget(self.b_salva)
@@ -598,15 +584,15 @@ class SchedaIncontri(QWidget):
         self.vista = QTextBrowser()
         self.vista.setOpenExternalLinks(True)
         self.testo = QPlainTextEdit()
-        self.testo.setPlaceholderText("Nessuna relazione ancora: premi «✨ Scrivi relazione».")
+        self.testo.setPlaceholderText(tr('Nessuna relazione ancora: premi «✨ Scrivi relazione».'))
         self.testo.textChanged.connect(lambda: self.b_salva_mod.setEnabled(self._caricato))
         self.pila = QStackedWidget()
         self.pila.addWidget(self.vista)
         self.pila.addWidget(self.testo)
-        self.schede.addTab(self.pila, "Relazione")
+        self.schede.addTab(self.pila, tr('Relazione'))
         self.t_trascrizione = QPlainTextEdit()
         self.t_trascrizione.setReadOnly(True)
-        self.schede.addTab(self.t_trascrizione, "Trascrizione e foto")
+        self.schede.addTab(self.t_trascrizione, tr('Trascrizione e foto'))
         dl.addWidget(self.schede, 1)
         self.lavoro = None
         self._caricato = False
@@ -644,7 +630,7 @@ class SchedaIncontri(QWidget):
             porta = self.ponte.avvia()
         except Exception as e:
             diagnostica.log.warning("Ponte non avviato: %s", e)
-            self.l_ponte.setText(f"⚠️ Ponte non avviato: {e}")
+            self.l_ponte.setText(tr('⚠️ Ponte non avviato: {e}', e=e))
             return False
         diagnostica.log.info("Ponte avviato sulla porta %s", porta)
         self._aggiorna_stato_ponte(porta)
@@ -653,23 +639,21 @@ class SchedaIncontri(QWidget):
     def _aggiorna_stato_ponte(self, porta=None):
         n = len(pt.dispositivi())
         if self.ponte.attivo:
-            self.l_ponte.setText(f"🔒 Ponte attivo in rete locale (porta {porta or self.ponte.porta}) · "
-                                 f"{n} iPhone collegat{'o' if n == 1 else 'i'} · cifrato, nessun cloud")
+            self.l_ponte.setText((tr('🔒 Ponte attivo in rete locale (porta {porta}) · 1 iPhone collegato · cifrato, nessun cloud', porta=porta or self.ponte.porta) if n == 1 else tr('🔒 Ponte attivo in rete locale (porta {porta}) · {n} iPhone collegati · cifrato, nessun cloud', porta=porta or self.ponte.porta, n=n)))
         else:
-            self.l_ponte.setText("Ponte spento: si accende quando colleghi un iPhone.")
+            self.l_ponte.setText(tr('Ponte spento: si accende quando colleghi un iPhone.'))
         m = QMenu(self.b_dispositivi)
         for d in pt.dispositivi():
             visto = d.get("ultimo_contatto") or "mai"
-            sotto = m.addMenu(f"{d['nome']} · ultimo contatto {visto}")
-            azione = sotto.addAction("Scollega questo iPhone")
+            sotto = m.addMenu(tr('{nome} · ultimo contatto {visto}', nome=d['nome'], visto=visto))
+            azione = sotto.addAction(tr('Scollega questo iPhone'))
             azione.triggered.connect(lambda _c=False, i=d["id"], nome=d["nome"]: self._scollega(i, nome))
         if not pt.dispositivi():
-            m.addAction("Nessun iPhone collegato").setEnabled(False)
+            m.addAction(tr('Nessun iPhone collegato')).setEnabled(False)
         self.b_dispositivi.setMenu(m)
 
     def _scollega(self, id_dispositivo, nome):
-        if QMessageBox.question(self, "Scollega", f"Scollegare {nome}? Non potrà più inviare incontri finché "
-                                "non lo ricolleghi.") == QMessageBox.Yes:
+        if QMessageBox.question(self, tr('Scollega'), tr('Scollegare {nome}? Non potrà più inviare incontri finché non lo ricolleghi.', nome=nome)) == QMessageBox.Yes:
             pt.scollega(id_dispositivo)
             self._aggiorna_stato_ponte()
 
@@ -689,7 +673,7 @@ class SchedaIncontri(QWidget):
             self._aggiorna_stato_ponte()
         elif tipo == "incontro":
             self.aggiorna()
-            self.finestra.statusBar().showMessage(f"📱 Incontro ricevuto dall'iPhone: {testo}", 8000)
+            self.finestra.statusBar().showMessage(tr("📱 Incontro ricevuto dall'iPhone: {testo}", testo=testo), 8000)
 
     def occupata(self):
         return self.lavoro is not None or self.lavoro_file is not None
@@ -726,7 +710,7 @@ class SchedaIncontri(QWidget):
 
     # -- incontri da file audio/video e file aggiunti
     def nuovo_da_media(self):
-        file, _ = QFileDialog.getOpenFileNames(self, "Registrazioni o video da trasformare in incontri",
+        file, _ = QFileDialog.getOpenFileNames(self, tr('Registrazioni o video da trasformare in incontri'),
                                                str(Path.home()), inf.filtro_dialogo(solo_media=True))
         if file:
             self._avvia_file([("nuovo", f) for f in file])
@@ -734,23 +718,22 @@ class SchedaIncontri(QWidget):
     def aggiungi_file(self, file=None):
         cartella, _d = self._corrente()
         if not cartella:
-            QMessageBox.information(self, "Scegli un incontro", "Seleziona prima l'incontro a cui aggiungere i file.")
+            QMessageBox.information(self, tr('Scegli un incontro'), tr("Seleziona prima l'incontro a cui aggiungere i file."))
             return
         if not file:
-            file, _ = QFileDialog.getOpenFileNames(self, "File da aggiungere all'incontro", str(Path.home()),
+            file, _ = QFileDialog.getOpenFileNames(self, tr("File da aggiungere all'incontro"), str(Path.home()),
                                                    inf.filtro_dialogo())
         if file:
             self._avvia_file([("aggiungi", cartella, list(file))])
 
     def _avvia_file(self, operazioni):
         if self.lavoro_file:
-            QMessageBox.information(self, "Un momento", "Sto già elaborando dei file: aspetta che finisca o premi «Ferma».")
+            QMessageBox.information(self, tr('Un momento'), tr('Sto già elaborando dei file: aspetta che finisca o premi «Ferma».'))
             return
         if any(op[0] == "nuovo" for op in operazioni) or any(
                 inf.tipo_di(f) == "audio" for op in operazioni if op[0] == "aggiungi" for f in op[2]):
             if not core.leggi_token():
-                QMessageBox.warning(self, "Manca il token", "Per trascrivere e riconoscere i parlanti serve il token "
-                                    "Hugging Face: Impostazioni › Token.")
+                QMessageBox.warning(self, tr('Manca il token'), tr('Per trascrivere e riconoscere i parlanti serve il token Hugging Face: Impostazioni › Token.'))
                 return
         self._esiti_file = []
         lav = LavoroFile(operazioni, getattr(self.ponte, "versione_app", ""), self)
@@ -761,7 +744,7 @@ class SchedaIncontri(QWidget):
         lav.sig_fine.connect(self._file_finiti)
         self.lavoro_file = lav
         self.pb_file.setValue(0)
-        self.l_file.setText("Avvio…")
+        self.l_file.setText(tr('Avvio…'))
         self.riga_file.setVisible(True)
         self.b_nuovo.setEnabled(False)
         self.b_allega.setEnabled(False)
@@ -782,15 +765,15 @@ class SchedaIncontri(QWidget):
         esiti = self._esiti_file or ["Niente da fare."]
         self.finestra.statusBar().showMessage(" · ".join(esiti), 15000)
         if any(e.startswith("⚠️") for e in esiti):
-            QMessageBox.warning(self, "File non elaborati", "\n".join(esiti))
+            QMessageBox.warning(self, tr('File non elaborati'), "\n".join(esiti))
         elif any(e.startswith("✅") for e in esiti):
-            QMessageBox.information(self, "Fatto", "\n".join(esiti)
+            QMessageBox.information(self, tr('Fatto'), "\n".join(esiti)
                                     + "\n\nSeleziona l'incontro e premi «✨ Scrivi relazione» per la relazione.")
 
     def ferma_file(self):
         if self.lavoro_file:
             self.lavoro_file.ferma()
-            self.l_file.setText("Mi fermo appena possibile…")
+            self.l_file.setText(tr('Mi fermo appena possibile…'))
 
     def dragEnterEvent(self, e):
         if e.mimeData().hasUrls():
@@ -804,15 +787,14 @@ class SchedaIncontri(QWidget):
         operazioni = []
         if media:
             if cartella and QMessageBox.question(
-                    self, "Audio o video", f"{len(media)} audio/video: creo un incontro nuovo per ciascuno?\n\n"
-                    f"«No» li aggiunge in coda all'incontro selezionato («{d.get('titolo', '')}»).") == QMessageBox.No:
+                    self, tr('Audio o video'), tr("{len} audio/video: creo un incontro nuovo per ciascuno?\n\n«No» li aggiunge in coda all'incontro selezionato («{get}»).", len=len(media), get=d.get('titolo', ''))) == QMessageBox.No:
                 altri += media
             else:
                 operazioni += [("nuovo", f) for f in media]
         if altri:
             if not cartella:
-                QMessageBox.information(self, "Scegli un incontro",
-                                        "Foto e documenti si aggiungono a un incontro: selezionane uno e riprova.")
+                QMessageBox.information(self, tr('Scegli un incontro'),
+                                        tr('Foto e documenti si aggiungono a un incontro: selezionane uno e riprova.'))
             else:
                 operazioni.append(("aggiungi", cartella, altri))
         if operazioni:
@@ -820,16 +802,16 @@ class SchedaIncontri(QWidget):
 
     # -- incontri
     def importa_file(self):
-        f, _ = QFileDialog.getOpenFileName(self, "Pacchetto Argo", str(Path.home() / "Downloads"), "Pacchetto Argo (*.zip)")
+        f, _ = QFileDialog.getOpenFileName(self, tr('Pacchetto Argo'), str(Path.home() / "Downloads"), "Pacchetto Argo (*.zip)")
         if not f:
             return
         try:
             _id, dati = pt.importa_pacchetto(f, origine="file")
         except Exception as e:
-            QMessageBox.warning(self, "Importazione non riuscita", str(e))
+            QMessageBox.warning(self, tr('Importazione non riuscita'), str(e))
             return
         self.aggiorna()
-        QMessageBox.information(self, "Incontro importato", f"«{dati.get('titolo', '')}» è tra gli Incontri.")
+        QMessageBox.information(self, tr('Incontro importato'), tr('«{get}» è tra gli Incontri.', get=dati.get('titolo', '')))
 
     def aggiorna(self):
         scelto = self._corrente()[0]
@@ -933,7 +915,7 @@ class SchedaIncontri(QWidget):
         self.b_relazione.setText("✨ Scrivi relazione" + (f" ({n})" if n > 1 else ""))
         self.b_ferma.setVisible(bool(self.lavoro))
         self.b_riprendi.setVisible(bool(self.coda) and not self.lavoro)
-        self.b_riprendi.setText(f"▶ Riprendi coda ({len(self.coda)})")
+        self.b_riprendi.setText(tr('▶ Riprendi coda ({len})', len=len(self.coda)))
 
     # -- coda salvata su disco (come quella delle trascrizioni)
     def _salva_coda(self):
@@ -947,7 +929,7 @@ class SchedaIncontri(QWidget):
             FILE_CODA.write_text(json.dumps({"coda": ([self.in_corso] if self.in_corso else []) + self.coda,
                                              "stati": stati}, indent=1, ensure_ascii=False), encoding="utf-8")
         except Exception as e:
-            self.finestra.statusBar().showMessage(f"Impossibile salvare la coda degli incontri: {e}", 8000)
+            self.finestra.statusBar().showMessage(tr('Impossibile salvare la coda degli incontri: {e}', e=e), 8000)
 
     def _carica_coda(self):
         try:
@@ -973,16 +955,16 @@ class SchedaIncontri(QWidget):
         if r not in {i.row() for i in self.tabella.selectedIndexes()}:
             self.tabella.selectRow(r)
         m = QMenu(self)
-        m.addAction("✨ Scrivi relazione", self.scrivi_relazione)
-        m.addAction("📎 Aggiungi file…", self.aggiungi_file)
-        m.addMenu(esporta_trascrizione.menu(self, self._sorgente_trascrizione)).setText("⬇️ Scarica trascrizione")
+        m.addAction(tr('✨ Scrivi relazione'), self.scrivi_relazione)
+        m.addAction(tr('📎 Aggiungi file…'), self.aggiungi_file)
+        m.addMenu(esporta_trascrizione.menu(self, self._sorgente_trascrizione)).setText(tr('⬇️ Scarica trascrizione'))
         if cervello.attivo():
-            m.addAction("🧠 Con chi stai parlando?…", self.con_chi)
+            m.addAction(tr('🧠 Con chi stai parlando?…'), self.con_chi)
         if any(c.name in self.coda for c, _d in self._selezionati()):
-            m.addAction("Togli dalla coda", self.togli_dalla_coda)
+            m.addAction(tr('Togli dalla coda'), self.togli_dalla_coda)
         m.addSeparator()
-        m.addAction("Apri cartella", self.apri_cartella)
-        m.addAction("Elimina incontro…", self.elimina_incontri)
+        m.addAction(tr('Apri cartella'), self.apri_cartella)
+        m.addAction(tr('Elimina incontro…'), self.elimina_incontri)
         m.exec(self.tabella.viewport().mapToGlobal(pos))
 
     def _mostra(self, _riga):
@@ -1066,7 +1048,7 @@ class SchedaIncontri(QWidget):
             self.c_vision.setCurrentIndex(1)  # prima volta: se c'è un modello vision, si usa
         self.c_vision.blockSignals(False)
         if not vision:
-            self.c_vision.setToolTip("Nessun modello vision in Ollama: es. «ollama pull qwen2.5vl:7b» o gemma3")
+            self.c_vision.setToolTip(tr('Nessun modello vision in Ollama: es. «ollama pull qwen2.5vl:7b» o gemma3'))
 
     def _vision_scelto(self):
         """Nome del modello vision scelto ('' = solo il testo letto dall'iPhone)."""
@@ -1086,9 +1068,8 @@ class SchedaIncontri(QWidget):
         gia_fatte = [c for c, _d in scelti if (c / rel.FILE_TESTO).exists() and c.name not in self.coda
                      and c.name != self.in_corso]
         if gia_fatte and QMessageBox.question(
-                self, "Rifare le relazioni?",
-                f"{len(gia_fatte)} degli incontri scelti ha già una relazione (con eventuali tue modifiche): "
-                "sostituirla?") != QMessageBox.Yes:
+                self, tr('Rifare le relazioni?'),
+                tr('{len} degli incontri scelti ha già una relazione (con eventuali tue modifiche): sostituirla?', len=len(gia_fatte))) != QMessageBox.Yes:
             scelti = [x for x in scelti if x[0] not in gia_fatte]
         for cartella, _d in scelti:
             if cartella.name in self.coda or cartella.name == self.in_corso:
@@ -1120,7 +1101,7 @@ class SchedaIncontri(QWidget):
         self.in_pausa = True
         if self.lavoro:
             self.lavoro.ferma()
-            self.l_lavoro.setText("Mi fermo appena finisce il passaggio in corso…")
+            self.l_lavoro.setText(tr('Mi fermo appena finisce il passaggio in corso…'))
         self._salva_coda()
         self._aggiorna_comandi()
 
@@ -1201,8 +1182,7 @@ class SchedaIncontri(QWidget):
         scelti = [x for x in self._selezionati() if x[0].name != self.in_corso]
         if not scelti:
             return
-        if QMessageBox.question(self, "Elimina", f"Eliminare {len(scelti)} incontr{'o' if len(scelti) == 1 else 'i'} "
-                                "da questo computer (trascrizione, foto e relazione)?") != QMessageBox.Yes:
+        if QMessageBox.question(self, tr('Elimina'), (tr("Eliminare l'incontro da questo computer (trascrizione, foto e relazione)?") if len(scelti) == 1 else tr('Eliminare {n} incontri da questo computer (trascrizione, foto e relazione)?', n=len(scelti)))) != QMessageBox.Yes:
             return
         import shutil
         for cartella, _d in scelti:
@@ -1228,21 +1208,19 @@ class SchedaIncontri(QWidget):
         if not attiva:
             self._aggiorna_vista()
         self.pila.setCurrentWidget(self.testo if attiva else self.vista)
-        self.b_modifica.setText("👁 Anteprima" if attiva else "✏️ Modifica")
+        self.b_modifica.setText(tr('👁 Anteprima') if attiva else tr('✏️ Modifica'))
 
     def invia_crm(self):
         cartella, d = self._corrente()
         if not cartella:
             return
         if not crm.configurato():
-            QMessageBox.information(self, "Dynamics 365", "Prima collega Dynamics in Impostazioni › Dynamics 365 Sales "
-                                    "(indirizzo dell'ambiente e accesso).")
+            QMessageBox.information(self, tr('Dynamics 365'), tr("Prima collega Dynamics in Impostazioni › Dynamics 365 Sales (indirizzo dell'ambiente e accesso)."))
             return
         if self.b_salva_mod.isEnabled():
             self.salva_modifiche()  # su Dynamics va la versione corretta a mano
         if crm_incontri.esito(cartella) and QMessageBox.question(
-                self, "Già inviato", "Questo incontro è già stato inviato a Dynamics. Inviarlo di nuovo? "
-                "(Controlla le destinazioni per non creare doppioni.)") != QMessageBox.Yes:
+                self, tr('Già inviato'), tr('Questo incontro è già stato inviato a Dynamics. Inviarlo di nuovo? (Controlla le destinazioni per non creare doppioni.)')) != QMessageBox.Yes:
             return
         if crm_incontri.DialogoCRM(cartella, d, self).exec():
             self.aggiorna()
@@ -1253,17 +1231,17 @@ class SchedaIncontri(QWidget):
             (cartella / rel.FILE_TESTO).write_text(self.testo.toPlainText(), encoding="utf-8")
             self.b_salva_mod.setEnabled(False)
             self._aggiorna_vista()
-            self.finestra.statusBar().showMessage("Modifiche salvate.", 4000)
+            self.finestra.statusBar().showMessage(tr('Modifiche salvate.'), 4000)
 
     def esporta(self, formato):
         cartella, d = self._corrente()
         testo = self.testo.toPlainText().strip()
         if not cartella or not testo:
-            QMessageBox.information(self, "Niente da salvare", "Scrivi prima la relazione.")
+            QMessageBox.information(self, tr('Niente da salvare'), tr('Scrivi prima la relazione.'))
             return
         nome = "".join(c if c.isalnum() or c in " -_" else "_" for c in d.get("titolo", "Incontro"))[:60].strip()
         estensione = ".docx" if formato == "docx" else ".md"
-        f, _ = QFileDialog.getSaveFileName(self, "Salva la relazione", str(Path.home() / "Documents" / (nome + estensione)),
+        f, _ = QFileDialog.getSaveFileName(self, tr('Salva la relazione'), str(Path.home() / "Documents" / (nome + estensione)),
                                            "Word (*.docx)" if formato == "docx" else "Markdown (*.md)")
         if not f:
             return
@@ -1272,7 +1250,7 @@ class SchedaIncontri(QWidget):
         else:
             percorso = Path(f)
             percorso.write_text(testo, encoding="utf-8")
-        self.finestra.statusBar().showMessage(f"Salvata in {percorso}", 6000)
+        self.finestra.statusBar().showMessage(tr('Salvata in {percorso}', percorso=percorso), 6000)
 
     def _sorgente_trascrizione(self):
         cartella, d = self._corrente()

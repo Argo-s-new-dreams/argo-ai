@@ -1,4 +1,5 @@
 """dettaglio.py - pannello di dettaglio di una trascrizione: corsie colorate dei parlanti e testo con i nomi."""
+from lingua import tr
 import html
 import json
 from pathlib import Path
@@ -89,10 +90,10 @@ class DettaglioTrascrizione(QWidget):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(18, 14, 18, 14)
         lay.setSpacing(12)
-        self.titolo = QLabel("Nessun file selezionato")
+        self.titolo = QLabel(tr('Nessun file selezionato'))
         self.titolo.setProperty("ruolo", "titolo")
         self.titolo.setWordWrap(True)
-        self.meta = QLabel("Scegli un file nella coda per vedere chi parla e cosa dice.")
+        self.meta = QLabel(tr('Scegli un file nella coda per vedere chi parla e cosa dice.'))
         self.meta.setProperty("ruolo", "tenue")
         self.meta.setWordWrap(True)
         lay.addWidget(self.titolo)
@@ -127,8 +128,8 @@ class DettaglioTrascrizione(QWidget):
         self.bottoni[1].setVisible(bool(job))
         self.corsie.setVisible(bool(job))
         if not job:
-            self.titolo.setText("Nessun file selezionato")
-            self.meta.setText("Scegli un file nella coda per vedere chi parla e cosa dice.")
+            self.titolo.setText(tr('Nessun file selezionato'))
+            self.meta.setText(tr('Scegli un file nella coda per vedere chi parla e cosa dice.'))
             self.corsie.imposta([], 1)
             self.testo.setHtml(tema.stato_vuoto("Trascina qui un audio o un video, oppure scegli un file nella coda."))
             tema.imposta_filigrana(self.testo, True)
@@ -138,7 +139,7 @@ class DettaglioTrascrizione(QWidget):
         if not completata:
             stato = job.get("stato", "")
             nota = f" · {job['nota']}" if job.get("nota") else ""
-            self.meta.setText(f"{stato}{nota} · partecipanti: {job.get('parlanti') or 'auto'}")
+            self.meta.setText(tr('{stato}{nota} · partecipanti: {valore}', stato=stato, nota=nota, valore=job.get('parlanti') or 'auto'))
             self.corsie.imposta([], 1)
             self.testo.setHtml(f"<p style='color:{c['tenue']}'>La trascrizione comparirà qui quando sarà completata.</p>")
             return
@@ -146,7 +147,7 @@ class DettaglioTrascrizione(QWidget):
             dati = json.loads(Path(job["json"]).read_text(encoding="utf-8"))
             mappa, _, _ = core.mappa_nomi(dati)
         except Exception as e:
-            self.meta.setText(f"Impossibile leggere la trascrizione: {e}")
+            self.meta.setText(tr('Impossibile leggere la trascrizione: {e}', e=e))
             return
         segs = [s for s in dati.get("segments", []) if (s.get("text") or "").strip()]
         durata = max((s.get("end", 0) for s in segs), default=1.0)
@@ -161,7 +162,7 @@ class DettaglioTrascrizione(QWidget):
         for s in segs:
             tratti[mappa.get(s.get("speaker"), "Non attribuito")].append((s.get("start", 0), s.get("end", 0)))
         self.corsie.imposta([(n, colore[n], tratti[n]) for n in nomi], durata)
-        self.meta.setText(f"{mmss(durata)} · {len(nomi)} parlanti: {', '.join(nomi)}")
+        self.meta.setText(tr('{mmss} · {len} parlanti: {join}', mmss=mmss(durata), len=len(nomi), join=', '.join(nomi)))
         righe, ultimo = [], None
         for s in segs:
             n = mappa.get(s.get("speaker"), "Non attribuito")

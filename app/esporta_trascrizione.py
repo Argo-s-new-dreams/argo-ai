@@ -7,6 +7,7 @@ Le sorgenti:
 WebVTT (W3C): una «cue» per frase, con il parlante nel tag di voce <v Nome>, così i lettori video e Teams/Stream
 mostrano chi parla. Frasi molto lunghe divise in più cue (al massimo ~7 secondi o ~120 caratteri ciascuna).
 """
+from lingua import tr
 import json
 import re
 from pathlib import Path
@@ -172,9 +173,9 @@ def menu(parent, sorgente):
     """Menu «Word / WebVTT / entrambi». sorgente() -> (segmenti, nome base, cartella proposta, titolo) o None."""
     from PySide6.QtWidgets import QMenu
     m = QMenu(parent)
-    m.addAction("Word (.docx)…", lambda: scarica(parent, sorgente, ("docx",)))
-    m.addAction("Sottotitoli WebVTT (.vtt)…", lambda: scarica(parent, sorgente, ("vtt",)))
-    m.addAction("Word e WebVTT…", lambda: scarica(parent, sorgente, ("docx", "vtt")))
+    m.addAction(tr('Word (.docx)…'), lambda: scarica(parent, sorgente, ("docx",)))
+    m.addAction(tr('Sottotitoli WebVTT (.vtt)…'), lambda: scarica(parent, sorgente, ("vtt",)))
+    m.addAction(tr('Word e WebVTT…'), lambda: scarica(parent, sorgente, ("docx", "vtt")))
     return m
 
 
@@ -187,18 +188,18 @@ def scarica(parent, sorgente, formati):
         return []
     segmenti, nome, cartella, titolo = dati
     if not segmenti:
-        QMessageBox.information(parent, "Niente da scaricare", "Questa trascrizione è vuota o non è ancora pronta.")
+        QMessageBox.information(parent, tr('Niente da scaricare'), tr('Questa trascrizione è vuota o non è ancora pronta.'))
         return []
     nome = re.sub(r'[\\/:*?"<>|]+', "_", nome).strip() or "trascrizione"
     base = Path(cartella or Path.home() / "Documents") / f"{nome}_trascrizione"
     if len(formati) == 1:
         filtro = "Documento Word (*.docx)" if formati[0] == "docx" else "Sottotitoli WebVTT (*.vtt)"
-        f, _ = QFileDialog.getSaveFileName(parent, "Scarica la trascrizione", str(base.with_suffix("." + formati[0])), filtro)
+        f, _ = QFileDialog.getSaveFileName(parent, tr('Scarica la trascrizione'), str(base.with_suffix("." + formati[0])), filtro)
         if not f:
             return []
         base = Path(f).with_suffix("")
     else:
-        scelta = QFileDialog.getExistingDirectory(parent, "Cartella per Word e WebVTT", str(base.parent))
+        scelta = QFileDialog.getExistingDirectory(parent, tr('Cartella per Word e WebVTT'), str(base.parent))
         if not scelta:
             return []
         base = Path(scelta) / base.name
@@ -210,7 +211,7 @@ def scarica(parent, sorgente, formati):
         if "vtt" in formati:
             salvati.append(salva_vtt(segmenti, base, titolo))
     except Exception as e:
-        QMessageBox.warning(parent, "Scarica trascrizione", f"Non riesco a salvare: {e}")
+        QMessageBox.warning(parent, tr('Scarica trascrizione'), tr('Non riesco a salvare: {e}', e=e))
         return salvati
     finestra = parent.window()
     if hasattr(finestra, "statusBar"):

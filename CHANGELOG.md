@@ -2,6 +2,13 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261122.0832: Argo in italiano, inglese, spagnolo e tedesco
+- **Lingua dell'interfaccia** in Impostazioni › Aspetto e aggiornamenti › *Lingua*: Come il sistema, Italiano, English, Español, Deutsch. Vale dal prossimo avvio: Argo propone di riavviarsi subito. Con il sistema in un'altra lingua Argo resta in italiano.
+- **Tradotti tutti i 953 testi delle schermate**: menu laterale, pagine, pulsanti, finestre di conferma, avvisi e barra in basso. Anche i pulsanti standard di Qt (OK, Annulla, Sì, No) seguono la lingua scelta.
+- La lingua dell'interfaccia è **separata** da quella delle trascrizioni e delle relazioni, che non cambiano.
+- Per gli sviluppatori: ogni testo passa da `tr("testo in italiano", campo=valore)` (`app/lingua.py`), le traduzioni sono in `app/traduzioni/en.json`, `es.json`, `de.json`. `strumenti/controlla_traduzioni.py` conta i testi tradotti e controlla i segnaposto; la GitHub Action *Prova di avvio* si ferma se manca una traduzione. `strumenti/avvolgi_testi.py` aiuta a passare a `tr()` i testi di un file nuovo.
+- **Da rileggere**: le traduzioni sono una prima versione. Restano in italiano, per ora, i messaggi che arrivano dai moduli senza interfaccia (alcuni errori di Ollama, Dynamics e aggiornamenti), le etichette dei canali e dell'uso del computer, il manuale e le istruzioni ai modelli.
+
 ## 20261120.2033: scarica la trascrizione in Word e in WebVTT
 - **⬇️ Scarica trascrizione**: **Word (.docx)**, **sottotitoli WebVTT (.vtt)** oppure **entrambi**. Si trova in *Trascrivi* (pulsante nel dettaglio e tasto destro, al posto di «Esporta in Word»), in *Registra* dopo una Live e negli *Incontri* (*Salva ▾*, dove le voci della relazione ora si chiamano «Relazione in…», e tasto destro).
 - **WebVTT** standard W3C: una riga per frase con inizio e fine presi da WhisperX (al millesimo), il parlante nel tag di voce `<v Nome>`, le frasi lunghe divise. Senza il `.json` i tempi si ricavano dal `_nomi.txt`.

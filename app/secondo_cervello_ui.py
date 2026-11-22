@@ -2,6 +2,7 @@
 
 La logica e i dati sono in secondo_cervello.py; qui solo l'interfaccia.
 """
+from lingua import tr
 import threading
 from pathlib import Path
 
@@ -75,29 +76,28 @@ class DialogoAzienda(QDialog):
         a = dict(azienda or {})
         self.id = a.get("id")
         self.fonte = a.get("fonte") or "manuale"
-        self.setWindowTitle("Azienda" if self.id else "Nuova azienda")
+        self.setWindowTitle(tr('Azienda') if self.id else tr('Nuova azienda'))
         self.setMinimumWidth(520)
         lay = QVBoxLayout(self)
         form = QFormLayout()
         self.e_nome = QLineEdit(a.get("nome") or nome)
         self.e_sito = QLineEdit(a.get("sito", ""))
-        self.e_sito.setPlaceholderText("facoltativo · aiuta a distinguere aziende con lo stesso nome")
+        self.e_sito.setPlaceholderText(tr('facoltativo · aiuta a distinguere aziende con lo stesso nome'))
         self.c_settore = _combo(sc.SETTORI, a.get("settore", ""))
         self.c_dimensione = _combo(sc.DIMENSIONI, a.get("dimensione", ""))
         self.c_tipo = _combo(sc.TIPI_ATTIVITA, a.get("tipo_attivita", ""))
         self.c_area = _combo(sc.AREE_GEOGRAFICHE, a.get("area", ""))
         self.e_note = QPlainTextEdit(a.get("note", ""))
         self.e_note.setFixedHeight(70)
-        self.e_note.setPlaceholderText("Cosa fa l'azienda: prodotti, servizi, mercati. Solo fatti di lavoro.")
+        self.e_note.setPlaceholderText(tr("Cosa fa l'azienda: prodotti, servizi, mercati. Solo fatti di lavoro."))
         for etichetta, w in (("Nome", self.e_nome), ("Sito", self.e_sito), ("Settore", self.c_settore),
                              ("Dimensione", self.c_dimensione), ("Tipo di attività", self.c_tipo),
                              ("Area geografica", self.c_area), ("Note", self.e_note)):
             form.addRow(etichetta, w)
         lay.addLayout(form)
         riga = QHBoxLayout()
-        self.b_web = QPushButton("🔎 Cataloga dal web")
-        self.b_web.setToolTip("Usa la scheda pubblica della pagina Clienti se c'è già, altrimenti la ricerca web; "
-                              "il modello sceglie le categorie. Controllale prima di salvare.")
+        self.b_web = QPushButton(tr('🔎 Cataloga dal web'))
+        self.b_web.setToolTip(tr("Usa la scheda pubblica della pagina Clienti se c'è già, altrimenti la ricerca web; il modello sceglie le categorie. Controllale prima di salvare."))
         self.b_web.clicked.connect(self.cataloga)
         riga.addWidget(self.b_web)
         self.l_stato = QLabel("")
@@ -114,7 +114,7 @@ class DialogoAzienda(QDialog):
     def cataloga(self):
         nome = self.e_nome.text().strip()
         if not nome:
-            QMessageBox.information(self, "Nome", "Scrivi prima il nome dell'azienda.")
+            QMessageBox.information(self, tr('Nome'), tr("Scrivi prima il nome dell'azienda."))
             return
         sito = self.e_sito.text().strip()
         self.b_web.setEnabled(False)
@@ -136,12 +136,12 @@ class DialogoAzienda(QDialog):
         if dati.get("note"):
             self.e_note.setPlainText(dati["note"])
         self.fonte = "ricerca"
-        self.l_stato.setText("Categorie proposte dalle fonti pubbliche: controllale prima di salvare.")
+        self.l_stato.setText(tr('Categorie proposte dalle fonti pubbliche: controllale prima di salvare.'))
 
     def _errore(self, testo):
         self.b_web.setEnabled(True)
         self.l_stato.setText("")
-        QMessageBox.warning(self, "Catalogazione", testo)
+        QMessageBox.warning(self, tr('Catalogazione'), testo)
 
     def salva(self):
         try:
@@ -151,7 +151,7 @@ class DialogoAzienda(QDialog):
                 "tipo_attivita": self.c_tipo.currentText(), "area": self.c_area.currentText(),
                 "note": self.e_note.toPlainText(), "fonte": self.fonte})
         except ValueError as e:
-            QMessageBox.information(self, "Azienda", str(e))
+            QMessageBox.information(self, tr('Azienda'), str(e))
             return
         self.accept()
 
@@ -162,20 +162,20 @@ class DialogoFunzione(QDialog):
         super().__init__(parent)
         f = dict(funzione or {})
         self.id = f.get("id")
-        self.setWindowTitle("Funzione")
+        self.setWindowTitle(tr('Funzione'))
         self.setMinimumWidth(440)
         lay = QVBoxLayout(self)
-        nota = QLabel("Le persone si catalogano per <b>funzione</b>, non per identità: <b>niente nomi</b>.")
+        nota = QLabel(tr('Le persone si catalogano per <b>funzione</b>, non per identità: <b>niente nomi</b>.'))
         nota.setWordWrap(True)
         lay.addWidget(nota)
         form = QFormLayout()
         self.e_ruolo = QLineEdit(f.get("ruolo", ""))
-        self.e_ruolo.setPlaceholderText("es. Responsabile IT, Buyer, Titolare, Responsabile di produzione")
+        self.e_ruolo.setPlaceholderText(tr('es. Responsabile IT, Buyer, Titolare, Responsabile di produzione'))
         self.c_area = _combo(sc.AREE_FUNZIONE, f.get("area", ""))
         self.c_livello = _combo(sc.LIVELLI, f.get("livello", ""))
-        form.addRow("Ruolo", self.e_ruolo)
-        form.addRow("Area", self.c_area)
-        form.addRow("Livello", self.c_livello)
+        form.addRow(tr('Ruolo'), self.e_ruolo)
+        form.addRow(tr('Area'), self.c_area)
+        form.addRow(tr('Livello'), self.c_livello)
         lay.addLayout(form)
         bb = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         bb.accepted.connect(self.salva)
@@ -189,7 +189,7 @@ class DialogoFunzione(QDialog):
                                               "area": self.c_area.currentText(),
                                               "livello": self.c_livello.currentText()})
         except ValueError as e:
-            QMessageBox.information(self, "Funzione", str(e))
+            QMessageBox.information(self, tr('Funzione'), str(e))
             return
         self.accept()
 
@@ -201,11 +201,11 @@ class DialogoInterlocutori(QDialog):
 
     def __init__(self, titolo="", esistente=None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Con chi stai parlando?")
+        self.setWindowTitle(tr('Con chi stai parlando?'))
         self.setMinimumWidth(540)
         e = dict(esistente or {})
         lay = QVBoxLayout(self)
-        testa = QLabel(f"<b>{titolo}</b><br>" if titolo else "")
+        testa = QLabel(tr('<b>{titolo}</b><br>', titolo=titolo) if titolo else "")
         testa.setText(testa.text() + "Serve al Secondo cervello per collegare l'incontro ad azienda e funzioni. "
                       "Puoi saltare e completarlo dopo.")
         testa.setWordWrap(True)
@@ -215,12 +215,12 @@ class DialogoInterlocutori(QDialog):
         self.c_azienda = QComboBox()
         self.c_azienda.setEditable(False)
         riga_az.addWidget(self.c_azienda, 1)
-        form.addRow("Azienda", riga_az)
+        form.addRow(tr('Azienda'), riga_az)
         lay.addLayout(form)
         self._riempi_aziende(e.get("azienda", ""))
         self.c_azienda.activated.connect(self._azienda_scelta)
 
-        lay.addWidget(QLabel("Persone, per funzione (niente nomi):"))
+        lay.addWidget(QLabel(tr('Persone, per funzione (niente nomi):')))
         self.l_funzioni = QListWidget()
         self.l_funzioni.setFixedHeight(110)
         lay.addWidget(self.l_funzioni)
@@ -232,31 +232,31 @@ class DialogoInterlocutori(QDialog):
         self.c_funzione = QComboBox()
         self._riempi_funzioni()
         riga_f.addWidget(self.c_funzione, 1)
-        b_agg = QPushButton("Aggiungi")
+        b_agg = QPushButton(tr('Aggiungi'))
         b_agg.clicked.connect(self._aggiungi_scelta)
         riga_f.addWidget(b_agg)
-        b_nuova = QPushButton("Nuova funzione…")
+        b_nuova = QPushButton(tr('Nuova funzione…'))
         b_nuova.clicked.connect(self._nuova_funzione)
         riga_f.addWidget(b_nuova)
-        b_togli = QPushButton("Togli")
+        b_togli = QPushButton(tr('Togli'))
         b_togli.clicked.connect(lambda: [self.l_funzioni.takeItem(self.l_funzioni.row(i))
                                          for i in self.l_funzioni.selectedItems()])
         riga_f.addWidget(b_togli)
         lay.addLayout(riga_f)
 
         bb = QDialogButtonBox()
-        bb.addButton("Salta", QDialogButtonBox.RejectRole)
-        bb.addButton("Salva", QDialogButtonBox.AcceptRole)
+        bb.addButton(tr('Salta'), QDialogButtonBox.RejectRole)
+        bb.addButton(tr('Salva'), QDialogButtonBox.AcceptRole)
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         lay.addWidget(bb)
 
     def _riempi_aziende(self, attuale=""):
         self.c_azienda.clear()
-        self.c_azienda.addItem("— nessuna o non lo so —", "")
+        self.c_azienda.addItem(tr('— nessuna o non lo so —'), "")
         for a in sc.aziende():
             self.c_azienda.addItem(sc.descrivi_azienda(a), a["id"])
-        self.c_azienda.addItem("➕ Nuova azienda…", self.NUOVA)
+        self.c_azienda.addItem(tr('➕ Nuova azienda…'), self.NUOVA)
         i = self.c_azienda.findData(attuale)
         self.c_azienda.setCurrentIndex(i if i >= 0 else 0)
 
@@ -377,14 +377,13 @@ class PaginaCervello(QWidget):
         self.l_lavoro.setProperty("ruolo", "tenue")
         self.l_lavoro.setWordWrap(True)
         riga.addWidget(self.l_lavoro, 1)
-        self.b_distilla = QPushButton("✨ Distilla")
-        self.b_distilla.setToolTip("Estrae i fatti di lavoro dagli incontri selezionati e li salva, anonimi, nella Base. "
-                                   "Solo con il modello su questo computer.")
+        self.b_distilla = QPushButton(tr('✨ Distilla'))
+        self.b_distilla.setToolTip(tr('Estrae i fatti di lavoro dagli incontri selezionati e li salva, anonimi, nella Base. Solo con il modello su questo computer.'))
         self.b_distilla.clicked.connect(lambda: self.distilla(False))
-        self.b_nuovi = QPushButton("✨ Distilla i nuovi")
-        self.b_nuovi.setToolTip("Tutti gli incontri catalogati non ancora nella Base")
+        self.b_nuovi = QPushButton(tr('✨ Distilla i nuovi'))
+        self.b_nuovi.setToolTip(tr('Tutti gli incontri catalogati non ancora nella Base'))
         self.b_nuovi.clicked.connect(lambda: self.distilla(True))
-        self.b_ferma = QPushButton("■ Ferma")
+        self.b_ferma = QPushButton(tr('■ Ferma'))
         self.b_ferma.hide()
         self.b_ferma.clicked.connect(self.ferma)
         for b in (self.b_distilla, self.b_nuovi, self.b_ferma):
@@ -394,12 +393,11 @@ class PaginaCervello(QWidget):
             b.clicked.connect(azione)
             riga.addWidget(b)
         wl.addLayout(riga)
-        self.schede.addTab(w, "Incontri")
+        self.schede.addTab(w, tr('Incontri'))
         # base
         w = QWidget()
         wl = QVBoxLayout(w)
-        nota = QLabel("Solo fatti di lavoro, anonimi: categoria dell'azienda, funzioni, mese. Nessun nome e nessun "
-                      "collegamento all'incontro di origine. Puoi correggere o eliminare ogni voce.")
+        nota = QLabel(tr("Solo fatti di lavoro, anonimi: categoria dell'azienda, funzioni, mese. Nessun nome e nessun collegamento all'incontro di origine. Puoi correggere o eliminare ogni voce."))
         nota.setProperty("ruolo", "tenue")
         nota.setWordWrap(True)
         wl.addWidget(nota)
@@ -413,7 +411,7 @@ class PaginaCervello(QWidget):
         div.setSizes([260, 240])
         wl.addWidget(div, 1)
         wl.addLayout(self._comandi([("Modifica…", self.modifica_voce), ("Elimina", self.elimina_voce)]))
-        self.schede.addTab(w, "Base")
+        self.schede.addTab(w, tr('Base'))
         self._scheda_base = w
         # aziende
         w = QWidget()
@@ -423,7 +421,7 @@ class PaginaCervello(QWidget):
         wl.addWidget(self.t_aziende, 1)
         wl.addLayout(self._comandi([("➕ Nuova…", self.nuova_azienda), ("Modifica…", self.modifica_azienda),
                                     ("Elimina", self.elimina_azienda)]))
-        self.schede.addTab(w, "Aziende")
+        self.schede.addTab(w, tr('Aziende'))
         # funzioni
         w = QWidget()
         wl = QVBoxLayout(w)
@@ -432,7 +430,7 @@ class PaginaCervello(QWidget):
         wl.addWidget(self.t_funzioni, 1)
         wl.addLayout(self._comandi([("➕ Nuova…", self.nuova_funzione), ("Modifica…", self.modifica_funzione),
                                     ("Elimina", self.elimina_funzione)]))
-        self.schede.addTab(w, "Funzioni")
+        self.schede.addTab(w, tr('Funzioni'))
         self.aggiorna()
 
     def _comandi(self, voci):
@@ -448,11 +446,11 @@ class PaginaCervello(QWidget):
     def aggiorna(self):
         acceso, vietato = sc.attivo(), sc.vietato()
         if vietato:
-            self.l_stato.setText("🔒 Disattivato dai criteri della tua azienda.")
+            self.l_stato.setText(tr('🔒 Disattivato dai criteri della tua azienda.'))
         else:
-            self.l_stato.setText("🟢 Attivo: ti chiedo con chi parli all'inizio di ogni registrazione."
-                                 if acceso else "⚪ Spento.")
-        self.b_interruttore.setText("Spegni…" if acceso else "Attiva il Secondo cervello")
+            self.l_stato.setText(tr("🟢 Attivo: ti chiedo con chi parli all'inizio di ogni registrazione.")
+                                 if acceso else tr('⚪ Spento.'))
+        self.b_interruttore.setText(tr('Spegni…') if acceso else tr('Attiva il Secondo cervello'))
         self.b_interruttore.setEnabled(not vietato)
         self.schede.setEnabled(acceso)
         uso_az, uso_f = {}, {}
@@ -482,7 +480,7 @@ class PaginaCervello(QWidget):
         for v in sorted(base.voci(), key=lambda x: x.get("mese", ""), reverse=True):
             _riga(self.t_base, [v.get("mese"), base.descrivi(v), (v.get("contenuti") or {}).get("sintesi", "")], v["id"])
         self.v_base.clear()
-        self.schede.setTabText(self.schede.indexOf(self._scheda_base), f"Base ({self.t_base.rowCount()})")
+        self.schede.setTabText(self.schede.indexOf(self._scheda_base), tr('Base ({rowcount})', rowcount=self.t_base.rowCount()))
         for t in (self.t_incontri, self.t_aziende, self.t_funzioni, self.t_base):
             t.resizeColumnsToContents()
         self.cambiato.emit()
@@ -492,13 +490,12 @@ class PaginaCervello(QWidget):
         if not sc.attivo():
             sc.imposta(True)
         else:
-            box = QMessageBox(QMessageBox.Question, "Spegnere il Secondo cervello?",
-                              "Spento, Argo non chiede più con chi parli. Cosa faccio dei cataloghi, delle schede "
-                              "degli incontri e della Base? Gli incontri e le trascrizioni restano dove sono.",
+            box = QMessageBox(QMessageBox.Question, tr('Spegnere il Secondo cervello?'),
+                              tr('Spento, Argo non chiede più con chi parli. Cosa faccio dei cataloghi, delle schede degli incontri e della Base? Gli incontri e le trascrizioni restano dove sono.'),
                               parent=self)
-            b_tieni = box.addButton("Spegni e tieni i dati", QMessageBox.AcceptRole)
-            b_canc = box.addButton("Spegni e cancella tutto", QMessageBox.DestructiveRole)
-            box.addButton("Annulla", QMessageBox.RejectRole)
+            b_tieni = box.addButton(tr('Spegni e tieni i dati'), QMessageBox.AcceptRole)
+            b_canc = box.addButton(tr('Spegni e cancella tutto'), QMessageBox.DestructiveRole)
+            box.addButton(tr('Annulla'), QMessageBox.RejectRole)
             box.exec()
             if box.clickedButton() is b_tieni:
                 sc.imposta(False)
@@ -520,8 +517,7 @@ class PaginaCervello(QWidget):
 
     def togli_incontro(self):
         id_ = _id_selezionato(self.t_incontri)
-        if id_ and QMessageBox.question(self, "Togliere la scheda?", "Tolgo solo azienda e funzioni collegate a "
-                                        "questo incontro; l'incontro resta.") == QMessageBox.Yes:
+        if id_ and QMessageBox.question(self, tr('Togliere la scheda?'), tr("Tolgo solo azienda e funzioni collegate a questo incontro; l'incontro resta.")) == QMessageBox.Yes:
             sc.elimina_interlocutori(id_)
             self.aggiorna()
 
@@ -536,12 +532,11 @@ class PaginaCervello(QWidget):
             ids = [self.t_incontri.item(r, 0).data(Qt.UserRole) for r in righe if self.t_incontri.item(r, 0)]
             schede = [sc.interlocutori_di(i) for i in ids if sc.interlocutori_di(i)]
         if not schede:
-            QMessageBox.information(self, "Distilla", "Nessun incontro da distillare." if nuovi else
-                                    "Seleziona uno o più incontri.")
+            QMessageBox.information(self, tr('Distilla'), tr('Nessun incontro da distillare.') if nuovi else
+                                    tr('Seleziona uno o più incontri.'))
             return
         rifare = [s for s in schede if s.get("base") and base.voce(s["base"])]
-        if rifare and QMessageBox.question(self, "Distillare di nuovo?", f"{len(rifare)} incontri sono già nella Base: "
-                                           "la voce vecchia viene sostituita. Procedo?") != QMessageBox.Yes:
+        if rifare and QMessageBox.question(self, tr('Distillare di nuovo?'), tr('{len} incontri sono già nella Base: la voce vecchia viene sostituita. Procedo?', len=len(rifare))) != QMessageBox.Yes:
             return
         lavoro = _Lavoro(lambda stato: self._distilla_tutti(schede, stato), self)
         self._lavoro = lavoro
@@ -575,13 +570,13 @@ class PaginaCervello(QWidget):
         self.b_ferma.hide()
         self.l_lavoro.setText(str(esito).split("\n")[0])
         if "\n" in str(esito):
-            QMessageBox.information(self, "Distilla", str(esito))
+            QMessageBox.information(self, tr('Distilla'), str(esito))
         self.aggiorna()
 
     def ferma(self):
         if getattr(self, "_lavoro", None):
             self._lavoro.fermato = True
-            self.l_lavoro.setText("Mi fermo dopo il passo in corso…")
+            self.l_lavoro.setText(tr('Mi fermo dopo il passo in corso…'))
 
     # -- base
     def _mostra_voce(self):
@@ -593,11 +588,10 @@ class PaginaCervello(QWidget):
         if not v:
             return
         d = QDialog(self)
-        d.setWindowTitle("Voce della Base")
+        d.setWindowTitle(tr('Voce della Base'))
         d.resize(640, 520)
         lay = QVBoxLayout(d)
-        nota = QLabel("Correggi o togli le voci; mantieni i titoli «## …» e i trattini. Al salvataggio Argo ripassa "
-                      "l'anonimizzazione e il filtro etico.")
+        nota = QLabel(tr("Correggi o togli le voci; mantieni i titoli «## …» e i trattini. Al salvataggio Argo ripassa l'anonimizzazione e il filtro etico."))
         nota.setWordWrap(True)
         lay.addWidget(nota)
         e = QPlainTextEdit(base.in_testo(v))
@@ -612,8 +606,7 @@ class PaginaCervello(QWidget):
 
     def elimina_voce(self):
         id_ = _id_selezionato(self.t_base)
-        if id_ and QMessageBox.question(self, "Eliminare la voce?", "La voce sparisce dalla Base. L'incontro di "
-                                        "origine resta e si può distillare di nuovo.") == QMessageBox.Yes:
+        if id_ and QMessageBox.question(self, tr('Eliminare la voce?'), tr("La voce sparisce dalla Base. L'incontro di origine resta e si può distillare di nuovo.")) == QMessageBox.Yes:
             base.elimina_voce(id_)
             self.aggiorna()
 
@@ -629,8 +622,7 @@ class PaginaCervello(QWidget):
 
     def elimina_azienda(self):
         a = sc.azienda(_id_selezionato(self.t_aziende))
-        if a and QMessageBox.question(self, "Eliminare l'azienda?", f"Elimino «{a.get('nome')}» dal catalogo; gli "
-                                      "incontri collegati restano senza azienda.") == QMessageBox.Yes:
+        if a and QMessageBox.question(self, tr("Eliminare l'azienda?"), tr('Elimino «{get}» dal catalogo; gli incontri collegati restano senza azienda.', get=a.get('nome'))) == QMessageBox.Yes:
             sc.elimina_azienda(a["id"])
             self.aggiorna()
 
@@ -646,7 +638,6 @@ class PaginaCervello(QWidget):
 
     def elimina_funzione(self):
         f = sc.funzione(_id_selezionato(self.t_funzioni))
-        if f and QMessageBox.question(self, "Eliminare la funzione?", f"Elimino «{sc.descrivi_funzione(f)}»; gli "
-                                      "incontri collegati la perdono.") == QMessageBox.Yes:
+        if f and QMessageBox.question(self, tr('Eliminare la funzione?'), tr('Elimino «{descrivi_funzione}»; gli incontri collegati la perdono.', descrivi_funzione=sc.descrivi_funzione(f))) == QMessageBox.Yes:
             sc.elimina_funzione(f["id"])
             self.aggiorna()

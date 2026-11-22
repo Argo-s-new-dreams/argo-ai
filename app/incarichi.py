@@ -4,6 +4,7 @@ visibile, una pausa di conferma sui nomi e i risultati salvati come file NUOVI n
 Ricetta disponibile: Call → verbale + mail di recap + task.
 Tutto in locale: trascrizione con WhisperX (coda del Trascrittore), testi con il modello in Ollama.
 """
+from lingua import tr
 import csv
 import json
 import re
@@ -202,10 +203,9 @@ class SchedaIncarichi(QWidget):
         l1 = QVBoxLayout(sx)
         l1.setContentsMargins(20, 16, 14, 14)
         l1.setSpacing(10)
-        t = QLabel("Incarichi")
+        t = QLabel(tr('Incarichi'))
         t.setProperty("ruolo", "titolo")
-        s = QLabel("Argo esegue più attrezzi in fila. Tu approvi i passi importanti; i risultati sono file nuovi "
-                   "nella cartella della call, niente viene sovrascritto o inviato.")
+        s = QLabel(tr('Argo esegue più attrezzi in fila. Tu approvi i passi importanti; i risultati sono file nuovi nella cartella della call, niente viene sovrascritto o inviato.'))
         s.setProperty("ruolo", "tenue")
         s.setWordWrap(True)
         l1.addWidget(t)
@@ -219,21 +219,21 @@ class SchedaIncarichi(QWidget):
             b.setChecked(i == 0)
             b.setEnabled(i == 0)
             if i:
-                b.setToolTip("Prossimamente")
+                b.setToolTip(tr('Prossimamente'))
             r.addWidget(b)
         r.addStretch()
         l1.addLayout(r)
         l1.addWidget(self._sezione("CALL"))
         rf = QHBoxLayout()
-        self.l_file = QLabel("Nessun file scelto")
+        self.l_file = QLabel(tr('Nessun file scelto'))
         self.l_file.setWordWrap(True)
-        b_file = QPushButton("Scegli audio o video…")
+        b_file = QPushButton(tr('Scegli audio o video…'))
         b_file.clicked.connect(self.scegli_file)
         rf.addWidget(self.l_file, 1)
         rf.addWidget(b_file)
         l1.addLayout(rf)
         rp = QHBoxLayout()
-        rp.addWidget(QLabel("Partecipanti:"))
+        rp.addWidget(QLabel(tr('Partecipanti:')))
         self.s_parl = QSpinBox()
         self.s_parl.setRange(0, 20)
         self.s_parl.setSpecialValueText("Auto")
@@ -243,9 +243,9 @@ class SchedaIncarichi(QWidget):
         l1.addWidget(self._sezione("MAIL DI RECAP"))
         rd = QHBoxLayout()
         self.e_dest = QLineEdit()
-        self.e_dest.setPlaceholderText("Destinatari (facoltativo), es. Markus Huber <markus@azienda.it>")
-        self.b_cal = QPushButton("Dal calendario")
-        self.b_cal.setToolTip("Microsoft 365: prende titolo e partecipanti della riunione registrata")
+        self.e_dest.setPlaceholderText(tr('Destinatari (facoltativo), es. Markus Huber <markus@azienda.it>'))
+        self.b_cal = QPushButton(tr('Dal calendario'))
+        self.b_cal.setToolTip(tr('Microsoft 365: prende titolo e partecipanti della riunione registrata'))
         self.b_cal.clicked.connect(self.dal_calendario)
         rd.addWidget(self.e_dest, 1)
         rd.addWidget(self.b_cal)
@@ -260,17 +260,17 @@ class SchedaIncarichi(QWidget):
             self.c_lingua.addItem(n, v)
         self.c_tono = QComboBox()
         self.c_tono.addItems(TONI)
-        rl.addWidget(QLabel("Lingua:"))
+        rl.addWidget(QLabel(tr('Lingua:')))
         rl.addWidget(self.c_lingua)
-        rl.addWidget(QLabel("Tono:"))
+        rl.addWidget(QLabel(tr('Tono:')))
         rl.addWidget(self.c_tono, 1)
         l1.addLayout(rl)
         self.e_note = QPlainTextEdit()
-        self.e_note.setPlaceholderText("Indicazioni aggiuntive (facoltative), es. «metti in evidenza le scadenze»")
+        self.e_note.setPlaceholderText(tr('Indicazioni aggiuntive (facoltative), es. «metti in evidenza le scadenze»'))
         self.e_note.setMaximumHeight(80)
         l1.addWidget(self.e_note)
         l1.addStretch()
-        self.b_esegui = QPushButton("▶ Esegui l'incarico")
+        self.b_esegui = QPushButton(tr("▶ Esegui l'incarico"))
         self.b_esegui.setProperty("primario", True)
         self.b_esegui.clicked.connect(self.esegui_o_ferma)
         l1.addWidget(self.b_esegui)
@@ -288,7 +288,7 @@ class SchedaIncarichi(QWidget):
             self.passi.append(p)
             l2.addWidget(p)
         l2.addStretch()
-        self.stato = QLabel("Scegli la call e premi «Esegui».")
+        self.stato = QLabel(tr('Scegli la call e premi «Esegui».'))
         self.stato.setProperty("ruolo", "tenue")
         self.stato.setWordWrap(True)
         l2.addWidget(self.stato)
@@ -305,9 +305,9 @@ class SchedaIncarichi(QWidget):
         l3.addWidget(self._sezione("RISULTATI"))
         self.ris = QTabWidget()
         self.t_mail = QPlainTextEdit()
-        self.t_mail.setPlaceholderText("La mail di recap comparirà qui. Puoi modificarla prima di copiarla.")
+        self.t_mail.setPlaceholderText(tr('La mail di recap comparirà qui. Puoi modificarla prima di copiarla.'))
         self.t_task = QTableWidget(0, 3)
-        self.t_task.setHorizontalHeaderLabels(["Task", "Responsabile", "Scadenza"])
+        self.t_task.setHorizontalHeaderLabels([tr('Task'), tr('Responsabile'), tr('Scadenza')])
         self.t_task.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.t_task.verticalHeader().setVisible(False)
         self.t_task.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -316,17 +316,17 @@ class SchedaIncarichi(QWidget):
         self.l_file_prod = QLabel("")
         self.l_file_prod.setWordWrap(True)
         self.l_file_prod.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.ris.addTab(self.t_mail, "Mail")
-        self.ris.addTab(self.t_task, "Task")
-        self.ris.addTab(self.t_verb, "Verbale")
-        self.ris.addTab(self.l_file_prod, "File")
+        self.ris.addTab(self.t_mail, tr('Mail'))
+        self.ris.addTab(self.t_task, tr('Task'))
+        self.ris.addTab(self.t_verb, tr('Verbale'))
+        self.ris.addTab(self.l_file_prod, tr('File'))
         l3.addWidget(self.ris, 1)
         rb = QHBoxLayout()
-        b_cm = QPushButton("Copia mail")
+        b_cm = QPushButton(tr('Copia mail'))
         b_cm.clicked.connect(lambda: attrezzi.copia(self.t_mail.toPlainText()))
-        b_ct = QPushButton("Copia task")
+        b_ct = QPushButton(tr('Copia task'))
         b_ct.clicked.connect(self.copia_task)
-        b_cart = QPushButton("Apri cartella")
+        b_cart = QPushButton(tr('Apri cartella'))
         b_cart.clicked.connect(lambda: self.file and QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.file.parent))))
         for b in (b_cm, b_ct, b_cart):
             rb.addWidget(b)
@@ -344,7 +344,7 @@ class SchedaIncarichi(QWidget):
         acc = m365.account()
         self.b_cal.setEnabled(bool(acc))
         if not acc:
-            self.b_cal.setToolTip("Collega Microsoft 365 in Impostazioni per usarlo")
+            self.b_cal.setToolTip(tr('Collega Microsoft 365 in Impostazioni per usarlo'))
 
     def _sezione(self, testo):
         l = QLabel(testo)
@@ -354,7 +354,7 @@ class SchedaIncarichi(QWidget):
     # ------------------------------------------------------------ preparazione
     def scegli_file(self):
         filtro = "Audio o video (*.wav *.mp3 *.m4a *.aac *.flac *.ogg *.opus *.wma *.mp4 *.mov *.mkv *.webm *.m4v);;Tutti i file (*)"
-        f, _ = QFileDialog.getOpenFileName(self, "Registrazione della call", str(Path.home()), filtro)
+        f, _ = QFileDialog.getOpenFileName(self, tr('Registrazione della call'), str(Path.home()), filtro)
         if f:
             self.imposta_file(f)
 
@@ -362,32 +362,31 @@ class SchedaIncarichi(QWidget):
         self.file = Path(f)
         j = core.json_atteso(self.file)
         gia = j.exists()
-        self.l_file.setText(f"<b>{self.file.name}</b><br><span>{'già trascritta: salto la trascrizione' if gia else 'da trascrivere'}</span>")
+        self.l_file.setText(tr('<b>{name}</b><br><span>{valore}</span>', name=self.file.name, valore='già trascritta: salto la trascrizione' if gia else 'da trascrivere'))
         for p in self.passi:
             p.imposta("attesa", "")
             p.pulisci_azioni()
 
     def dal_calendario(self):
         if not self.file:
-            QMessageBox.information(self, "Calendario", "Scegli prima la registrazione della call.")
+            QMessageBox.information(self, tr('Calendario'), tr('Scegli prima la registrazione della call.'))
             return
         from datetime import datetime
         quando = datetime.fromtimestamp(self.file.stat().st_mtime).astimezone()
-        self.l_riunione.setText("Cerco nel calendario…")
+        self.l_riunione.setText(tr('Cerco nel calendario…'))
         lav = attrezzi.Lavoro(lambda _l: m365.riunione_vicina(quando), self)
 
         def fatto(ev):
             self._lav_cal = None
             if not ev:
-                self.l_riunione.setText("Nessuna riunione trovata nel calendario vicino all'ora della registrazione.")
+                self.l_riunione.setText(tr("Nessuna riunione trovata nel calendario vicino all'ora della registrazione."))
                 return
             self.persone = ev["persone"]
             self.e_dest.setText(", ".join(f"{p['nome']} <{p['email']}>" for p in ev["persone"]))
-            self.l_riunione.setText(f"Riunione: «{ev['oggetto']}» · {ev['inizio']} · {len(ev['persone'])} persone. "
-                                    "Togli dai destinatari chi non deve ricevere il recap.")
+            self.l_riunione.setText(tr('Riunione: «{oggetto}» · {inizio} · {len} persone. Togli dai destinatari chi non deve ricevere il recap.', oggetto=ev['oggetto'], inizio=ev['inizio'], len=len(ev['persone'])))
 
         lav.sig_fine.connect(fatto)
-        lav.sig_errore.connect(lambda e: self.l_riunione.setText(f"Calendario non disponibile: {e}"))
+        lav.sig_errore.connect(lambda e: self.l_riunione.setText(tr('Calendario non disponibile: {e}', e=e)))
         self._lav_cal = lav
         lav.start()
 
@@ -403,12 +402,12 @@ class SchedaIncarichi(QWidget):
             self.ferma()
             return
         if not self.file or not self.file.exists():
-            QMessageBox.information(self, "Incarico", "Scegli prima la registrazione della call.")
+            QMessageBox.information(self, tr('Incarico'), tr('Scegli prima la registrazione della call.'))
             return
         if not attrezzi.pronto_llm(self):
             return
         self.in_corso = True
-        self.b_esegui.setText("■ Ferma l'incarico")
+        self.b_esegui.setText(tr("■ Ferma l'incarico"))
         self.prodotti, self.task, self.verbale = [], [], ""
         self.t_mail.clear()
         self.t_verb.clear()
@@ -428,7 +427,7 @@ class SchedaIncarichi(QWidget):
 
     def _fine(self, msg):
         self.in_corso = False
-        self.b_esegui.setText("▶ Esegui l'incarico")
+        self.b_esegui.setText(tr("▶ Esegui l'incarico"))
         self.log(msg)
         self.l_file_prod.setText("<br>".join(str(p) for p in self.prodotti) or "Nessun file creato.")
 

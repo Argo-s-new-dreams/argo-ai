@@ -1,4 +1,5 @@
 """tema.py - aspetto di Argo: tema scuro / chiaro, icone e menu laterale (stile «Studio»)."""
+from lingua import tr
 from PySide6.QtCore import QByteArray, QRectF, QSize, Qt, Signal
 import weakref
 from pathlib import Path
@@ -314,7 +315,7 @@ class StatoVuoto(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(24, 24, 24, 24)
         lay.addStretch(2)
-        motto = QLabel("Dove il fantastico è il quotidiano")
+        motto = QLabel(tr('Dove il fantastico è il quotidiano'))
         motto.setProperty("ruolo", "motto")
         motto.setAlignment(Qt.AlignCenter)
         lay.addWidget(motto)
@@ -361,9 +362,9 @@ class NavLaterale(QWidget):
         self.logo = QLabel()
         self.logo.setFixedSize(56, 56)
         self.logo.setPixmap(marchio(56))
-        self.logo.setToolTip("Argo · Cassetta degli attrezzi AI\nArgo's New Dreams: dove il fantastico è il quotidiano")
+        self.logo.setToolTip(tr("Argo · Cassetta degli attrezzi AI\nArgo's New Dreams: dove il fantastico è il quotidiano"))
         lay.addWidget(self.logo, alignment=Qt.AlignHCenter)
-        scritta = QLabel("ARGO")
+        scritta = QLabel(tr('ARGO'))
         scritta.setObjectName("marchio")
         lay.addWidget(scritta, alignment=Qt.AlignHCenter)
         lay.addSpacing(4)
