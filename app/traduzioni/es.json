@@ -951,5 +951,13 @@
  "🛟 Modalità sicura: Ponte, trascrizione Live, aggiornamenti automatici e avvio di Ollama sono spenti.": "🛟 Modo seguro: Puente, transcripción Live, actualizaciones automáticas e inicio de Ollama están apagados.",
  "🟢 Attivo: ti chiedo con chi parli all'inizio di ogni registrazione.": "🟢 Activo: te pregunto con quién hablas al inicio de cada grabación.",
  "🧠 Con chi stai parlando?…": "🧠 ¿Con quién estás hablando?…",
- "🧠 Secondo cervello attivo · {n} {valore} nella Base": "🧠 Segundo cerebro activo · {n} {valore} en la Base"
+ "🧠 Secondo cervello attivo · {n} {valore} nella Base": "🧠 Segundo cerebro activo · {n} {valore} en la Base",
+ "Se Ollama è spento, Argo lo accende all'avvio. Alla chiusura lo ferma secondo questa scelta, per liberare la memoria. Con «Lascialo acceso» Argo libera solo la memoria dei propri modelli e non tocca quelli degli altri programmi.": "Si Ollama está apagado, Argo lo enciende al iniciarse. Al cerrarse lo detiene según esta opción, para liberar memoria. Con «Déjalo encendido» Argo solo libera la memoria de sus propios modelos y no toca los de otros programas.",
+ "Fermalo solo se l'ha avviato Argo (consigliato)": "Detenerlo solo si lo inició Argo (recomendado)",
+ "Fermalo sempre": "Detenerlo siempre",
+ "Lascialo acceso: lo usano anche altri programmi": "Déjalo encendido: también lo usan otros programas",
+ "Avvio Ollama…": "Iniciando Ollama…",
+ "Installa Ollama da ollama.com e avvialo.": "Instala Ollama desde ollama.com e inícialo.",
+ "Ollama non si è acceso. Avvialo a mano e riprova.": "Ollama no se ha encendido. Inícialo a mano y vuelve a intentarlo.",
+ "Spengo Ollama…": "Apagando Ollama…"
 }

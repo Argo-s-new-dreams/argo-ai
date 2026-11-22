@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261120.2033 · riferita all'app versione 20261120.2033*
+*Versione del manuale: 20261122.1107 · riferita all'app versione 20261122.1107*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -772,10 +772,16 @@ Contiene il token, il pulsante **Mostra** e **Salva e verifica**, più i link al
 ### 11.4 Modello linguistico locale (Ollama)
 
 - **Indirizzo Ollama:** predefinito `http://localhost:11434`.
-- **Verifica e aggiorna elenco:** legge i modelli installati in Ollama.
+- **Verifica e aggiorna elenco:** legge i modelli installati in Ollama; se Ollama è spento (e sta su questo computer) prima lo accende.
 - **Modello per testi:** usato da Verbale, Documenti, Dettatura e Traduzione. Accanto a ogni modello c'è lo spazio che occupa sul disco (es. `gemma3:12b · 8,1 GB`), letto da Ollama; lo stesso vale per la tendina **Foto:** della pagina Incontri.
 - **Modello per documenti:** il modello di embedding usato dalla ricerca nei documenti, ad esempio `bge-m3`.
 - **Trascrizione rapida:** il modello faster-whisper usato da Dettatura e Traduzione da audio (predefinito `large-v3-turbo`).
+- **Alla chiusura di Argo:** se all'avvio Ollama è spento, Argo lo accende (Mac: l'app Ollama o `ollama serve`; Windows: l'icona di Ollama nella barra o `ollama serve`). Alla chiusura:
+  - **Fermalo solo se l'ha avviato Argo** (consigliato): se Ollama era già acceso, per esempio perché parte con il computer o lo usa un altro programma, resta acceso. Argo si ricorda di averlo acceso anche dopo un riavvio per aggiornamento, ma non dopo un riavvio del computer;
+  - **Fermalo sempre**: libera tutta la memoria, anche se lo stava usando un altro programma;
+  - **Lascialo acceso: lo usano anche altri programmi**: Argo non lo ferma mai e, prima di una trascrizione pesante, libera la memoria **solo dei propri modelli** (testi, foto, documenti), senza toccare quelli degli altri programmi.
+  
+  Un Ollama su un altro computer (indirizzo non locale) non viene mai acceso né spento.
 - **Scarica un modello:** scrivi il nome di un modello (es. `bge-m3`), premi **Scarica** e Argo lo scarica tramite Ollama, mostrando l'avanzamento.
 - **Salva modelli:** memorizza le scelte.
 - **Scarica modelli consigliati:** accende Ollama se serve e scarica i modelli che mancano (vedi sotto).

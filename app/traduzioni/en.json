@@ -951,5 +951,13 @@
  "🛟 Modalità sicura: Ponte, trascrizione Live, aggiornamenti automatici e avvio di Ollama sono spenti.": "🛟 Safe mode: Bridge, Live transcription, automatic updates and Ollama start are off.",
  "🟢 Attivo: ti chiedo con chi parli all'inizio di ogni registrazione.": "🟢 On: I ask you who you're talking to at the start of every recording.",
  "🧠 Con chi stai parlando?…": "🧠 Who are you talking to?…",
- "🧠 Secondo cervello attivo · {n} {valore} nella Base": "🧠 Second brain on · {n} {valore} in the Base"
+ "🧠 Secondo cervello attivo · {n} {valore} nella Base": "🧠 Second brain on · {n} {valore} in the Base",
+ "Se Ollama è spento, Argo lo accende all'avvio. Alla chiusura lo ferma secondo questa scelta, per liberare la memoria. Con «Lascialo acceso» Argo libera solo la memoria dei propri modelli e non tocca quelli degli altri programmi.": "If Ollama is off, Argo starts it on launch. On exit it stops it according to this choice, to free memory. With “Leave it running” Argo only frees the memory of its own models and leaves those of other programs alone.",
+ "Fermalo solo se l'ha avviato Argo (consigliato)": "Stop it only if Argo started it (recommended)",
+ "Fermalo sempre": "Always stop it",
+ "Lascialo acceso: lo usano anche altri programmi": "Leave it running: other programs use it too",
+ "Avvio Ollama…": "Starting Ollama…",
+ "Installa Ollama da ollama.com e avvialo.": "Install Ollama from ollama.com and start it.",
+ "Ollama non si è acceso. Avvialo a mano e riprova.": "Ollama did not start. Start it manually and try again.",
+ "Spengo Ollama…": "Stopping Ollama…"
 }

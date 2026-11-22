@@ -4,8 +4,20 @@ Al primo avvio (o quando mancano) Argo propone di scaricare:
     - un modello per i testi che guarda anche le foto (gemma3: 4b sui PC leggeri, 12b con 16 GB di RAM o più);
     - un modello per i documenti (bge-m3, embedding).
 Dopo il download li sceglie nelle Impostazioni; l'utente può cambiarli quando vuole.
+
+Acceso e spento (richiesta di Luca, 22/11/2026): se Ollama è spento Argo lo avvia (Mac: Ollama.app, altrimenti
+«ollama serve»; Windows: «ollama app.exe», l'icona nella barra, altrimenti «ollama serve») e se lo ricorda in
+un segnalino (ollama_avviato.json) che vale fino al riavvio del computer. Alla chiusura di Argo, secondo
+l'impostazione «ollama_alla_chiusura»:
+    - "se_avviato" (predefinita): lo ferma solo se l'ha acceso Argo;
+    - "sempre": lo ferma comunque;
+    - "mai": lo lascia acceso, perché lo usano anche altri programmi; in questo caso Argo libera la memoria solo
+      dei propri modelli (risorse.libera_ollama).
+Mai un Ollama su un altro computer.
 Solo libreria standard; nessuna interfaccia (la usa trascrittore.py).
 """
+import json
+import logging
 import os
 import shutil
 import subprocess
@@ -15,6 +27,9 @@ from pathlib import Path
 
 import llm_locale as llm
 import risorse
+import voci_core as core
+
+log = logging.getLogger("argo")
 
 EMBED_CONSIGLIATO = "bge-m3"
 DIMENSIONI_GB = {"gemma3:4b": 3.3, "gemma3:12b": 8.1, "bge-m3": 1.2}  # circa, come da ollama.com
@@ -111,12 +126,56 @@ def installato():
     return bool(_eseguibile()) or (sys.platform == "darwin" and _app_mac() is not None)
 
 
+SENZA_FINESTRA = 0x08000000
+SEGNALINO = core.APP_HOME / "ollama_avviato.json"
+SCELTE_CHIUSURA = ("se_avviato", "sempre", "mai")
+_processo = None  # «ollama serve» lanciato da questa sessione di Argo
+
+
+def _avvio_sistema():
+    """Ora (time.time) dell'ultimo avvio del computer, o 0 se non si sa."""
+    try:
+        if os.name == "nt":
+            import ctypes
+            ctypes.windll.kernel32.GetTickCount64.restype = ctypes.c_ulonglong
+            return time.time() - ctypes.windll.kernel32.GetTickCount64() / 1000
+        if sys.platform == "darwin":
+            r = subprocess.run(["/usr/sbin/sysctl", "-n", "kern.boottime"], capture_output=True, text=True, timeout=5)
+            return float(r.stdout.split("sec =")[1].split(",")[0])
+        return time.time() - float(Path("/proc/uptime").read_text().split()[0])
+    except Exception:
+        return 0.0
+
+
+def _segna(come):
+    try:
+        SEGNALINO.parent.mkdir(parents=True, exist_ok=True)
+        SEGNALINO.write_text(json.dumps({"come": come, "quando": time.time()}), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def avviato_da_argo():
+    """Come l'ha acceso Argo ("app" o "serve"), o "" se Ollama non l'ha acceso Argo (o il computer si è riavviato
+    da allora, e quindi l'ha acceso qualcun altro)."""
+    try:
+        dati = json.loads(SEGNALINO.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+    if dati.get("quando", 0) < _avvio_sistema() - 60:
+        SEGNALINO.unlink(missing_ok=True)
+        return ""
+    return dati.get("come", "")
+
+
 def avvia():
     """Prova ad accendere Ollama (l'app con l'icona, se c'è; altrimenti «ollama serve»). True se ha lanciato qualcosa."""
+    global _processo
     nulla = subprocess.DEVNULL
     try:
         if sys.platform == "darwin" and _app_mac() is not None:
             subprocess.Popen(["/usr/bin/open", "-g", "-a", str(_app_mac())], stdin=nulla, stdout=nulla, stderr=nulla)
+            _segna("app")
             return True
         exe = _eseguibile()
         if not exe:
@@ -124,13 +183,83 @@ def avvia():
         if os.name == "nt":
             app = Path(exe).with_name("ollama app.exe")  # l'icona nella barra: avvia anche il server
             cmd = [str(app)] if app.exists() else [exe, "serve"]
-            subprocess.Popen(cmd, stdin=nulla, stdout=nulla, stderr=nulla, close_fds=True,
-                             creationflags=0x00000008 | 0x00000200 | 0x08000000)  # staccato, senza finestra
+            processo = subprocess.Popen(cmd, stdin=nulla, stdout=nulla, stderr=nulla, close_fds=True,
+                                        creationflags=0x00000008 | 0x00000200 | SENZA_FINESTRA)  # staccato
+            _segna("app" if app.exists() else "serve")
         else:
-            subprocess.Popen([exe, "serve"], stdin=nulla, stdout=nulla, stderr=nulla, start_new_session=True)
+            processo = subprocess.Popen([exe, "serve"], stdin=nulla, stdout=nulla, stderr=nulla, start_new_session=True)
+            _segna("serve")
+        _processo = processo
+        log.info("Ollama avviato da Argo")
         return True
-    except Exception:
+    except Exception as e:
+        log.warning("Ollama non avviato: %s", e)
         return False
+
+
+def _esegui(cmd):
+    try:
+        subprocess.run(cmd, capture_output=True, timeout=15, creationflags=SENZA_FINESTRA if os.name == "nt" else 0)
+    except Exception:
+        pass
+
+
+def ferma():
+    """Spegne Ollama su questo computer (app e server). True se dopo non risponde più."""
+    global _processo
+    if sys.platform == "darwin":
+        if _app_mac() is not None:
+            _esegui(["/usr/bin/osascript", "-e", 'tell application "Ollama" to quit'])
+        _esegui(["/usr/bin/pkill", "-x", "ollama"])  # «ollama serve» lanciato da Argo o da un terminale
+    elif os.name == "nt":
+        _esegui(["taskkill", "/IM", "ollama app.exe", "/T", "/F"])
+        _esegui(["taskkill", "/IM", "ollama.exe", "/T", "/F"])
+    else:
+        _esegui(["pkill", "-x", "ollama"])
+    if _processo is not None:
+        try:
+            _processo.terminate()
+            _processo.wait(5)
+        except Exception:
+            pass
+        _processo = None
+    url = core.carica_impostazioni().get("ollama_url") or llm.DEFAULT_URL
+    for _ in range(10):
+        try:
+            llm.elenco_modelli(url)
+        except llm.ErroreLLM:
+            SEGNALINO.unlink(missing_ok=True)
+            log.info("Ollama fermato alla chiusura di Argo")
+            return True
+        time.sleep(0.5)
+    log.warning("Ollama ancora acceso dopo il tentativo di fermarlo")
+    return False
+
+
+def scelta_chiusura(s=None):
+    v = (s or core.carica_impostazioni()).get("ollama_alla_chiusura", "se_avviato")
+    return v if v in SCELTE_CHIUSURA else "se_avviato"
+
+
+def condiviso(s=None):
+    """True se l'utente ha detto che Ollama lo usano anche altri programmi."""
+    return scelta_chiusura(s) == "mai"
+
+
+def alla_chiusura():
+    """Dalla chiusura di Argo: ferma Ollama secondo l'impostazione. Ritorna True se l'ha fermato."""
+    s = core.carica_impostazioni()
+    if not llm.e_locale(s.get("ollama_url") or llm.DEFAULT_URL):
+        return False
+    scelta = scelta_chiusura(s)
+    if scelta == "mai" or (scelta == "se_avviato" and not avviato_da_argo()):
+        return False
+    try:
+        llm.elenco_modelli(s.get("ollama_url") or llm.DEFAULT_URL)
+    except llm.ErroreLLM:
+        SEGNALINO.unlink(missing_ok=True)  # già spento
+        return False
+    return ferma()
 
 
 def controlla(url, stato=lambda _t: None, attesa=30, stop=None):

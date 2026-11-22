@@ -2,6 +2,14 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261122.1107: Ollama acceso all'avvio e spento alla chiusura, a scelta
+- **Alla chiusura di Argo** (Impostazioni › Modelli AI): *Fermalo solo se l'ha avviato Argo* (predefinito), *Fermalo sempre* oppure *Lascialo acceso: lo usano anche altri programmi*. Prima Argo accendeva Ollama ma non lo spegneva mai, e la memoria restava occupata anche dopo la chiusura.
+- Argo **si ricorda di aver acceso Ollama** anche dopo un riavvio per aggiornamento, ma non dopo un riavvio del computer: così non spegne un Ollama partito con il sistema o acceso da un altro programma.
+- Con Ollama **condiviso con altri programmi**, prima di una trascrizione pesante Argo libera la memoria solo dei propri modelli.
+- **Verifica e aggiorna elenco** accende Ollama se è spento, invece di dire solo di avviarlo.
+- Spegnimento: Mac con l'uscita dall'app Ollama e la chiusura di `ollama serve`; Windows con la chiusura dell'icona di Ollama e del server. Mai un Ollama su un altro computer.
+- Manuale §11.4 aggiornato; testi nuovi tradotti in inglese, spagnolo e tedesco.
+
 ## 20261122.0832: Argo in italiano, inglese, spagnolo e tedesco
 - **Lingua dell'interfaccia** in Impostazioni › Aspetto e aggiornamenti › *Lingua*: Come il sistema, Italiano, English, Español, Deutsch. Vale dal prossimo avvio: Argo propone di riavviarsi subito. Con il sistema in un'altra lingua Argo resta in italiano.
 - **Tradotti tutti i 953 testi delle schermate**: menu laterale, pagine, pulsanti, finestre di conferma, avvisi e barra in basso. Anche i pulsanti standard di Qt (OK, Annulla, Sì, No) seguono la lingua scelta.

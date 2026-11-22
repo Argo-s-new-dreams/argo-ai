@@ -956,6 +956,17 @@ class PannelloOllama(QGroupBox):
         f.addRow(tr('Modello per testi:'), self.c_chat)
         f.addRow(tr('Modello per documenti:'), self.c_embed)
         f.addRow(tr('Trascrizione rapida:'), self.c_dett)
+        self.c_chiusura = QComboBox()  # cosa fare di Ollama quando si chiude Argo
+        for testo, valore in ((tr("Fermalo solo se l'ha avviato Argo (consigliato)"), "se_avviato"),
+                              (tr("Fermalo sempre"), "sempre"),
+                              (tr("Lascialo acceso: lo usano anche altri programmi"), "mai")):
+            self.c_chiusura.addItem(testo, valore)
+        self.c_chiusura.setCurrentIndex(max(0, self.c_chiusura.findData(s.get("ollama_alla_chiusura", "se_avviato"))))
+        self.c_chiusura.setToolTip(tr("Se Ollama è spento, Argo lo accende all'avvio. Alla chiusura lo ferma secondo "
+                                      "questa scelta, per liberare la memoria. Con «Lascialo acceso» Argo libera solo la "
+                                      "memoria dei propri modelli e non tocca quelli degli altri programmi."))
+        self.c_chiusura.currentIndexChanged.connect(self._salva_chiusura)
+        f.addRow(tr('Alla chiusura di Argo:'), self.c_chiusura)
         r2 = QHBoxLayout()
         self.e_pull = QLineEdit()
         self.e_pull.setPlaceholderText(tr('nome modello da scaricare, es. bge-m3'))
@@ -982,12 +993,28 @@ class PannelloOllama(QGroupBox):
         segnale_modelli.cambiato.connect(lambda: self.verifica(silenzioso=True))
         self.verifica(silenzioso=True)
 
+    def _salva_chiusura(self, _indice=None):
+        s = imp()
+        s["ollama_alla_chiusura"] = self.c_chiusura.currentData()
+        core.salva_impostazioni(s)
+
     def verifica(self, silenzioso=False):
         url = self.e_url.text().strip()
         try:
             chat, emb = llm.elenco_modelli(url)
         except llm.ErroreLLM as e:
-            self.l_stato.setText("❌ " + str(e) + " Installa Ollama da ollama.com e avvialo.")
+            import modelli_ollama
+            if not silenzioso and not self.lavoro and llm.e_locale(url) and modelli_ollama.installato():
+                # spento: lo accende (come all'avvio di Argo) e poi riverifica
+                self.l_stato.setText(tr('Avvio Ollama…'))
+                self.lavoro = Lavoro(lambda lav: modelli_ollama.controlla(url, lav.stato, stop=lav.fermato), self)
+                self.lavoro.sig_fine.connect(lambda r: (setattr(self, "lavoro", None), self.verifica(silenzioso=True)
+                                                        if r.get("esito") == "ok" else self.l_stato.setText(
+                                                            "❌ " + tr("Ollama non si è acceso. Avvialo a mano e riprova."))))
+                self.lavoro.sig_errore.connect(lambda err: (setattr(self, "lavoro", None), self.l_stato.setText("❌ " + err)))
+                self.lavoro.start()
+                return
+            self.l_stato.setText("❌ " + str(e) + " " + tr("Installa Ollama da ollama.com e avvialo."))
             return
         s = imp()
         scelti = completa_modelli(s, chat, emb)

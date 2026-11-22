@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261122.0832"
+VERSIONE = "20261122.1107"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -2184,8 +2184,21 @@ class Finestra(QMainWindow):
         self._salva_coda()
         if not diagnostica.MODALITA_SICURA:  # backup alla chiusura e configurazione condivisa
             _senza_errori(lambda: backup_ui.alla_chiusura(self))
+        _senza_errori(lambda: _ferma_ollama_attesa(self))  # Ollama spento secondo Impostazioni › Modelli AI
         diagnostica.avvio_riuscito()  # chiusa dall'utente: l'avvio era andato a buon fine
         e.accept()
+
+
+def _ferma_ollama_attesa(finestra):
+    """Ferma Ollama (se va fermato) mostrando un breve messaggio: di solito un secondo."""
+    import modelli_ollama
+    s = core.carica_impostazioni()
+    scelta = modelli_ollama.scelta_chiusura(s)
+    if scelta == "mai" or (scelta == "se_avviato" and not modelli_ollama.avviato_da_argo()):
+        return
+    finestra.statusBar().showMessage(tr("Spengo Ollama…"))
+    QApplication.processEvents()
+    modelli_ollama.alla_chiusura()
 
 
 def _senza_errori(funzione):
