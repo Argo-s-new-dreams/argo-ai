@@ -2,6 +2,9 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261122.1237: Impostazioni tradotte anche nelle categorie
+- Con l'interfaccia in inglese, tedesco o spagnolo, le categorie delle Impostazioni (*Trascrizione e voci*, *Modelli AI*, *Relazioni*, *Collegamenti*, *Backup e più computer*, *Supporto*) e le loro descrizioni restavano in italiano. Ora seguono la lingua scelta.
+
 ## 20261122.1114: Ollama spento anche uscendo con ⌘Q o dal Dock
 - Lo spegnimento di Ollama alla chiusura vale per ogni modo di uscire: pulsante di chiusura della finestra (o Alt+F4), sul Mac anche ⌘Q, *Argo › Esci*, *Esci* dal Dock e spegnimento del computer. Una volta sola.
 - Quando Argo si riavvia da solo dopo un aggiornamento, Ollama resta acceso per la nuova finestra.
