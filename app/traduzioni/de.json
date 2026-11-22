@@ -959,5 +959,17 @@
  "Avvio Ollama…": "Ollama wird gestartet…",
  "Installa Ollama da ollama.com e avvialo.": "Installiere Ollama von ollama.com und starte es.",
  "Ollama non si è acceso. Avvialo a mano e riprova.": "Ollama ist nicht gestartet. Starte es manuell und versuche es erneut.",
- "Spengo Ollama…": "Ollama wird beendet…"
+ "Spengo Ollama…": "Ollama wird beendet…",
+ "🎙  Trascrizione e voci": "🎙  Transkription und Stimmen",
+ "Token, modelli di trascrizione, uso del computer, riconoscimento delle voci": "Token, Transkriptionsmodelle, Nutzung des Computers, Stimmerkennung",
+ "🧠  Modelli AI": "🧠  KI-Modelle",
+ "Ollama su questo computer e, se vuoi, modelli cloud attrezzo per attrezzo": "Ollama auf diesem Computer und, wenn du willst, Cloud-Modelle Werkzeug für Werkzeug",
+ "📝  Relazioni": "📝  Berichte",
+ "Template delle relazioni: sezioni, lunghezza, come le vuoi": "Berichtsvorlagen: Abschnitte, Länge, ganz wie du willst",
+ "🔗  Collegamenti": "🔗  Verbindungen",
+ "Microsoft 365, Dynamics 365 Sales e ricerca web: tutti facoltativi": "Microsoft 365, Dynamics 365 Sales und Websuche: alles optional",
+ "💾  Backup e più computer": "💾  Backup und mehrere Computer",
+ "Backup ora, alla chiusura e programmati; ripristino anche da OneDrive e Google Drive; configurazione condivisa tra Mac e Windows": "Backup jetzt, beim Beenden und geplant; Wiederherstellung auch aus OneDrive und Google Drive; Konfiguration geteilt zwischen Mac und Windows",
+ "🛟  Supporto": "🛟  Support",
+ "Cosa è uscito da questo computer, chiedi supporto, modalità trace, registro e versione precedente": "Was diesen Computer verlassen hat, Support anfragen, Trace-Modus, Protokoll und vorherige Version"
 }

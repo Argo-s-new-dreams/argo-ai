@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261122.1114"
+VERSIONE = "20261122.1237"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -1601,19 +1601,20 @@ class Finestra(QMainWindow):
 
         # Pagina a argomenti (Stile Argo): colonna a sinistra, a destra solo l'argomento scelto
         self._categorie_imp = [
-            ("🎙  Trascrizione e voci", "Token, modelli di trascrizione, uso del computer, riconoscimento delle voci",
+            (tr("🎙  Trascrizione e voci"), tr("Token, modelli di trascrizione, uso del computer, riconoscimento delle voci"),
              [("hf", g1), ("trascrizione", g2), ("voci", g3)]),
-            ("🧠  Modelli AI", "Ollama su questo computer e, se vuoi, modelli cloud attrezzo per attrezzo",
+            (tr("🧠  Modelli AI"), tr("Ollama su questo computer e, se vuoi, modelli cloud attrezzo per attrezzo"),
              [("ollama", self.pannello_ollama), ("cloud", self.pannello_cloud)]),
-            ("📝  Relazioni", "Template delle relazioni: sezioni, lunghezza, come le vuoi",
+            (tr("📝  Relazioni"), tr("Template delle relazioni: sezioni, lunghezza, come le vuoi"),
              [("relazioni", g_rel)]),
-            ("🔗  Collegamenti", "Microsoft 365, Dynamics 365 Sales e ricerca web: tutti facoltativi",
+            (tr("🔗  Collegamenti"), tr("Microsoft 365, Dynamics 365 Sales e ricerca web: tutti facoltativi"),
              [("m365", g6), ("dynamics", g7), ("web", g8)]),
             (tr("⚙️  Aspetto e aggiornamenti"), tr("Tema chiaro o scuro, lingua, canale e aggiornamenti di Argo"),
              [("aspetto", g5), ("aggiornamenti", g4), ("disinstalla", g9)]),
-            ("💾  Backup e più computer", "Backup ora, alla chiusura e programmati; ripristino anche da OneDrive e "
-             "Google Drive; configurazione condivisa tra Mac e Windows", self.pannello_backup.gruppi),
-            ("🛟  Supporto", "Cosa è uscito da questo computer, chiedi supporto, modalità trace, registro e versione precedente",
+            (tr("💾  Backup e più computer"),
+             tr("Backup ora, alla chiusura e programmati; ripristino anche da OneDrive e Google Drive; configurazione condivisa tra Mac e Windows"),
+             self.pannello_backup.gruppi),
+            (tr("🛟  Supporto"), tr("Cosa è uscito da questo computer, chiedi supporto, modalità trace, registro e versione precedente"),
              self.pannello_supporto.gruppi),
         ]
         radice = QWidget()
