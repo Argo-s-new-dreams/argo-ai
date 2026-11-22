@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261122.1107"
+VERSIONE = "20261122.1114"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -2189,9 +2189,19 @@ class Finestra(QMainWindow):
         e.accept()
 
 
+_ollama_chiusura_fatta = False
+
+
 def _ferma_ollama_attesa(finestra):
-    """Ferma Ollama (se va fermato) mostrando un breve messaggio: di solito un secondo."""
+    """Ferma Ollama (se va fermato) mostrando un breve messaggio: di solito un secondo.
+    La chiamano sia la chiusura della finestra (pulsante di chiusura, Alt+F4) sia l'uscita dall'app (Mac: ⌘Q,
+    menu Argo › Esci, Esci dal Dock; spegnimento del computer): una volta sola."""
+    global _ollama_chiusura_fatta
+    import aggiornamenti
     import modelli_ollama
+    if _ollama_chiusura_fatta or aggiornamenti.IN_RIAVVIO:
+        return
+    _ollama_chiusura_fatta = True
     s = core.carica_impostazioni()
     scelta = modelli_ollama.scelta_chiusura(s)
     if scelta == "mai" or (scelta == "se_avviato" and not modelli_ollama.avviato_da_argo()):
@@ -2242,6 +2252,7 @@ def main():
         except Exception as e:
             diagnostica.log.warning("configurazione condivisa non letta: %s", e)
     f = Finestra()
+    app.aboutToQuit.connect(lambda: _senza_errori(lambda: _ferma_ollama_attesa(f)))  # anche ⌘Q, Dock, spegnimento
     f.show()
     if condivisa_da:
         f.statusBar().showMessage(tr('Configurazione aggiornata da {condivisa_da} (cartella condivisa).', condivisa_da=condivisa_da), 15000)

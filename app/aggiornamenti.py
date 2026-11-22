@@ -324,11 +324,16 @@ def installa(cartella_app, stato=lambda t: None, canale=CANALE_PREDEFINITO):
             "verifica": verifica}
 
 
+IN_RIAVVIO = False
+
+
 def riavvia():
     """Riapre Argo dopo l'aggiornamento.
     Sul Mac passa dall'app «Argo AI» (open -n, subito, prima di chiudere la vecchia finestra);
     altrove rilancia lo stesso Python con lo stesso script. Uscite scollegate: il processo nuovo non dipende
     da quello vecchio."""
+    global IN_RIAVVIO
+    IN_RIAVVIO = True  # Argo si riapre subito: Ollama resta acceso (non serve spegnerlo e riaccenderlo)
     script = Path(sys.argv[0]).resolve()
     nulla = subprocess.DEVNULL
     if sys.platform == "darwin":

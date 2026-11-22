@@ -1,6 +1,6 @@
 # Manuale di Argo · Cassetta degli attrezzi AI
 
-*Versione del manuale: 20261122.1107 · riferita all'app versione 20261122.1107*
+*Versione del manuale: 20261122.1114 · riferita all'app versione 20261122.1114*
 
 Argo è una cassetta degli attrezzi di intelligenza artificiale che lavora **tutta sul tuo computer**. Gli attrezzi principali:
 
@@ -782,6 +782,8 @@ Contiene il token, il pulsante **Mostra** e **Salva e verifica**, più i link al
   - **Lascialo acceso: lo usano anche altri programmi**: Argo non lo ferma mai e, prima di una trascrizione pesante, libera la memoria **solo dei propri modelli** (testi, foto, documenti), senza toccare quelli degli altri programmi.
   
   Un Ollama su un altro computer (indirizzo non locale) non viene mai acceso né spento.
+
+  Vale per ogni modo di chiudere Argo: il pulsante di chiusura della finestra (o Alt+F4), sul Mac anche ⌘Q, *Argo › Esci* ed *Esci* dal Dock, e lo spegnimento del computer. Non vale quando Argo si riavvia da solo dopo un aggiornamento: Ollama resta acceso per la nuova finestra.
 - **Scarica un modello:** scrivi il nome di un modello (es. `bge-m3`), premi **Scarica** e Argo lo scarica tramite Ollama, mostrando l'avanzamento.
 - **Salva modelli:** memorizza le scelte.
 - **Scarica modelli consigliati:** accende Ollama se serve e scarica i modelli che mancano (vedi sotto).
