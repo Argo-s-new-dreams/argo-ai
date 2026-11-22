@@ -2,6 +2,7 @@
 
 Il modello linguistico gira in Ollama sul computer; la trascrizione con faster-whisper, sempre in locale.
 """
+from lingua import tr
 import csv
 import json
 import re
@@ -89,26 +90,20 @@ def pronto_llm(parent, serve_embed=False):
     try:
         chat, emb = llm.elenco_modelli(url)
     except llm.ErroreLLM:
-        QMessageBox.warning(parent, "Ollama non è acceso",
-                            f"Argo non riesce a parlare con Ollama ({url}).\n\n"
-                            "Avvia Ollama (sul Mac: l'icona del lama nella barra dei menu) e riprova.\n"
-                            "Se non è installato, scaricalo da ollama.com.")
+        QMessageBox.warning(parent, tr('Ollama non è acceso'),
+                            tr("Argo non riesce a parlare con Ollama ({url}).\n\nAvvia Ollama (sul Mac: l'icona del lama nella barra dei menu) e riprova.\nSe non è installato, scaricalo da ollama.com.", url=url))
         return False
     if not chat:
-        QMessageBox.warning(parent, "Nessun modello scaricato",
-                            "Ollama è acceso ma non ha modelli per i testi.\n\n"
-                            "Scaricane uno dal Terminale, per esempio:\n    ollama pull gemma3:12b\n\n"
-                            "oppure da Impostazioni → Modello linguistico locale → Scarica un modello.")
+        QMessageBox.warning(parent, tr('Nessun modello scaricato'),
+                            tr('Ollama è acceso ma non ha modelli per i testi.\n\nScaricane uno dal Terminale, per esempio:\n    ollama pull gemma3:12b\n\noppure da Impostazioni → Modello linguistico locale → Scarica un modello.'))
         return False
     if serve_embed and not emb:
-        QMessageBox.warning(parent, "Manca il modello per i documenti",
-                            "Per cercare nei documenti serve un modello di embedding.\n\n"
-                            "Scaricalo dal Terminale:\n    ollama pull bge-m3\n\n"
-                            "oppure da Impostazioni → Modello linguistico locale → Scarica un modello.")
+        QMessageBox.warning(parent, tr('Manca il modello per i documenti'),
+                            tr('Per cercare nei documenti serve un modello di embedding.\n\nScaricalo dal Terminale:\n    ollama pull bge-m3\n\noppure da Impostazioni → Modello linguistico locale → Scarica un modello.'))
         return False
     scelti = completa_modelli(s, chat, emb)
     if scelti:
-        QMessageBox.information(parent, "Modello scelto in automatico",
+        QMessageBox.information(parent, tr('Modello scelto in automatico'),
                                 "Uso " + " e ".join(scelti) + ".\nPuoi cambiarlo in Impostazioni → Modello linguistico locale.")
         segnale_modelli.cambiato.emit()
     return True
@@ -229,7 +224,7 @@ class SchedaBase(QWidget):
                 if pulito != visibile(r).strip():
                     uscita.setPlainText(pulito)
             dove = cloud.avviso(getattr(self, "ATTREZZO", None)) or "tutto in locale."
-            self.stato.setText(f"Fatto in {time.time() - self.t0:.0f} s, {dove}")
+            self.stato.setText(tr('Fatto in {valore:.0f} s, {dove}', valore=time.time() - self.t0, dove=dove))
             if fine:
                 fine(r)
 
@@ -243,13 +238,13 @@ class SchedaBase(QWidget):
         self.lavoro.sig_errore.connect(_err)
         if pulsante:
             self._testo_pulsante = pulsante.text()
-            pulsante.setText("■ Ferma")
+            pulsante.setText(tr('■ Ferma'))
         self.lavoro.start()
 
     def ferma_o(self, avvio):
         if self.lavoro:
             self.lavoro.ferma()
-            self.stato.setText("Interruzione…")
+            self.stato.setText(tr('Interruzione…'))
         else:
             avvio()
 
@@ -278,7 +273,7 @@ def menu_salva(voci):
     """Un solo pulsante «Salva ▾» con i formati (Stile Argo: al massimo 5 pulsanti visibili per barra).
     voci: [(etichetta, funzione)]."""
     b = QToolButton()
-    b.setText("Salva ▾")
+    b.setText(tr('Salva ▾'))
     b.setPopupMode(QToolButton.InstantPopup)
     m = QMenu(b)
     for etichetta, fn in voci:
@@ -295,18 +290,18 @@ def salva_word(parent, testo, base, titolo=None, sottotitolo=None, nota_ai=True,
     """Chiede dove salvare, crea il .docx e lo apre in Word."""
     testo = (testo or "").strip()
     if not testo:
-        QMessageBox.information(parent, "Niente da salvare", "Non c'è ancora un testo da esportare.")
+        QMessageBox.information(parent, tr('Niente da salvare'), tr("Non c'è ancora un testo da esportare."))
         return None
-    f, _ = QFileDialog.getSaveFileName(parent, "Salva in Word", str(base), "Documento Word (*.docx)")
+    f, _ = QFileDialog.getSaveFileName(parent, tr('Salva in Word'), str(base), "Documento Word (*.docx)")
     if not f:
         return None
     try:
         out = word.salva_docx(testo, f, titolo, sottotitolo, nota_ai)
     except Exception as e:
-        QMessageBox.warning(parent, "Word", f"Non riesco a salvare il documento: {e}")
+        QMessageBox.warning(parent, tr('Word'), tr('Non riesco a salvare il documento: {e}', e=e))
         return None
     if stato is not None:
-        stato.setText(f"Salvato in Word: {out}")
+        stato.setText(tr('Salvato in Word: {out}', out=out))
     QDesktopServices.openUrl(QUrl.fromLocalFile(str(out)))
     return out
 
@@ -340,17 +335,17 @@ class SchedaVerbale(SchedaBase):
         self.sorgente = None
         lay = QVBoxLayout(self)
         bar = QHBoxLayout()
-        b_apri = QPushButton("Apri trascrizione…")
-        b_es = QPushButton("Usa l'esempio")
+        b_apri = QPushButton(tr('Apri trascrizione…'))
+        b_es = QPushButton(tr("Usa l'esempio"))
         self.c_tipo = QComboBox()
         self.c_tipo.addItems(list(MODELLI_VERBALE))
-        self.b_gen = QPushButton("▶ Genera")
+        self.b_gen = QPushButton(tr('▶ Genera'))
         self.b_gen.setProperty("primario", True)
-        b_cop = QPushButton("Copia")
+        b_cop = QPushButton(tr('Copia'))
         b_salva = menu_salva([("Documento Word (.docx)", self.salva_word), ("Testo Markdown (.md)", self.salva)])
         # Stile Argo · Organizzazione: azione principale prima a sinistra, poi i suoi parametri e gli ingressi;
         # a destra ciò che si fa col risultato.
-        for w in (self.b_gen, QLabel("Formato:"), self.c_tipo, b_apri, b_es):
+        for w in (self.b_gen, QLabel(tr('Formato:')), self.c_tipo, b_apri, b_es):
             bar.addWidget(w)
         bar.addStretch()
         for w in (b_cop, b_salva):
@@ -371,7 +366,7 @@ class SchedaVerbale(SchedaBase):
         b_cop.clicked.connect(lambda: copia(self.uscita.toPlainText()))
 
     def apri(self):
-        f, _ = QFileDialog.getOpenFileName(self, "Trascrizione", str(Path.home()), "Testo (*.txt *.md)")
+        f, _ = QFileDialog.getOpenFileName(self, tr('Trascrizione'), str(Path.home()), "Testo (*.txt *.md)")
         if f:
             self.carica(f)
 
@@ -380,7 +375,7 @@ class SchedaVerbale(SchedaBase):
         if p.exists():
             self.sorgente = p
             self.ingresso.setPlainText(p.read_text(encoding="utf-8", errors="replace"))
-            self.stato.setText(f"Caricato: {p.name}")
+            self.stato.setText(tr('Caricato: {name}', name=p.name))
 
     def genera(self):
         testo = self.ingresso.toPlainText().strip()
@@ -417,10 +412,10 @@ class SchedaVerbale(SchedaBase):
             return
         base = self.sorgente.with_name(self.sorgente.stem.replace("_nomi", "") + "_verbale.md") if self.sorgente \
             else Path.home() / "verbale.md"
-        f, _ = QFileDialog.getSaveFileName(self, "Salva verbale", str(base), "Markdown (*.md)")
+        f, _ = QFileDialog.getSaveFileName(self, tr('Salva verbale'), str(base), "Markdown (*.md)")
         if f:
             Path(f).write_text(testo + "\n", encoding="utf-8")
-            self.stato.setText(f"Salvato: {f}")
+            self.stato.setText(tr('Salvato: {f}', f=f))
 
 
     def salva_word(self):
@@ -467,14 +462,14 @@ class SchedaDocumenti(SchedaBase):
         sx = QWidget()
         lsx = QVBoxLayout(sx)
         lsx.setContentsMargins(0, 0, 0, 0)
-        lsx.addWidget(QLabel("Documenti indicizzati"))
+        lsx.addWidget(QLabel(tr('Documenti indicizzati')))
         self.lista = QListWidget()
         lsx.addWidget(self.lista)
         r = QHBoxLayout()
-        b_agg = QPushButton("➕ Aggiungi…")
-        b_es = QPushButton("Esempio")
-        b_svuota = QPushButton("Svuota indice")
-        b_svuota.setToolTip("Toglie tutti i documenti dall'indice; i file originali non vengono toccati")
+        b_agg = QPushButton(tr('➕ Aggiungi…'))
+        b_es = QPushButton(tr('Esempio'))
+        b_svuota = QPushButton(tr('Svuota indice'))
+        b_svuota.setToolTip(tr("Toglie tutti i documenti dall'indice; i file originali non vengono toccati"))
         self.b_svuota = b_svuota
         for b in (b_agg, b_es):
             r.addWidget(b)
@@ -486,8 +481,8 @@ class SchedaDocumenti(SchedaBase):
         ldx.setContentsMargins(0, 0, 0, 0)
         rq = QHBoxLayout()
         self.domanda = QLineEdit()
-        self.domanda.setPlaceholderText("Es.: Qual è la durata dell'obbligo di riservatezza? Ci sono penali?")
-        self.b_chiedi = QPushButton("Chiedi")
+        self.domanda.setPlaceholderText(tr("Es.: Qual è la durata dell'obbligo di riservatezza? Ci sono penali?"))
+        self.b_chiedi = QPushButton(tr('Chiedi'))
         self.b_chiedi.setProperty("primario", True)
         rq.addWidget(self.domanda)
         rq.addWidget(self.b_chiedi)
@@ -496,9 +491,9 @@ class SchedaDocumenti(SchedaBase):
                                    "documenti a sinistra (o l'esempio), poi scrivi la domanda.", filigrana=True)
         ldx.addWidget(self.risposta, 3)
         rf = QHBoxLayout()
-        rf.addWidget(QLabel("Fonti usate per la risposta"))
+        rf.addWidget(QLabel(tr('Fonti usate per la risposta')))
         rf.addStretch()
-        b_word_doc = QPushButton("Salva Word")
+        b_word_doc = QPushButton(tr('Salva Word'))
         b_word_doc.clicked.connect(self.salva_word)
         rf.addWidget(b_word_doc)
         ldx.addLayout(rf)
@@ -541,19 +536,19 @@ class SchedaDocumenti(SchedaBase):
         for p in self.meta["pezzi"]:
             conteggio[p["file"]] = conteggio.get(p["file"], 0) + 1
         for f, n in conteggio.items():
-            self.lista.addItem(f"{Path(f).name}  ({n} estratti)")
+            self.lista.addItem(tr('{name}  ({n} estratti)', name=Path(f).name, n=n))
         if hasattr(self, "b_svuota"):
             self.b_svuota.setVisible(bool(conteggio))
 
     def svuota(self):
-        if QMessageBox.question(self, "Svuota", "Eliminare l'indice dei documenti? I file originali non vengono toccati.") \
+        if QMessageBox.question(self, tr('Svuota'), tr("Eliminare l'indice dei documenti? I file originali non vengono toccati.")) \
                 == QMessageBox.Yes:
             self.meta, self.vett = {"modello": "", "pezzi": []}, np.zeros((0, 1), dtype=np.float32)
             self.salva_indice()
             self.aggiorna_lista()
 
     def aggiungi(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "Documenti", str(Path.home()),
+        files, _ = QFileDialog.getOpenFileNames(self, tr('Documenti'), str(Path.home()),
                                                 "Documenti (*.pdf *.docx *.txt *.md)")
         if files:
             self.indicizza(files)
@@ -563,8 +558,8 @@ class SchedaDocumenti(SchedaBase):
             return
         s = imp()
         if self.meta["pezzi"] and self.meta.get("modello") != s["modello_embed"]:
-            QMessageBox.information(self, "Indice ricreato",
-                                    "Il modello di embedding è cambiato: svuoto l'indice e lo ricostruisco con i nuovi documenti.")
+            QMessageBox.information(self, tr('Indice ricreato'),
+                                    tr("Il modello di embedding è cambiato: svuoto l'indice e lo ricostruisco con i nuovi documenti."))
             self.meta, self.vett = {"modello": "", "pezzi": []}, np.zeros((0, 1), dtype=np.float32)
 
         def fn(lav):
@@ -588,14 +583,14 @@ class SchedaDocumenti(SchedaBase):
             self.salva_indice()
             return len(nuovi)
 
-        self.avvia(fn, fine=lambda n: (self.aggiorna_lista(), self.stato.setText(f"Indicizzati {n} nuovi estratti.")))
+        self.avvia(fn, fine=lambda n: (self.aggiorna_lista(), self.stato.setText(tr('Indicizzati {n} nuovi estratti.', n=n))))
 
     def chiedi(self):
         q = self.domanda.text().strip()
         if not q or not pronto_llm(self, serve_embed=True):
             return
         if not self.meta["pezzi"]:
-            QMessageBox.information(self, "Nessun documento", "Aggiungi prima almeno un documento (o usa l'esempio).")
+            QMessageBox.information(self, tr('Nessun documento'), tr("Aggiungi prima almeno un documento (o usa l'esempio)."))
             return
         s = imp()
         self.fonti.clear()
@@ -633,7 +628,7 @@ class SchedaDocumenti(SchedaBase):
     def salva_word(self):
         risposta = self.risposta.toPlainText().strip()
         if not risposta or not self.ultima:
-            QMessageBox.information(self, "Niente da salvare", "Fai prima una domanda sui documenti.")
+            QMessageBox.information(self, tr('Niente da salvare'), tr('Fai prima una domanda sui documenti.'))
             return
         q, estratti = self.ultima
         fonti = "\n".join(f"- **[{n}]** {Path(p['file']).name}, pag. {p['pagina']}: "
@@ -663,17 +658,17 @@ class SchedaDettatura(SchedaBase):
         self.campioni = []
         lay = QVBoxLayout(self)
         bar = QHBoxLayout()
-        self.b_reg = QPushButton("● Registra")
+        self.b_reg = QPushButton(tr('● Registra'))
         self.b_reg.setProperty("primario", True)
-        b_file = QPushButton("Da file audio…")
+        b_file = QPushButton(tr('Da file audio…'))
         self.c_stile = QComboBox()
         self.c_stile.addItems(list(STILI_DETTATURA))
-        b_rif = QPushButton("Riscrivi")
-        b_cop = QPushButton("Copia")
-        b_word = QPushButton("Salva Word")
+        b_rif = QPushButton(tr('Riscrivi'))
+        b_cop = QPushButton(tr('Copia'))
+        b_word = QPushButton(tr('Salva Word'))
         b_word.clicked.connect(lambda: salva_word(self, self.uscita.toPlainText(), Path.home() / "dettatura.docx",
                                                   None, oggi(), stato=self.stato))
-        for w in (self.b_reg, QLabel("Formato:"), self.c_stile, b_file):
+        for w in (self.b_reg, QLabel(tr('Formato:')), self.c_stile, b_file):
             bar.addWidget(w)
         bar.addStretch()
         for w in (b_rif, b_cop, b_word):
@@ -697,7 +692,7 @@ class SchedaDettatura(SchedaBase):
             try:
                 import sounddevice as sd
             except Exception as e:
-                QMessageBox.warning(self, "Microfono", f"Registrazione non disponibile: {e}\nUsa «Da file audio…».")
+                QMessageBox.warning(self, tr('Microfono'), tr('Registrazione non disponibile: {e}\nUsa «Da file audio…».', e=e))
                 return
             self.campioni = []
             try:
@@ -706,18 +701,17 @@ class SchedaDettatura(SchedaBase):
                 self.flusso.start()
             except Exception as e:
                 self.flusso = None
-                QMessageBox.warning(self, "Microfono", f"Impossibile usare il microfono: {e}\n"
-                                    "Controlla Impostazioni di Sistema → Privacy e sicurezza → Microfono.")
+                QMessageBox.warning(self, tr('Microfono'), tr('Impossibile usare il microfono: {e}\nControlla Impostazioni di Sistema → Privacy e sicurezza → Microfono.', e=e))
                 return
-            self.b_reg.setText("■ Stop")
-            self.stato.setText("Registrazione in corso… parla pure.")
+            self.b_reg.setText(tr('■ Stop'))
+            self.stato.setText(tr('Registrazione in corso… parla pure.'))
         else:
             self.flusso.stop()
             self.flusso.close()
             self.flusso = None
-            self.b_reg.setText("● Registra")
+            self.b_reg.setText(tr('● Registra'))
             if not self.campioni:
-                self.stato.setText("Nessun audio registrato.")
+                self.stato.setText(tr('Nessun audio registrato.'))
                 return
             audio = np.concatenate(self.campioni)[:, 0]
             f = Path(tempfile.gettempdir()) / "argo_dettatura.wav"
@@ -729,7 +723,7 @@ class SchedaDettatura(SchedaBase):
             self.elabora(f)
 
     def da_file(self):
-        f, _ = QFileDialog.getOpenFileName(self, "Audio o video", str(Path.home()),
+        f, _ = QFileDialog.getOpenFileName(self, tr('Audio o video'), str(Path.home()),
                                            "Audio o video (*.wav *.m4a *.mp3 *.aac *.flac *.ogg *.opus *.mp4 *.mov *.mkv *.webm *.m4v)")
         if f:
             self.elabora(Path(f))
@@ -774,19 +768,19 @@ class SchedaTraduzione(SchedaBase):
         super().__init__(parent)
         lay = QVBoxLayout(self)
         bar = QHBoxLayout()
-        b_txt = QPushButton("Apri testo…")
-        b_aud = QPushButton("Trascrivi audio…")
+        b_txt = QPushButton(tr('Apri testo…'))
+        b_aud = QPushButton(tr('Trascrivi audio…'))
         self.c_lingua = QComboBox()
         for k, t in LINGUE_TRAD:
             self.c_lingua.addItem(t, k)
-        self.b_trad = QPushButton("▶ Traduci")
+        self.b_trad = QPushButton(tr('▶ Traduci'))
         self.b_trad.setProperty("primario", True)
-        b_cop = QPushButton("Copia")
-        b_word = QPushButton("Salva Word")
+        b_cop = QPushButton(tr('Copia'))
+        b_word = QPushButton(tr('Salva Word'))
         b_word.clicked.connect(lambda: salva_word(
             self, self.uscita.toPlainText(), Path.home() / f"traduzione_{self.c_lingua.currentData()}.docx",
             None, f"Traduzione in {self.c_lingua.currentText().lower()} · {oggi()}", stato=self.stato))
-        for w in (self.b_trad, QLabel("in:"), self.c_lingua, b_txt, b_aud):
+        for w in (self.b_trad, QLabel(tr('in:')), self.c_lingua, b_txt, b_aud):
             bar.addWidget(w)
         bar.addStretch()
         for w in (b_cop, b_word):
@@ -798,18 +792,18 @@ class SchedaTraduzione(SchedaBase):
                                  "imposti al modello.", filigrana=True)
         sp.addWidget(self.ingresso)
         sp.addWidget(self.uscita)
-        gl = QGroupBox("Glossario (IT / EN / DE) - modificabile")
+        gl = QGroupBox(tr('Glossario (IT / EN / DE) - modificabile'))
         lgl = QVBoxLayout(gl)
         self.tab = QTableWidget(0, 3)
-        self.tab.setHorizontalHeaderLabels(["Italiano", "English", "Deutsch"])
+        self.tab.setHorizontalHeaderLabels([tr('Italiano'), tr('English'), tr('Deutsch')])
         self.tab.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tab.setSelectionBehavior(QAbstractItemView.SelectRows)
         lgl.addWidget(self.tab)
         rg = QHBoxLayout()
-        b_add = QPushButton("+ Riga")
-        b_del = QPushButton("− Riga")
-        b_imp = QPushButton("Importa CSV…")
-        b_sav = QPushButton("Salva glossario")
+        b_add = QPushButton(tr('+ Riga'))
+        b_del = QPushButton(tr('− Riga'))
+        b_imp = QPushButton(tr('Importa CSV…'))
+        b_sav = QPushButton(tr('Salva glossario'))
         for b in (b_add, b_del, b_imp, b_sav):
             rg.addWidget(b)
         rg.addStretch()
@@ -859,10 +853,10 @@ class SchedaTraduzione(SchedaBase):
             w = csv.writer(f, delimiter=";")
             w.writerow(["it", "en", "de"])
             w.writerows(self.righe())
-        self.stato.setText(f"Glossario salvato ({len(self.righe())} termini).")
+        self.stato.setText(tr('Glossario salvato ({len} termini).', len=len(self.righe())))
 
     def importa(self):
-        f, _ = QFileDialog.getOpenFileName(self, "Glossario CSV (it;en;de)", str(Path.home()), "CSV (*.csv)")
+        f, _ = QFileDialog.getOpenFileName(self, tr('Glossario CSV (it;en;de)'), str(Path.home()), "CSV (*.csv)")
         if not f:
             return
         with open(f, encoding="utf-8-sig", newline="") as fh:
@@ -873,15 +867,15 @@ class SchedaTraduzione(SchedaBase):
         if righe and [c.strip().lower() for c in righe[0][:3]] == ["it", "en", "de"]:
             righe = righe[1:]
         self.imposta(righe)
-        self.stato.setText(f"Importati {len(righe)} termini (premi «Salva glossario» per tenerli).")
+        self.stato.setText(tr('Importati {len} termini (premi «Salva glossario» per tenerli).', len=len(righe)))
 
     def apri_testo(self):
-        f, _ = QFileDialog.getOpenFileName(self, "Testo", str(Path.home()), "Testo (*.txt *.md)")
+        f, _ = QFileDialog.getOpenFileName(self, tr('Testo'), str(Path.home()), "Testo (*.txt *.md)")
         if f:
             self.ingresso.setPlainText(Path(f).read_text(encoding="utf-8", errors="replace"))
 
     def trascrivi_audio(self):
-        f, _ = QFileDialog.getOpenFileName(self, "Audio o video", str(Path.home()),
+        f, _ = QFileDialog.getOpenFileName(self, tr('Audio o video'), str(Path.home()),
                                            "Audio o video (*.wav *.m4a *.mp3 *.aac *.flac *.ogg *.opus *.mp4 *.mov *.mkv *.webm *.m4v)")
         if f:
             self.avvia(lambda lav: trascrivi_file(f, None, lav), fine=self.ingresso.setPlainText)
@@ -927,7 +921,7 @@ class SchedaTraduzione(SchedaBase):
 
         self.avvia(fn, self.uscita, pulsante=self.b_trad)
         if vincoli:
-            self.stato.setText(f"Glossario applicato: {len(vincoli)} termini.")
+            self.stato.setText(tr('Glossario applicato: {len} termini.', len=len(vincoli)))
 
 
 # =============================================================== impostazioni Ollama
@@ -956,25 +950,36 @@ class PannelloOllama(QGroupBox):
         self.c_dett.setCurrentText(s.get("modello_dettatura") or "large-v3-turbo")
         r = QHBoxLayout()
         r.addWidget(self.e_url)
-        b_ver = QPushButton("Verifica e aggiorna elenco")
+        b_ver = QPushButton(tr('Verifica e aggiorna elenco'))
         r.addWidget(b_ver)
-        f.addRow("Indirizzo Ollama:", r)
-        f.addRow("Modello per testi:", self.c_chat)
-        f.addRow("Modello per documenti:", self.c_embed)
-        f.addRow("Trascrizione rapida:", self.c_dett)
+        f.addRow(tr('Indirizzo Ollama:'), r)
+        f.addRow(tr('Modello per testi:'), self.c_chat)
+        f.addRow(tr('Modello per documenti:'), self.c_embed)
+        f.addRow(tr('Trascrizione rapida:'), self.c_dett)
+        self.c_chiusura = QComboBox()  # cosa fare di Ollama quando si chiude Argo
+        for testo, valore in ((tr("Fermalo solo se l'ha avviato Argo (consigliato)"), "se_avviato"),
+                              (tr("Fermalo sempre"), "sempre"),
+                              (tr("Lascialo acceso: lo usano anche altri programmi"), "mai")):
+            self.c_chiusura.addItem(testo, valore)
+        self.c_chiusura.setCurrentIndex(max(0, self.c_chiusura.findData(s.get("ollama_alla_chiusura", "se_avviato"))))
+        self.c_chiusura.setToolTip(tr("Se Ollama è spento, Argo lo accende all'avvio. Alla chiusura lo ferma secondo "
+                                      "questa scelta, per liberare la memoria. Con «Lascialo acceso» Argo libera solo la "
+                                      "memoria dei propri modelli e non tocca quelli degli altri programmi."))
+        self.c_chiusura.currentIndexChanged.connect(self._salva_chiusura)
+        f.addRow(tr('Alla chiusura di Argo:'), self.c_chiusura)
         r2 = QHBoxLayout()
         self.e_pull = QLineEdit()
-        self.e_pull.setPlaceholderText("nome modello da scaricare, es. bge-m3")
-        b_pull = QPushButton("Scarica")
+        self.e_pull.setPlaceholderText(tr('nome modello da scaricare, es. bge-m3'))
+        b_pull = QPushButton(tr('Scarica'))
         r2.addWidget(self.e_pull)
         r2.addWidget(b_pull)
-        f.addRow("Scarica un modello:", r2)
+        f.addRow(tr('Scarica un modello:'), r2)
         self.l_stato = QLabel("")
         self.l_stato.setWordWrap(True)
         f.addRow("", self.l_stato)
-        b_salva = QPushButton("Salva modelli")
-        b_consigliati = QPushButton("Scarica modelli consigliati")
-        b_consigliati.setToolTip("Accende Ollama se serve e scarica i modelli che mancano per testi, foto e documenti")
+        b_salva = QPushButton(tr('Salva modelli'))
+        b_consigliati = QPushButton(tr('Scarica modelli consigliati'))
+        b_consigliati.setToolTip(tr('Accende Ollama se serve e scarica i modelli che mancano per testi, foto e documenti'))
         r3 = QHBoxLayout()
         r3.addWidget(b_salva)
         r3.addWidget(b_consigliati)
@@ -988,12 +993,28 @@ class PannelloOllama(QGroupBox):
         segnale_modelli.cambiato.connect(lambda: self.verifica(silenzioso=True))
         self.verifica(silenzioso=True)
 
+    def _salva_chiusura(self, _indice=None):
+        s = imp()
+        s["ollama_alla_chiusura"] = self.c_chiusura.currentData()
+        core.salva_impostazioni(s)
+
     def verifica(self, silenzioso=False):
         url = self.e_url.text().strip()
         try:
             chat, emb = llm.elenco_modelli(url)
         except llm.ErroreLLM as e:
-            self.l_stato.setText("❌ " + str(e) + " Installa Ollama da ollama.com e avvialo.")
+            import modelli_ollama
+            if not silenzioso and not self.lavoro and llm.e_locale(url) and modelli_ollama.installato():
+                # spento: lo accende (come all'avvio di Argo) e poi riverifica
+                self.l_stato.setText(tr('Avvio Ollama…'))
+                self.lavoro = Lavoro(lambda lav: modelli_ollama.controlla(url, lav.stato, stop=lav.fermato), self)
+                self.lavoro.sig_fine.connect(lambda r: (setattr(self, "lavoro", None), self.verifica(silenzioso=True)
+                                                        if r.get("esito") == "ok" else self.l_stato.setText(
+                                                            "❌ " + tr("Ollama non si è acceso. Avvialo a mano e riprova."))))
+                self.lavoro.sig_errore.connect(lambda err: (setattr(self, "lavoro", None), self.l_stato.setText("❌ " + err)))
+                self.lavoro.start()
+                return
+            self.l_stato.setText("❌ " + str(e) + " " + tr("Installa Ollama da ollama.com e avvialo."))
             return
         s = imp()
         scelti = completa_modelli(s, chat, emb)
@@ -1006,7 +1027,7 @@ class PannelloOllama(QGroupBox):
             if attuale in voci:
                 combo.setCurrentIndex(combo.findData(attuale))
         avviso = "" if llm.e_locale(url) else " ⚠️ L'indirizzo NON è locale: i testi lascerebbero il computer."
-        self.l_stato.setText(f"✅ Ollama risponde: {len(chat)} modelli per testi, {len(emb)} per documenti.{avviso}")
+        self.l_stato.setText(tr('✅ Ollama risponde: {len} modelli per testi, {len2} per documenti.{avviso}', len=len(chat), len2=len(emb), avviso=avviso))
         if scelti:
             self.l_stato.setText(self.l_stato.text() + " Scelti in automatico e salvati: " + ", ".join(scelti) + ".")
             self.cambiato.emit()
@@ -1022,7 +1043,7 @@ class PannelloOllama(QGroupBox):
                  modello_embed=self.c_embed.currentData() or self.c_embed.currentText(),
                  modello_dettatura=self.c_dett.currentText())
         core.salva_impostazioni(s)
-        self.l_stato.setText("Modelli salvati.")
+        self.l_stato.setText(tr('Modelli salvati.'))
         self.cambiato.emit()
 
     def scarica(self):
@@ -1031,7 +1052,7 @@ class PannelloOllama(QGroupBox):
             return
         url = self.e_url.text().strip()
         self.lavoro = Lavoro(lambda lav: llm.scarica_modello(nome, url, lav.stato, lav.fermato), self)
-        self.lavoro.sig_stato.connect(lambda t: self.l_stato.setText(f"Scarico {nome}: {t}"))
+        self.lavoro.sig_stato.connect(lambda t: self.l_stato.setText(tr('Scarico {nome}: {t}', nome=nome, t=t)))
         self.lavoro.sig_fine.connect(lambda _: (setattr(self, "lavoro", None), self.verifica()))
         self.lavoro.sig_errore.connect(lambda e: (setattr(self, "lavoro", None), self.l_stato.setText("❌ " + e)))
         self.lavoro.start()
@@ -1047,15 +1068,12 @@ class PannelloCloud(QGroupBox):
         self.lavori = {}
         lay = QVBoxLayout(self)
         if cloud.vietati_da_criteri():
-            nota = QLabel("🔒 I criteri aziendali non consentono modelli cloud: Argo usa solo Ollama su questo computer.")
+            nota = QLabel(tr('🔒 I criteri aziendali non consentono modelli cloud: Argo usa solo Ollama su questo computer.'))
             nota.setWordWrap(True)
             lay.addWidget(nota)
             self.combo = {}
             return
-        intro = QLabel("Di base tutto resta su questo computer. Qui puoi collegare un fornitore cloud e scegliere, "
-                       "attrezzo per attrezzo, se usarlo: il testo di quell'attrezzo uscirà dal computer e Argo lo "
-                       "scrive ogni volta (☁️). Audio, trascrizione, impronte vocali e indice dei documenti restano "
-                       "sempre in locale.")
+        intro = QLabel(tr("Di base tutto resta su questo computer. Qui puoi collegare un fornitore cloud e scegliere, attrezzo per attrezzo, se usarlo: il testo di quell'attrezzo uscirà dal computer e Argo lo scrive ogni volta (☁️). Audio, trascrizione, impronte vocali e indice dei documenti restano sempre in locale."))
         intro.setWordWrap(True)
         lay.addWidget(intro)
 
@@ -1067,10 +1085,10 @@ class PannelloCloud(QGroupBox):
             e.setEchoMode(QLineEdit.Password)
             e.setPlaceholderText(info["aiuto"])
             e.setToolTip(info["aiuto"])
-            b = QPushButton("Collega e verifica")
+            b = QPushButton(tr('Collega e verifica'))
             b.clicked.connect(lambda _c=False, x=fid: self.verifica(x))
-            b_info = QPushButton("ℹ️ Maggiori info")
-            b_info.setToolTip("Sito, come creare la chiave, dove vengono elaborati e conservati i dati")
+            b_info = QPushButton(tr('ℹ️ Maggiori info'))
+            b_info.setToolTip(tr('Sito, come creare la chiave, dove vengono elaborati e conservati i dati'))
             b_info.clicked.connect(lambda _c=False, x=fid: self.mostra_info(x))
             esito = QLabel(self._testo_esito(fid))
             esito.setWordWrap(True)
@@ -1083,7 +1101,7 @@ class PannelloCloud(QGroupBox):
             self.chiavi[fid], self.esiti[fid] = e, esito
         lay.addLayout(f)
 
-        titolo = QLabel("<b>Quale modello per ogni attrezzo</b>")
+        titolo = QLabel(tr('<b>Quale modello per ogni attrezzo</b>'))
         lay.addWidget(titolo)
         g = QFormLayout()
         self.combo = {}
@@ -1101,7 +1119,7 @@ class PannelloCloud(QGroupBox):
 
     def mostra_info(self, fid):
         box = QMessageBox(self)
-        box.setWindowTitle(f"{cloud.FORNITORI[fid]['nome']} · maggiori info")
+        box.setWindowTitle(tr('{nome} · maggiori info', nome=cloud.FORNITORI[fid]['nome']))
         box.setTextFormat(Qt.RichText)
         box.setTextInteractionFlags(Qt.TextBrowserInteraction)
         box.setText(cloud.scheda_info(fid))
@@ -1125,7 +1143,7 @@ class PannelloCloud(QGroupBox):
         self._riempendo = True
         for chiave_a, c in self.combo.items():
             c.clear()
-            c.addItem("🖥 Locale (Ollama su questo computer)", cloud.LOCALE)
+            c.addItem(tr('🖥 Locale (Ollama su questo computer)'), cloud.LOCALE)
             for fid in cloud.ammessi():
                 if not cloud.chiave(fid):
                     continue
@@ -1147,13 +1165,13 @@ class PannelloCloud(QGroupBox):
             return
         cloud.salva_chiave(fid, self.chiavi[fid].text())
         if not cloud.chiave(fid):
-            self.esiti[fid].setText("Non collegato.")
+            self.esiti[fid].setText(tr('Non collegato.'))
             s = imp()
             (s.setdefault("modelli_cloud", {})).pop(fid, None)
             core.salva_impostazioni(s)
             self.riempi()
             return
-        self.esiti[fid].setText("Verifico…")
+        self.esiti[fid].setText(tr('Verifico…'))
         lav = Lavoro(lambda _l: cloud.elenco_modelli(fid), self)
         lav.sig_fine.connect(lambda modelli, x=fid: self._verificato(x, modelli))
         lav.sig_errore.connect(lambda e, x=fid: (self.lavori.pop(x, None), self.esiti[x].setText("❌ " + e)))
@@ -1165,7 +1183,7 @@ class PannelloCloud(QGroupBox):
         s = imp()
         s.setdefault("modelli_cloud", {})[fid] = modelli
         core.salva_impostazioni(s)
-        self.esiti[fid].setText(f"✅ Collegato · {len(modelli)} modelli disponibili.")
+        self.esiti[fid].setText(tr('✅ Collegato · {len} modelli disponibili.', len=len(modelli)))
         self.riempi()
 
     def cambia(self, chiave_a):
@@ -1176,10 +1194,8 @@ class PannelloCloud(QGroupBox):
         if scelta and scelta != cloud.LOCALE:
             fid, m = scelta.split(":", 1)
             risposta = QMessageBox.question(
-                self, "Usare un modello cloud?",
-                f"Con questa scelta «{cloud.NOMI_ATTREZZI[chiave_a]}» invia a {cloud.FORNITORI[fid]['nome']} "
-                f"({m}):\n\n•  {cloud.ESCE[chiave_a]}\n\nQuesti dati escono dal computer e valgono le condizioni "
-                "del fornitore e del tuo account. Continuare?")
+                self, tr('Usare un modello cloud?'),
+                tr('Con questa scelta «{valore}» invia a {nome} ({m}):\n\n•  {valore2}\n\nQuesti dati escono dal computer e valgono le condizioni del fornitore e del tuo account. Continuare?', valore=cloud.NOMI_ATTREZZI[chiave_a], nome=cloud.FORNITORI[fid]['nome'], m=m, valore2=cloud.ESCE[chiave_a]))
             if risposta != QMessageBox.Yes:
                 self._riempendo = True
                 c.setCurrentIndex(max(0, c.findData(c.property("precedente"))))
@@ -1190,4 +1206,4 @@ class PannelloCloud(QGroupBox):
         core.salva_impostazioni(s)
         c.setProperty("precedente", scelta)
         self.cambiato.emit()
-        self.l_stato.setText(f"Salvato: {cloud.NOMI_ATTREZZI[chiave_a]} → {c.currentText()}.")
+        self.l_stato.setText(tr('Salvato: {valore} → {currenttext}.', valore=cloud.NOMI_ATTREZZI[chiave_a], currenttext=c.currentText()))

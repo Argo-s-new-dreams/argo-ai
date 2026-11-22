@@ -2,6 +2,21 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261122.1107: Ollama acceso all'avvio e spento alla chiusura, a scelta
+- **Alla chiusura di Argo** (Impostazioni › Modelli AI): *Fermalo solo se l'ha avviato Argo* (predefinito), *Fermalo sempre* oppure *Lascialo acceso: lo usano anche altri programmi*. Prima Argo accendeva Ollama ma non lo spegneva mai, e la memoria restava occupata anche dopo la chiusura.
+- Argo **si ricorda di aver acceso Ollama** anche dopo un riavvio per aggiornamento, ma non dopo un riavvio del computer: così non spegne un Ollama partito con il sistema o acceso da un altro programma.
+- Con Ollama **condiviso con altri programmi**, prima di una trascrizione pesante Argo libera la memoria solo dei propri modelli.
+- **Verifica e aggiorna elenco** accende Ollama se è spento, invece di dire solo di avviarlo.
+- Spegnimento: Mac con l'uscita dall'app Ollama e la chiusura di `ollama serve`; Windows con la chiusura dell'icona di Ollama e del server. Mai un Ollama su un altro computer.
+- Manuale §11.4 aggiornato; testi nuovi tradotti in inglese, spagnolo e tedesco.
+
+## 20261122.0832: Argo in italiano, inglese, spagnolo e tedesco
+- **Lingua dell'interfaccia** in Impostazioni › Aspetto e aggiornamenti › *Lingua*: Come il sistema, Italiano, English, Español, Deutsch. Vale dal prossimo avvio: Argo propone di riavviarsi subito. Con il sistema in un'altra lingua Argo resta in italiano.
+- **Tradotti tutti i 953 testi delle schermate**: menu laterale, pagine, pulsanti, finestre di conferma, avvisi e barra in basso. Anche i pulsanti standard di Qt (OK, Annulla, Sì, No) seguono la lingua scelta.
+- La lingua dell'interfaccia è **separata** da quella delle trascrizioni e delle relazioni, che non cambiano.
+- Per gli sviluppatori: ogni testo passa da `tr("testo in italiano", campo=valore)` (`app/lingua.py`), le traduzioni sono in `app/traduzioni/en.json`, `es.json`, `de.json`. `strumenti/controlla_traduzioni.py` conta i testi tradotti e controlla i segnaposto; la GitHub Action *Prova di avvio* si ferma se manca una traduzione. `strumenti/avvolgi_testi.py` aiuta a passare a `tr()` i testi di un file nuovo.
+- **Da rileggere**: le traduzioni sono una prima versione. Restano in italiano, per ora, i messaggi che arrivano dai moduli senza interfaccia (alcuni errori di Ollama, Dynamics e aggiornamenti), le etichette dei canali e dell'uso del computer, il manuale e le istruzioni ai modelli.
+
 ## 20261120.2033: scarica la trascrizione in Word e in WebVTT
 - **⬇️ Scarica trascrizione**: **Word (.docx)**, **sottotitoli WebVTT (.vtt)** oppure **entrambi**. Si trova in *Trascrivi* (pulsante nel dettaglio e tasto destro, al posto di «Esporta in Word»), in *Registra* dopo una Live e negli *Incontri* (*Salva ▾*, dove le voci della relazione ora si chiamano «Relazione in…», e tasto destro).
 - **WebVTT** standard W3C: una riga per frase con inizio e fine presi da WhisperX (al millesimo), il parlante nel tag di voce `<v Nome>`, le frasi lunghe divise. Senza il `.json` i tempi si ricavano dal `_nomi.txt`.

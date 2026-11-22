@@ -203,6 +203,14 @@ def libera_ollama(url=None):
     try:
         with urllib.request.urlopen(base + "/api/ps", timeout=2) as r:
             modelli = [m.get("name") for m in json.load(r).get("models", []) if m.get("name")]
+        try:  # Ollama usato anche da altri programmi: si tolgono solo i modelli di Argo
+            import voci_core
+            s = voci_core.carica_impostazioni()
+            if s.get("ollama_alla_chiusura") == "mai":
+                miei = {s.get(k) for k in ("modello_chat", "modello_vision", "modello_embed") if s.get(k)}
+                modelli = [m for m in modelli if m in miei or m.split(":")[0] + ":latest" in miei]
+        except Exception:
+            pass
         for nome in modelli:
             dati = json.dumps({"model": nome, "keep_alive": 0}).encode("utf-8")
             req = urllib.request.Request(base + "/api/generate", data=dati,

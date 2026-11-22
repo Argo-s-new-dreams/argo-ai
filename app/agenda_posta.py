@@ -5,6 +5,7 @@ Posta AI: elenco leggero della posta in arrivo; riassunto, «cosa mi si chiede»
 con il modello LOCALE. Il testo delle mail arriva dal tuo tenant e viene elaborato solo su questo computer.
 Argo non invia mai mail: le risposte finiscono nelle Bozze di Outlook.
 """
+from lingua import tr
 import html
 import time
 from datetime import datetime
@@ -118,7 +119,7 @@ class SchedaAgenda(SchedaM365):
         for testo, g in (("Oggi e domani", 2), ("7 giorni", 7), ("14 giorni", 14)):
             self.c_giorni.addItem(testo, g)
         self.c_giorni.setCurrentIndex(1)
-        b_agg = QPushButton("Aggiorna")
+        b_agg = QPushButton(tr('Aggiorna'))
         b_agg.clicked.connect(self.carica)
         self.titolo(lay, [self.c_giorni, b_agg])
         sp = QSplitter(Qt.Horizontal)
@@ -129,7 +130,7 @@ class SchedaAgenda(SchedaM365):
         dx = QWidget()
         dl = QVBoxLayout(dx)
         dl.setContentsMargins(16, 0, 0, 0)
-        self.d_titolo = QLabel("Seleziona una riunione")
+        self.d_titolo = QLabel(tr('Seleziona una riunione'))
         self.d_titolo.setProperty("ruolo", "titolo")
         self.d_titolo.setWordWrap(True)
         self.d_meta = QLabel("")
@@ -139,14 +140,14 @@ class SchedaAgenda(SchedaM365):
         dl.addWidget(self.d_titolo)
         dl.addWidget(self.d_meta)
         bar = QHBoxLayout()
-        self.b_prep = QPushButton("Prepara")
-        self.b_prep.setToolTip("Briefing locale: partecipanti, verbali precedenti con le stesse persone, azioni aperte")
-        self.b_reg = QPushButton("● Registra")
-        self.b_reg.setToolTip("Apre la pagina Registra con il titolo di questa riunione")
-        self.b_inc = QPushButton("Incarico →")
+        self.b_prep = QPushButton(tr('Prepara'))
+        self.b_prep.setToolTip(tr('Briefing locale: partecipanti, verbali precedenti con le stesse persone, azioni aperte'))
+        self.b_reg = QPushButton(tr('● Registra'))
+        self.b_reg.setToolTip(tr('Apre la pagina Registra con il titolo di questa riunione'))
+        self.b_inc = QPushButton(tr('Incarico →'))
         self.b_inc.setProperty("primario", True)
-        self.b_out = QPushButton("Apri in Outlook")
-        self.b_join = QPushButton("Partecipa")
+        self.b_out = QPushButton(tr('Apri in Outlook'))
+        self.b_join = QPushButton(tr('Partecipa'))
         for b in (self.b_prep, self.b_reg, self.b_join, self.b_out):
             bar.addWidget(b)
         bar.addStretch()
@@ -184,11 +185,11 @@ class SchedaAgenda(SchedaM365):
         if not self.aggiorna_stato():
             return
         self.lista.clear()
-        self.lista.addItem("Leggo il calendario…")
+        self.lista.addItem(tr('Leggo il calendario…'))
         giorni = self.c_giorni.currentData()
         lav = attrezzi.Lavoro(lambda _l: m365.eventi(giorni), self)
         lav.sig_fine.connect(self._caricati)
-        lav.sig_errore.connect(lambda e: (self.lista.clear(), self.lista.addItem(f"Errore: {e}")))
+        lav.sig_errore.connect(lambda e: (self.lista.clear(), self.lista.addItem(tr('Errore: {e}', e=e))))
         self._lav_cal = lav
         lav.start()
 
@@ -214,7 +215,7 @@ class SchedaAgenda(SchedaM365):
             fine = datetime.fromisoformat(ev["fine"])
             orario = "tutto il giorno" if ev["giornata"] else f"{ini:%H:%M}–{fine:%H:%M}"
             dove = " · Teams" if ev["online"] else (f" · {ev['luogo']}" if ev["luogo"] else "")
-            it = QListWidgetItem(f"{ev['oggetto']}\n{orario}{dove} · {len(ev['persone'])} persone")
+            it = QListWidgetItem(tr('{oggetto}\n{orario}{dove} · {len} persone', oggetto=ev['oggetto'], orario=orario, dove=dove, len=len(ev['persone'])))
             it.setData(Qt.UserRole, k)
             it.setSizeHint(QSize(0, 52))
             if ini <= adesso <= fine:
@@ -223,7 +224,7 @@ class SchedaAgenda(SchedaM365):
                 it.setForeground(QColor(c["tenue"]))
             self.lista.addItem(it)
         if not evs:
-            self.lista.addItem("Nessuna riunione nel periodo.")
+            self.lista.addItem(tr('Nessuna riunione nel periodo.'))
 
     def mostra(self, _i):
         ev = self.evento()
@@ -231,7 +232,7 @@ class SchedaAgenda(SchedaM365):
             b.setEnabled(bool(ev))
         self.b_join.setEnabled(bool(ev and ev.get("link_riunione")))
         if not ev:
-            self.d_titolo.setText("Seleziona una riunione")
+            self.d_titolo.setText(tr('Seleziona una riunione'))
             self.d_meta.setText("")
             self.out.setHtml("")
             return
@@ -239,7 +240,7 @@ class SchedaAgenda(SchedaM365):
         self.d_titolo.setText(ev["oggetto"])
         persone = ", ".join(p["nome"] for p in ev["persone"]) or "nessun partecipante"
         dove = "Teams" if ev["online"] else (ev["luogo"] or "luogo non indicato")
-        self.d_meta.setText(f"{etichetta_giorno(ini)} · {ini:%H:%M}–{fine:%H:%M} · {dove}\nPartecipanti: {persone}")
+        self.d_meta.setText(tr('{etichetta_giorno} · {ini:%H:%M}–{fine:%H:%M} · {dove}\nPartecipanti: {persone}', etichetta_giorno=etichetta_giorno(ini), ini=ini, fine=fine, dove=dove, persone=persone))
         c = tema.colori()
         prev = html.escape(ev.get("anteprima") or "").strip()
         self.out.setHtml(f"<p style='color:{c['tenue']}'>Agenda / invito:</p><p>{prev or '—'}</p>"
@@ -319,7 +320,7 @@ class SchedaAgenda(SchedaM365):
         inc = self.finestra.tab_incarichi
         reg = self.finestra.tab_registra
         if reg.occupata():
-            QMessageBox.information(self, "Registrazione", "Ferma prima la registrazione nella pagina Registra.")
+            QMessageBox.information(self, tr('Registrazione'), tr('Ferma prima la registrazione nella pagina Registra.'))
             return
         # l'ultima registrazione archiviata dalla pagina Registra (in Live resta solo il testo, niente audio)
         f = Path(reg.risultato) if reg.risultato and str(reg.risultato).endswith(".wav") else None
@@ -328,12 +329,10 @@ class SchedaAgenda(SchedaM365):
         if ev:
             inc.persone = ev["persone"]
             inc.e_dest.setText(", ".join(f"{p['nome']} <{p['email']}>" for p in ev["persone"]))
-            inc.l_riunione.setText(f"Riunione: «{ev['oggetto']}» · {ev['inizio'].replace('T', ' ')} · "
-                                   f"{len(ev['persone'])} persone. Togli dai destinatari chi non deve ricevere il recap.")
+            inc.l_riunione.setText(tr('Riunione: «{oggetto}» · {inizio} · {len} persone. Togli dai destinatari chi non deve ricevere il recap.', oggetto=ev['oggetto'], inizio=ev['inizio'].replace('T', ' '), len=len(ev['persone'])))
         self.finestra.tabs.setCurrentWidget(inc)
         if not (f and f.exists()):
-            QMessageBox.information(self, "Incarico", "Partecipanti compilati. Scegli ora la registrazione della call "
-                                    "con «Scegli audio o video…».")
+            QMessageBox.information(self, tr('Incarico'), tr('Partecipanti compilati. Scegli ora la registrazione della call con «Scegli audio o video…».'))
 
 
 # =============================================================== Posta AI
@@ -352,10 +351,10 @@ class SchedaPosta(SchedaM365):
         lay = QVBoxLayout(self.contenuto)
         lay.setContentsMargins(20, 16, 20, 12)
         self.c_filtro = QComboBox()
-        self.c_filtro.addItem("Non lette", True)
-        self.c_filtro.addItem("Tutte (ultime 40)", False)
+        self.c_filtro.addItem(tr('Non lette'), True)
+        self.c_filtro.addItem(tr('Tutte (ultime 40)'), False)
         self.c_filtro.currentIndexChanged.connect(lambda _: self.carica())
-        b_agg = QPushButton("Aggiorna")
+        b_agg = QPushButton(tr('Aggiorna'))
         b_agg.clicked.connect(self.carica)
         self.titolo(lay, [self.c_filtro, b_agg])
         sp = QSplitter(Qt.Horizontal)
@@ -366,7 +365,7 @@ class SchedaPosta(SchedaM365):
         mid = QWidget()
         ml = QVBoxLayout(mid)
         ml.setContentsMargins(14, 0, 8, 0)
-        self.m_ogg = QLabel("Seleziona una mail")
+        self.m_ogg = QLabel(tr('Seleziona una mail'))
         self.m_ogg.setProperty("ruolo", "titolo")
         self.m_ogg.setWordWrap(True)
         self.m_meta = QLabel("")
@@ -381,8 +380,8 @@ class SchedaPosta(SchedaM365):
         ml.addWidget(self.m_meta)
         ml.addWidget(self.m_testo, 1)
         rb = QHBoxLayout()
-        self.b_letta = QPushButton("Segna come letta")
-        self.b_outlook = QPushButton("Apri in Outlook")
+        self.b_letta = QPushButton(tr('Segna come letta'))
+        self.b_outlook = QPushButton(tr('Apri in Outlook'))
         rb.addWidget(self.b_letta)
         rb.addWidget(self.b_outlook)
         rb.addStretch()
@@ -391,12 +390,12 @@ class SchedaPosta(SchedaM365):
         dx = QWidget()
         dl = QVBoxLayout(dx)
         dl.setContentsMargins(8, 0, 0, 0)
-        s = QLabel("ASSISTENTE LOCALE")
+        s = QLabel(tr('ASSISTENTE LOCALE'))
         s.setProperty("ruolo", "sezione")
         dl.addWidget(s)
         ra = QHBoxLayout()
-        self.b_riass = QPushButton("Riassumi")
-        self.b_chiede = QPushButton("Cosa mi si chiede")
+        self.b_riass = QPushButton(tr('Riassumi'))
+        self.b_chiede = QPushButton(tr('Cosa mi si chiede'))
         ra.addWidget(self.b_riass)
         ra.addWidget(self.b_chiede)
         dl.addLayout(ra)
@@ -404,26 +403,26 @@ class SchedaPosta(SchedaM365):
         self.c_tono = QComboBox()
         self.c_tono.addItems(incarichi.TONI)
         self.e_istr = QLineEdit()
-        self.e_istr.setPlaceholderText("Come rispondere, es. «accetto, propongo giovedì alle 10»")
+        self.e_istr.setPlaceholderText(tr('Come rispondere, es. «accetto, propongo giovedì alle 10»'))
         rr.addWidget(self.c_tono)
         dl.addLayout(rr)
         dl.addWidget(self.e_istr)
         rr2 = QHBoxLayout()
-        self.b_risp = QPushButton("Scrivi risposta")
+        self.b_risp = QPushButton(tr('Scrivi risposta'))
         self.b_risp.setProperty("primario", True)
         self.c_tutti = QComboBox()
-        self.c_tutti.addItem("Rispondi", False)
-        self.c_tutti.addItem("Rispondi a tutti", True)
+        self.c_tutti.addItem(tr('Rispondi'), False)
+        self.c_tutti.addItem(tr('Rispondi a tutti'), True)
         rr2.addWidget(self.b_risp)
         rr2.addWidget(self.c_tutti)
         dl.addLayout(rr2)
         self.uscita = QPlainTextEdit()
-        self.uscita.setPlaceholderText("Qui compaiono riassunto, richieste o bozza di risposta. Puoi modificare il testo.")
+        self.uscita.setPlaceholderText(tr('Qui compaiono riassunto, richieste o bozza di risposta. Puoi modificare il testo.'))
         dl.addWidget(self.uscita, 1)
         rb2 = QHBoxLayout()
-        self.b_bozza = QPushButton("Salva come bozza in Outlook")
-        self.b_task = QPushButton("Crea task in Planner")
-        b_copia = QPushButton("Copia")
+        self.b_bozza = QPushButton(tr('Salva come bozza in Outlook'))
+        self.b_task = QPushButton(tr('Crea task in Planner'))
+        b_copia = QPushButton(tr('Copia'))
         b_copia.clicked.connect(lambda: attrezzi.copia(self.uscita.toPlainText()))
         rb2.addWidget(self.b_bozza)
         rb2.addWidget(b_copia)
@@ -468,11 +467,11 @@ class SchedaPosta(SchedaM365):
         if not self.aggiorna_stato():
             return
         self.lista.clear()
-        self.lista.addItem("Leggo la posta…")
+        self.lista.addItem(tr('Leggo la posta…'))
         solo = self.c_filtro.currentData()
         lav = attrezzi.Lavoro(lambda _l: m365.posta(solo), self)
         lav.sig_fine.connect(self._caricata)
-        lav.sig_errore.connect(lambda e: (self.lista.clear(), self.lista.addItem(f"Errore: {e}")))
+        lav.sig_errore.connect(lambda e: (self.lista.clear(), self.lista.addItem(tr('Errore: {e}', e=e))))
         self._lav_posta = lav
         lav.start()
 
@@ -492,7 +491,7 @@ class SchedaPosta(SchedaM365):
                 it.setForeground(QColor(c["tenue"]))
             self.lista.addItem(it)
         if not mail:
-            self.lista.addItem("Nessuna mail da mostrare. 🎉" if self.c_filtro.currentData() else "Nessuna mail.")
+            self.lista.addItem(tr('Nessuna mail da mostrare. 🎉') if self.c_filtro.currentData() else tr('Nessuna mail.'))
 
     def apri(self, _i):
         it = self.lista.currentItem()
@@ -529,7 +528,7 @@ class SchedaPosta(SchedaM365):
         tono = self.c_tono.currentText()
         conv_id = m.get("conversazione")
         self.uscita.clear()
-        self.l_stato.setText("Il modello locale sta lavorando…")
+        self.l_stato.setText(tr('Il modello locale sta lavorando…'))
         for b in (self.b_riass, self.b_chiede, self.b_risp, self.b_bozza):
             b.setEnabled(False)
 
@@ -560,7 +559,7 @@ class SchedaPosta(SchedaM365):
                                         self.l_stato.setText(
                                             "Fatto" + (", " + attrezzi.cloud.avviso("posta") if attrezzi.cloud.e_cloud("posta")
                                                        else ", in locale.") + " Rileggi prima di usarlo.")))
-        lav.sig_errore.connect(lambda e: (self.l_stato.setText(f"Errore: {e}"), self._abilita(True)))
+        lav.sig_errore.connect(lambda e: (self.l_stato.setText(tr('Errore: {e}', e=e)), self._abilita(True)))
         self.lavoro = lav
         lav.start()
 
@@ -571,8 +570,8 @@ class SchedaPosta(SchedaM365):
         a_tutti = self.c_tutti.currentData()
         lav = attrezzi.Lavoro(lambda _l: m365.bozza_risposta(m["id"], testo, a_tutti), self)
         lav.sig_fine.connect(lambda r: self.l_stato.setText(
-            f"Bozza di risposta salvata in Outlook ({'a tutti' if a_tutti else 'al mittente'}). Non è stata inviata."))
-        lav.sig_errore.connect(lambda e: self.l_stato.setText(f"Errore: {e}"))
+            tr('Bozza di risposta salvata in Outlook ({valore}). Non è stata inviata.', valore='a tutti' if a_tutti else 'al mittente')))
+        lav.sig_errore.connect(lambda e: self.l_stato.setText(tr('Errore: {e}', e=e)))
         self._lav_b = lav
         lav.start()
 
@@ -581,8 +580,8 @@ class SchedaPosta(SchedaM365):
         if not m:
             return
         lav = attrezzi.Lavoro(lambda _l: m365.segna_letta(m["id"]), self)
-        lav.sig_fine.connect(lambda _r: (self.l_stato.setText("Segnata come letta."), self.carica()))
-        lav.sig_errore.connect(lambda e: self.l_stato.setText(f"Errore: {e}"))
+        lav.sig_fine.connect(lambda _r: (self.l_stato.setText(tr('Segnata come letta.')), self.carica()))
+        lav.sig_errore.connect(lambda e: self.l_stato.setText(tr('Errore: {e}', e=e)))
         self._lav_l = lav
         lav.start()
 
@@ -590,7 +589,7 @@ class SchedaPosta(SchedaM365):
         m = self.attuale
         if not m or not attrezzi.pronto_llm(self):
             return
-        self.l_stato.setText("Estraggo le richieste come task…")
+        self.l_stato.setText(tr('Estraggo le richieste come task…'))
         oggi = time.strftime(incarichi.FORMATO_DATA)
         lav = attrezzi.Lavoro(lambda l: (incarichi.estrai_task(l, f"Mail di {m['da']['nome']} del {m['quando']}:\n"
                                                                f"{m['testo'][:8000]}", oggi), m365.piani()), self)
@@ -598,18 +597,18 @@ class SchedaPosta(SchedaM365):
         def scegli(r):
             task, piani = r
             if not task:
-                self.l_stato.setText("Nessuna richiesta da trasformare in task.")
+                self.l_stato.setText(tr('Nessuna richiesta da trasformare in task.'))
                 return
             if not piani:
-                self.l_stato.setText("Nessun piano Planner trovato.")
+                self.l_stato.setText(tr('Nessun piano Planner trovato.'))
                 return
             from PySide6.QtWidgets import QInputDialog
             nomi = [p["titolo"] for p in piani]
             elenco = "\n".join(f"• {t['titolo']}" + (f" (entro {t['scadenza']})" if t["scadenza"] else "") for t in task)
-            scelto, ok = QInputDialog.getItem(self, "Crea task in Planner",
-                                              f"Creo questi task nel piano scelto:\n{elenco}\n\nPiano:", nomi, 0, False)
+            scelto, ok = QInputDialog.getItem(self, tr('Crea task in Planner'),
+                                              tr('Creo questi task nel piano scelto:\n{elenco}\n\nPiano:', elenco=elenco), nomi, 0, False)
             if not ok:
-                self.l_stato.setText("Annullato.")
+                self.l_stato.setText(tr('Annullato.'))
                 return
             pid = piani[nomi.index(scelto)]["id"]
 
@@ -622,12 +621,12 @@ class SchedaPosta(SchedaM365):
                 return m365.crea_task(pid, b[0]["id"], task, {})
 
             l2 = attrezzi.Lavoro(crea, self)
-            l2.sig_fine.connect(lambda c: self.l_stato.setText(f"{len(c)} task creati in «{scelto}»."))
-            l2.sig_errore.connect(lambda e: self.l_stato.setText(f"Errore: {e}"))
+            l2.sig_fine.connect(lambda c: self.l_stato.setText(tr('{len} task creati in «{scelto}».', len=len(c), scelto=scelto)))
+            l2.sig_errore.connect(lambda e: self.l_stato.setText(tr('Errore: {e}', e=e)))
             self._lav_t2 = l2
             l2.start()
 
         lav.sig_fine.connect(scegli)
-        lav.sig_errore.connect(lambda e: self.l_stato.setText(f"Errore: {e}"))
+        lav.sig_errore.connect(lambda e: self.l_stato.setText(tr('Errore: {e}', e=e)))
         self._lav_t = lav
         lav.start()
