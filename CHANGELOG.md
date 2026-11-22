@@ -2,6 +2,10 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261122.1114: Ollama spento anche uscendo con ⌘Q o dal Dock
+- Lo spegnimento di Ollama alla chiusura vale per ogni modo di uscire: pulsante di chiusura della finestra (o Alt+F4), sul Mac anche ⌘Q, *Argo › Esci*, *Esci* dal Dock e spegnimento del computer. Una volta sola.
+- Quando Argo si riavvia da solo dopo un aggiornamento, Ollama resta acceso per la nuova finestra.
+
 ## 20261122.1107: Ollama acceso all'avvio e spento alla chiusura, a scelta
 - **Alla chiusura di Argo** (Impostazioni › Modelli AI): *Fermalo solo se l'ha avviato Argo* (predefinito), *Fermalo sempre* oppure *Lascialo acceso: lo usano anche altri programmi*. Prima Argo accendeva Ollama ma non lo spegneva mai, e la memoria restava occupata anche dopo la chiusura.
 - Argo **si ricorda di aver acceso Ollama** anche dopo un riavvio per aggiornamento, ma non dopo un riavvio del computer: così non spegne un Ollama partito con il sistema o acceso da un altro programma.
