@@ -7,6 +7,7 @@ Due modalità:
 
 L'IT può limitare le modalità con criteri.json → "registrazione": "completa" | "solo_live" | "nessuna".
 """
+from lingua import tr
 import json
 import math
 import sys
@@ -72,23 +73,21 @@ class Ponte(QObject):
 class DialogoConsenso(QDialog):
     def __init__(self, modo, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Prima di registrare")
+        self.setWindowTitle(tr('Prima di registrare'))
         lay = QVBoxLayout(self)
-        t = QLabel("<b>Chi partecipa deve saperlo.</b> Una registrazione fatta con Argo, a differenza di quella "
-                   "di Teams, <b>non avvisa</b> gli altri partecipanti. Informali prima di iniziare: "
-                   "puoi incollare in chat il testo qui sotto.")
+        t = QLabel(tr('<b>Chi partecipa deve saperlo.</b> Una registrazione fatta con Argo, a differenza di quella di Teams, <b>non avvisa</b> gli altri partecipanti. Informali prima di iniziare: puoi incollare in chat il testo qui sotto.'))
         t.setWordWrap(True)
         lay.addWidget(t)
         self.testo = QPlainTextEdit(INFORMATIVA[modo])
         self.testo.setFixedHeight(110)
         lay.addWidget(self.testo)
-        b_copia = QPushButton("Copia l'avviso")
+        b_copia = QPushButton(tr("Copia l'avviso"))
         b_copia.clicked.connect(lambda: QGuiApplication.clipboard().setText(self.testo.toPlainText()))
         lay.addWidget(b_copia)
-        self.ok = QCheckBox("Ho informato i partecipanti e nessuno si è opposto")
+        self.ok = QCheckBox(tr('Ho informato i partecipanti e nessuno si è opposto'))
         lay.addWidget(self.ok)
         bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.button(QDialogButtonBox.Ok).setText("Avvia")
+        bb.button(QDialogButtonBox.Ok).setText(tr('Avvia'))
         bb.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ok.toggled.connect(bb.button(QDialogButtonBox.Ok).setEnabled)
         bb.accepted.connect(self.accept)
@@ -123,9 +122,8 @@ class SchedaRegistra(QWidget):
         self.ponte.nuovo_blocco.connect(self._blocco_pronto)
 
         lay = QVBoxLayout(self)
-        self.r_live = QRadioButton("Live: trascrive mentre registri e cancella l'audio appena trascritto. "
-                                   "Alla fine resta solo il testo.")
-        self.r_arch = QRadioButton("Archivia: salva la registrazione completa e la trascrivi dopo, nella pagina Trascrivi.")
+        self.r_live = QRadioButton(tr("Live: trascrive mentre registri e cancella l'audio appena trascritto. Alla fine resta solo il testo."))
+        self.r_arch = QRadioButton(tr('Archivia: salva la registrazione completa e la trascrivi dopo, nella pagina Trascrivi.'))
         self.gruppo = QButtonGroup(self)
         for r in (self.r_live, self.r_arch):
             self.gruppo.addButton(r)
@@ -136,27 +134,27 @@ class SchedaRegistra(QWidget):
         (self.r_live if "live" in consentite else self.r_arch).setChecked(True)
 
         self.e_titolo = QLineEdit()
-        self.e_titolo.setPlaceholderText("Titolo della riunione (facoltativo)")
+        self.e_titolo.setPlaceholderText(tr('Titolo della riunione (facoltativo)'))
 
         bar = QHBoxLayout()
-        self.b_avvia = QPushButton("● Avvia")
+        self.b_avvia = QPushButton(tr('● Avvia'))
         self.b_avvia.setProperty("primario", True)
         self.b_avvia.clicked.connect(self.avvia_o_ferma)
-        self.b_scarta = QPushButton("Scarta l'audio rimasto e concludi")
+        self.b_scarta = QPushButton(tr("Scarta l'audio rimasto e concludi"))
         self.b_scarta.clicked.connect(self.scarta_e_concludi)
         self.b_scarta.hide()
-        self.b_riavvia = QPushButton("Riavvia la trascrizione")
+        self.b_riavvia = QPushButton(tr('Riavvia la trascrizione'))
         self.b_riavvia.clicked.connect(self._avvia_motore)
         self.b_riavvia.hide()
-        self.b_verbale = QPushButton("Apri nel Verbale →")
+        self.b_verbale = QPushButton(tr('Apri nel Verbale →'))
         self.b_verbale.clicked.connect(self.apri_verbale)
-        self.b_coda = QPushButton("Metti in coda in Trascrivi →")
+        self.b_coda = QPushButton(tr('Metti in coda in Trascrivi →'))
         self.b_coda.clicked.connect(self.metti_in_coda)
         self.b_scarica = QToolButton()  # trascrizione della Live in Word o WebVTT
-        self.b_scarica.setText("⬇️ Scarica ▾")
+        self.b_scarica.setText(tr('⬇️ Scarica ▾'))
         self.b_scarica.setPopupMode(QToolButton.InstantPopup)
         self.b_scarica.setMenu(esporta_trascrizione.menu(self, self._sorgente_scarica))
-        self.b_cartella = QPushButton("Apri cartella")
+        self.b_cartella = QPushButton(tr('Apri cartella'))
         self.b_cartella.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(
             Path(self.risultato).parent if self.risultato else cartella_registrazioni()))))
         for b in (self.b_verbale, self.b_coda, self.b_scarica):
@@ -191,7 +189,7 @@ class SchedaRegistra(QWidget):
             vol.setRange(0, 200)
             vol.setValue(int(imp.get(chiave, 100)))
             vol.setFixedWidth(140)
-            vol.setToolTip("Volume di questa sorgente nella registrazione (si può cambiare anche mentre registri)")
+            vol.setToolTip(tr('Volume di questa sorgente nella registrazione (si può cambiare anche mentre registri)'))
             etich.setFixedWidth(42)
             metro.setRange(0, 100)
             metro.setTextVisible(False)
@@ -202,8 +200,8 @@ class SchedaRegistra(QWidget):
             g.addWidget(etich, i, 3)
             g.addWidget(metro, i, 4)
             vol.valueChanged.connect(self._volumi)
-        self.b_elenco = QPushButton("Aggiorna elenco")  # il simbolo ↻ non c'è in Roboto: meglio un verbo
-        self.b_elenco.setToolTip("Aggiorna l'elenco dei dispositivi (dopo aver collegato cuffie o microfoni)")
+        self.b_elenco = QPushButton(tr('Aggiorna elenco'))  # il simbolo ↻ non c'è in Roboto: meglio un verbo
+        self.b_elenco.setToolTip(tr("Aggiorna l'elenco dei dispositivi (dopo aver collegato cuffie o microfoni)"))
         self.b_elenco.clicked.connect(self._riempi_sorgenti)
         g.addWidget(self.b_elenco, 1, 5)
         self.l_sorgenti = QLabel("")
@@ -220,10 +218,7 @@ class SchedaRegistra(QWidget):
 
         self.testo = QPlainTextEdit()
         self.testo.setReadOnly(True)
-        self.testo.setPlaceholderText("In modalità Live la trascrizione compare qui, blocco dopo blocco "
-                                      "(con 20-45 secondi di ritardo).\n\n"
-                                      "Consiglio: nelle call usa le cuffie, così il microfono non riprende anche "
-                                      "le voci che escono dagli altoparlanti.")
+        self.testo.setPlaceholderText(tr('In modalità Live la trascrizione compare qui, blocco dopo blocco (con 20-45 secondi di ritardo).\n\nConsiglio: nelle call usa le cuffie, così il microfono non riprende anche le voci che escono dagli altoparlanti.'))
         lay.addWidget(self.testo, 1)
         tema.imposta_filigrana(self.testo, True)
         self.stato = QLabel("")
@@ -231,7 +226,7 @@ class SchedaRegistra(QWidget):
         lay.addWidget(self.stato)
         if not consentite:
             self.b_avvia.setEnabled(False)
-            self.stato.setText("La registrazione è disattivata dai criteri aziendali impostati dall'IT.")
+            self.stato.setText(tr("La registrazione è disattivata dai criteri aziendali impostati dall'IT."))
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._aggiorna)
@@ -251,7 +246,7 @@ class SchedaRegistra(QWidget):
                 combo.addItem(etichetta, valore)
             i = combo.findData(voluto)
             if i < 0 and voluto:  # dispositivo salvato ma ora scollegato: resta visibile e segnalato
-                combo.addItem(f"{voluto.removeprefix('dev:')} (non collegato)", voluto)
+                combo.addItem(tr('{dispositivo} (non collegato)', dispositivo=voluto.removeprefix('dev:')), voluto)
                 i = combo.count() - 1
             combo.setCurrentIndex(max(i, 0))
             combo.blockSignals(False)
@@ -284,13 +279,11 @@ class SchedaRegistra(QWidget):
             n = len(s.blocchi_in_attesa())
             fatti = len(s.risultati())
             box = QMessageBox(self)
-            box.setWindowTitle("Sessione Live non conclusa")
-            box.setText(f"La sessione Live «{s.meta['titolo']}» ({s.meta['inizio'][:16].replace('T', ' ')}) "
-                        f"non è stata conclusa.\n\nTesto già salvato: {fatti} blocchi. Audio ancora da trascrivere: "
-                        f"{n} blocchi.")
-            b_fin = box.addButton("Trascrivi il resto e concludi", QMessageBox.AcceptRole) if n else None
-            b_txt = box.addButton("Cancella l'audio e salva il testo", QMessageBox.DestructiveRole)
-            box.addButton("Decidi dopo", QMessageBox.RejectRole)
+            box.setWindowTitle(tr('Sessione Live non conclusa'))
+            box.setText(tr('La sessione Live «{titolo}» ({inizio}) non è stata conclusa.\n\nTesto già salvato: {fatti} blocchi. Audio ancora da trascrivere: {n} blocchi.', titolo=s.meta['titolo'], inizio=s.meta['inizio'][:16].replace('T', ' '), fatti=fatti, n=n))
+            b_fin = box.addButton(tr('Trascrivi il resto e concludi'), QMessageBox.AcceptRole) if n else None
+            b_txt = box.addButton(tr("Cancella l'audio e salva il testo"), QMessageBox.DestructiveRole)
+            box.addButton(tr('Decidi dopo'), QMessageBox.RejectRole)
             box.exec()
             if b_fin is not None and box.clickedButton() is b_fin:
                 self._riprendi(s)
@@ -326,11 +319,10 @@ class SchedaRegistra(QWidget):
         if modo not in modalita_consentite():
             return
         if modo == "live" and diagnostica.MODALITA_SICURA:
-            QMessageBox.information(self, "Modalità sicura", "In modalità sicura la trascrizione Live è spenta. "
-                                    "Puoi registrare in archivio, oppure riavviare Argo normalmente.")
+            QMessageBox.information(self, tr('Modalità sicura'), tr('In modalità sicura la trascrizione Live è spenta. Puoi registrare in archivio, oppure riavviare Argo normalmente.'))
             return
         if modo == "live" and not core.leggi_token():
-            QMessageBox.warning(self, "Token mancante", "Per la Live serve il token Hugging Face (Impostazioni).")
+            QMessageBox.warning(self, tr('Token mancante'), tr('Per la Live serve il token Hugging Face (Impostazioni).'))
             return
         if DialogoConsenso(modo, self).exec() != QDialog.Accepted:
             return
@@ -365,8 +357,7 @@ class SchedaRegistra(QWidget):
             self.mixer.avvia()
         except Exception as e:
             self._pulisci_dopo_errore()
-            QMessageBox.warning(self, "Registrazione", f"Impossibile registrare: {e}\n\nSul Mac: Impostazioni di "
-                                "Sistema → Privacy e sicurezza → Microfono, abilita Argo AI.")
+            QMessageBox.warning(self, tr('Registrazione'), tr('Impossibile registrare: {e}\n\nSul Mac: Impostazioni di Sistema → Privacy e sicurezza → Microfono, abilita Argo AI.', e=e))
             return
         sorgenti = self.mixer.mic.nome + (f" + {self.mixer.sis.nome}" if self.mixer.sis else "")
         avviso = ""
@@ -379,7 +370,7 @@ class SchedaRegistra(QWidget):
             self._id_cervello = cervello.salva_interlocutori(rif, titolo, "live" if modo == "live" else "archivio",
                                                              *con_chi)
         self.registrando = True
-        self.b_avvia.setText("■ Ferma")
+        self.b_avvia.setText(tr('■ Ferma'))
         for w in (self.r_live, self.r_arch, self.c_mic, self.c_sis, self.b_elenco, self.e_titolo):
             w.setEnabled(False)
         self.timer.start(200)
@@ -410,7 +401,7 @@ class SchedaRegistra(QWidget):
         self.registrando = False
         self._salva_sorgenti()
         self.mixer.ferma()
-        self.b_avvia.setText("● Avvia")
+        self.b_avvia.setText(tr('● Avvia'))
         if self.modo == "archivia":
             with self._lock_wav:
                 self.wav.close()
@@ -420,8 +411,7 @@ class SchedaRegistra(QWidget):
             self.risultato = str(self.file_archivio)
             self.l_rec.setText("")
             self.l_rec.hide()
-            self.stato.setText(f"Registrazione salvata: {self.file_archivio.name} "
-                               f"({live.mmss(self.mixer.secondi)}).")
+            self.stato.setText(tr('Registrazione salvata: {name} ({mmss}).', name=self.file_archivio.name, mmss=live.mmss(self.mixer.secondi)))
             self.b_coda.show()
             self.mixer = None
             self._aggiorna_veglia()
@@ -486,7 +476,7 @@ class SchedaRegistra(QWidget):
         self.motore.setWorkingDirectory(str(QUI))
         self.motore.start(sys.executable, ["-u", str(QUI / "live_motore.py")])
         diagnostica.log.info("motore Live avviato")
-        self.stato.setText("Avvio della trascrizione Live…")
+        self.stato.setText(tr('Avvio della trascrizione Live…'))
 
     def _leggi_motore(self):
         self._buf_out += bytes(self.motore.readAllStandardOutput())
@@ -508,7 +498,7 @@ class SchedaRegistra(QWidget):
             self.stato.setText(m.get("msg", ""))
         elif tipo == "pronto":
             self.motore_pronto = True
-            self.stato.setText("Trascrizione Live pronta.")
+            self.stato.setText(tr('Trascrizione Live pronta.'))
             self._prossimo()
         elif tipo == "risultato" and self.sessione:
             righe = self.sessione.registra_risultato(m["blocco"], m.get("segmenti"), m.get("emb"))
@@ -532,8 +522,7 @@ class SchedaRegistra(QWidget):
             if self.in_lavoro:
                 self.coda.insert(0, self.in_lavoro)
                 self.in_lavoro = None
-            self.stato.setText("⚠️ La trascrizione Live si è fermata. I blocchi non ancora trascritti sono al "
-                               "sicuro in una cartella privata: premi «Riavvia la trascrizione».")
+            self.stato.setText(tr('⚠️ La trascrizione Live si è fermata. I blocchi non ancora trascritti sono al sicuro in una cartella privata: premi «Riavvia la trascrizione».'))
             self.b_riavvia.show()
 
     def _blocco_pronto(self, f):
@@ -550,8 +539,7 @@ class SchedaRegistra(QWidget):
             self._concludi()
 
     def scarta_e_concludi(self):
-        if QMessageBox.question(self, "Concludere?", "L'audio non ancora trascritto verrà cancellato e il suo "
-                                "contenuto andrà perso. Il testo già trascritto viene salvato. Procedere?") != QMessageBox.Yes:
+        if QMessageBox.question(self, tr('Concludere?'), tr("L'audio non ancora trascritto verrà cancellato e il suo contenuto andrà perso. Il testo già trascritto viene salvato. Procedere?")) != QMessageBox.Yes:
             return
         self.coda = []
         self._ferma_motore()
@@ -591,11 +579,11 @@ class SchedaRegistra(QWidget):
             self.risultato = str(out)
             if getattr(self, "_id_cervello", None):  # la scheda «con chi» segue la trascrizione salvata
                 cervello.aggiorna_riferimento(self._id_cervello, out)
-            self.stato.setText(f"✅ Trascrizione salvata: {Path(out).name}. L'audio è stato cancellato.")
+            self.stato.setText(tr("✅ Trascrizione salvata: {name}. L'audio è stato cancellato.", name=Path(out).name))
             self.b_verbale.show()
             self.b_scarica.show()
         else:
-            self.stato.setText("Sessione conclusa: non è stato trascritto alcun parlato. L'audio è stato cancellato.")
+            self.stato.setText(tr("Sessione conclusa: non è stato trascritto alcun parlato. L'audio è stato cancellato."))
 
     # ------------------------------------------------------------ interfaccia
     def _scrivi_riga(self, nome, seg):
@@ -616,7 +604,7 @@ class SchedaRegistra(QWidget):
         if self.modo == "live" and self.sessione:
             attesa = len(self.coda) + (1 if self.in_lavoro else 0)
             if self.chiusura:
-                self.l_rec.setText("Sto finendo di trascrivere…")
+                self.l_rec.setText(tr('Sto finendo di trascrivere…'))
             if self.motore_pronto:
                 self.stato.setText(f"Blocchi da trascrivere: {attesa}" + (" (uno in corso)" if self.in_lavoro else "") +
                                    ". L'audio di ogni blocco viene cancellato appena il suo testo è salvato." + self.avviso)

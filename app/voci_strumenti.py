@@ -6,6 +6,7 @@
 
 L'audio resta sul computer: si usano ffmpeg per leggere i file e sounddevice per microfono e altoparlanti.
 """
+from lingua import tr
 import json
 import os
 import subprocess
@@ -94,24 +95,23 @@ class RegistraVoceDialog(QDialog):
 
     def __init__(self, nomi_noti, nome=None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Registra una voce")
+        self.setWindowTitle(tr('Registra una voce'))
         self.resize(620, 520)
         self.risultato = []
         self.flusso = None
         self.campioni = []
         self.livello = 0.0
         lay = QVBoxLayout(self)
-        intro = QLabel("Fai parlare <b>solo</b> la persona da registrare, nel silenzio, con il microfono che usi di "
-                       "solito. Servono almeno 20 secondi; 30-60 è meglio. Può leggere il testo qui sotto.")
+        intro = QLabel(tr('Fai parlare <b>solo</b> la persona da registrare, nel silenzio, con il microfono che usi di solito. Servono almeno 20 secondi; 30-60 è meglio. Può leggere il testo qui sotto.'))
         intro.setWordWrap(True)
         lay.addWidget(intro)
         riga = QHBoxLayout()
-        riga.addWidget(QLabel("Nome:"))
+        riga.addWidget(QLabel(tr('Nome:')))
         self.c_nome = QComboBox()
         self.c_nome.setEditable(True)
         self.c_nome.addItems(nomi_noti)
         self.c_nome.setCurrentText(nome or "")
-        self.c_nome.lineEdit().setPlaceholderText("es. Marco Rossi")
+        self.c_nome.lineEdit().setPlaceholderText(tr('es. Marco Rossi'))
         riga.addWidget(self.c_nome, 1)
         lay.addLayout(riga)
         testo = QPlainTextEdit(TESTO_LETTURA)
@@ -125,18 +125,18 @@ class RegistraVoceDialog(QDialog):
         self.barra.setTextVisible(False)
         self.barra.setFixedHeight(12)
         lay.addWidget(self.barra)
-        self.l_tempo = QLabel("Pronto. Premi «Registra».")
+        self.l_tempo = QLabel(tr('Pronto. Premi «Registra».'))
         lay.addWidget(self.l_tempo)
         self.cb_consenso = QCheckBox(TESTO_CONSENSO)
         lay.addWidget(self.cb_consenso)
         bar = QHBoxLayout()
-        self.b_reg = QPushButton("● Registra")
+        self.b_reg = QPushButton(tr('● Registra'))
         self.b_reg.setProperty("primario", True)
-        self.b_ascolta = QPushButton("▶ Riascolta")
+        self.b_ascolta = QPushButton(tr('▶ Riascolta'))
         self.b_ascolta.setEnabled(False)
-        self.b_salva = QPushButton("Crea impronta")
+        self.b_salva = QPushButton(tr('Crea impronta'))
         self.b_salva.setEnabled(False)
-        b_annulla = QPushButton("Annulla")
+        b_annulla = QPushButton(tr('Annulla'))
         for b in (self.b_reg, self.b_ascolta):
             bar.addWidget(b)
         bar.addStretch()
@@ -163,10 +163,9 @@ class RegistraVoceDialog(QDialog):
                 self.flusso.start()
             except Exception as e:
                 self.flusso = None
-                QMessageBox.warning(self, "Microfono", f"Impossibile usare il microfono: {e}\n\n"
-                                    "Sul Mac: Impostazioni di Sistema → Privacy e sicurezza → Microfono → abilita Argo AI.")
+                QMessageBox.warning(self, tr('Microfono'), tr('Impossibile usare il microfono: {e}\n\nSul Mac: Impostazioni di Sistema → Privacy e sicurezza → Microfono → abilita Argo AI.', e=e))
                 return
-            self.b_reg.setText("■ Stop")
+            self.b_reg.setText(tr('■ Stop'))
             self.b_ascolta.setEnabled(False)
             self.b_salva.setEnabled(False)
             self.timer.start(100)
@@ -184,17 +183,17 @@ class RegistraVoceDialog(QDialog):
             self.flusso = None
         self.timer.stop()
         self.barra.setValue(0)
-        self.b_reg.setText("● Registra di nuovo")
+        self.b_reg.setText(tr('● Registra di nuovo'))
         s = self._secondi()
         ok = s >= MIN_SECONDI
         self.b_ascolta.setEnabled(s > 0)
         self.b_salva.setEnabled(ok)
         if not ok:
-            self.l_tempo.setText(f"Registrati {s:.0f} s: troppo pochi, ne servono almeno {MIN_SECONDI} (meglio {CONSIGLIATI}+).")
+            self.l_tempo.setText(tr('Registrati {s:.0f} s: troppo pochi, ne servono almeno {min_secondi} (meglio {consigliati}+).', s=s, min_secondi=MIN_SECONDI, consigliati=CONSIGLIATI))
         elif s < CONSIGLIATI:
-            self.l_tempo.setText(f"Registrati {s:.0f} s: va bene, ma con {CONSIGLIATI}+ secondi l'impronta è più stabile.")
+            self.l_tempo.setText(tr("Registrati {s:.0f} s: va bene, ma con {consigliati}+ secondi l'impronta è più stabile.", s=s, consigliati=CONSIGLIATI))
         else:
-            self.l_tempo.setText(f"Registrati {s:.0f} s. Ottimo: riascolta se vuoi, poi «Crea impronta».")
+            self.l_tempo.setText(tr('Registrati {s:.0f} s. Ottimo: riascolta se vuoi, poi «Crea impronta».', s=s))
 
     def _aggiorna(self):
         s = self._secondi()
@@ -202,7 +201,7 @@ class RegistraVoceDialog(QDialog):
         self.barra.setValue(int(np.clip((db + 60) / 60 * 100, 0, 100)))
         consiglio = "parla pure…" if s < CONSIGLIATI else "va bene, puoi fermare quando vuoi"
         silenzio = "  ·  non sento niente: controlla il microfono" if s > 3 and self.livello < 0.002 else ""
-        self.l_tempo.setText(f"● Registrazione: {s:.0f} s, {consiglio}{silenzio}")
+        self.l_tempo.setText(tr('● Registrazione: {s:.0f} s, {consiglio}{silenzio}', s=s, consiglio=consiglio, silenzio=silenzio))
         if s >= 120:
             self._ferma()
 
@@ -215,16 +214,15 @@ class RegistraVoceDialog(QDialog):
             import sounddevice as sd
             sd.play(self._audio(), SR)
         except Exception as e:
-            QMessageBox.warning(self, "Audio", f"Riproduzione non disponibile: {e}")
+            QMessageBox.warning(self, tr('Audio'), tr('Riproduzione non disponibile: {e}', e=e))
 
     def salva(self):
         nome = self.c_nome.currentText().strip()
         if not core.nome_valido(nome):
-            QMessageBox.warning(self, "Nome", "Scrivi il nome della persona, senza caratteri speciali.")
+            QMessageBox.warning(self, tr('Nome'), tr('Scrivi il nome della persona, senza caratteri speciali.'))
             return
         if not self.cb_consenso.isChecked():
-            QMessageBox.warning(self, "Consenso", "L'impronta vocale è un dato biometrico: "
-                                "serve il consenso esplicito della persona. Spunta la casella per confermarlo.")
+            QMessageBox.warning(self, tr('Consenso'), tr("L'impronta vocale è un dato biometrico: serve il consenso esplicito della persona. Spunta la casella per confermarlo."))
             return
         f = dir_temporanea() / f"registrazione_{nome_file(nome)}_{int(time.time())}.wav"
         scrivi_wav(f, self._audio())
@@ -520,7 +518,7 @@ class MarcaVociDialog(QDialog):
 
     def __init__(self, nomi_noti, file_audio=None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Crea impronte vocali da un audio o da un video")
+        self.setWindowTitle(tr('Crea impronte vocali da un audio o da un video'))
         self.resize(1000, 720)
         self.nomi_noti = list(nomi_noti)
         self.audio = None
@@ -533,15 +531,13 @@ class MarcaVociDialog(QDialog):
         self.colori = {}
 
         lay = QVBoxLayout(self)
-        intro = QLabel("Ascolta l'audio (o guarda il video della call), <b>trascina sulla forma d'onda</b> per selezionare un tratto in cui parla una "
-                       "sola persona e assegnalo. Rotella = zoom, Maiusc+rotella = scorri, clic = vai lì. "
-                       "Se l'audio è già stato trascritto, sotto vedi i parlanti trovati: clic su un tratto per selezionarlo.")
+        intro = QLabel(tr("Ascolta l'audio (o guarda il video della call), <b>trascina sulla forma d'onda</b> per selezionare un tratto in cui parla una sola persona e assegnalo. Rotella = zoom, Maiusc+rotella = scorri, clic = vai lì. Se l'audio è già stato trascritto, sotto vedi i parlanti trovati: clic su un tratto per selezionarlo."))
         intro.setWordWrap(True)
         lay.addWidget(intro)
 
         r1 = QHBoxLayout()
-        b_apri = QPushButton("Apri audio o video…")
-        self.l_file = QLabel("Nessun audio")
+        b_apri = QPushButton(tr('Apri audio o video…'))
+        self.l_file = QLabel(tr('Nessun audio'))
         r1.addWidget(b_apri)
         r1.addWidget(self.l_file, 1)
         lay.addLayout(r1)
@@ -557,13 +553,13 @@ class MarcaVociDialog(QDialog):
         lay.addWidget(self.sp, 3)
 
         r2 = QHBoxLayout()
-        self.b_play = QPushButton("▶ Ascolta")
+        self.b_play = QPushButton(tr('▶ Ascolta'))
         b_indietro = QPushButton("⏪ 5 s")
         b_avanti = QPushButton("5 s ⏩")
-        b_sel = QPushButton("▶ Ascolta selezione")
-        b_zp = QPushButton("Zoom +")
-        b_zm = QPushButton("Zoom −")
-        b_tutto = QPushButton("Tutto")
+        b_sel = QPushButton(tr('▶ Ascolta selezione'))
+        b_zp = QPushButton(tr('Zoom +'))
+        b_zm = QPushButton(tr('Zoom −'))
+        b_tutto = QPushButton(tr('Tutto'))
         self.l_tempo = QLabel("00:00 / 00:00")
         for w in (self.b_play, b_indietro, b_avanti, b_sel, self.l_tempo):
             r2.addWidget(w)
@@ -573,21 +569,21 @@ class MarcaVociDialog(QDialog):
         lay.addLayout(r2)
 
         r3 = QHBoxLayout()
-        r3.addWidget(QLabel("Persona:"))
+        r3.addWidget(QLabel(tr('Persona:')))
         self.c_persona = QComboBox()
         self.c_persona.setEditable(True)
         self.c_persona.addItems(self.nomi_noti)
         self.c_persona.setCurrentText("")
-        self.c_persona.lineEdit().setPlaceholderText("nome della persona")
+        self.c_persona.lineEdit().setPlaceholderText(tr('nome della persona'))
         self.c_persona.setMinimumWidth(200)
         r3.addWidget(self.c_persona)
-        b_ass = QPushButton("✚ Assegna selezione")
+        b_ass = QPushButton(tr('✚ Assegna selezione'))
         b_ass.setProperty("primario", True)
         r3.addWidget(b_ass)
         r3.addSpacing(20)
-        self.l_diar = QLabel("Parlante rilevato:")
+        self.l_diar = QLabel(tr('Parlante rilevato:'))
         self.c_speaker = QComboBox()
-        self.b_speaker = QPushButton("Assegna tutti i suoi tratti")
+        self.b_speaker = QPushButton(tr('Assegna tutti i suoi tratti'))
         for w in (self.l_diar, self.c_speaker, self.b_speaker):
             r3.addWidget(w)
             w.setVisible(False)
@@ -595,7 +591,7 @@ class MarcaVociDialog(QDialog):
         lay.addLayout(r3)
 
         self.tab = QTableWidget(0, 4)
-        self.tab.setHorizontalHeaderLabels(["Persona", "Inizio", "Fine", "Durata"])
+        self.tab.setHorizontalHeaderLabels([tr('Persona'), tr('Inizio'), tr('Fine'), tr('Durata')])
         self.tab.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.tab.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tab.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -603,19 +599,19 @@ class MarcaVociDialog(QDialog):
         lay.addWidget(self.tab, 1)
 
         r4 = QHBoxLayout()
-        b_rim = QPushButton("Rimuovi segno")
+        b_rim = QPushButton(tr('Rimuovi segno'))
         self.l_riepilogo = QLabel("")
         self.l_riepilogo.setWordWrap(True)
         r4.addWidget(b_rim)
         r4.addWidget(self.l_riepilogo, 1)
         lay.addLayout(r4)
 
-        self.cb_consenso = QCheckBox("Le persone marcate sanno che registro la loro impronta vocale e hanno dato il consenso esplicito")
+        self.cb_consenso = QCheckBox(tr('Le persone marcate sanno che registro la loro impronta vocale e hanno dato il consenso esplicito'))
         lay.addWidget(self.cb_consenso)
         r5 = QHBoxLayout()
         r5.addStretch()
-        b_ann = QPushButton("Annulla")
-        self.b_crea = QPushButton("Crea impronte")
+        b_ann = QPushButton(tr('Annulla'))
+        self.b_crea = QPushButton(tr('Crea impronte'))
         self.b_crea.setProperty("primario", True)
         r5.addWidget(b_ann)
         r5.addWidget(self.b_crea)
@@ -648,19 +644,19 @@ class MarcaVociDialog(QDialog):
     def apri(self):
         filtro = ("Audio o video (*.wav *.mp3 *.m4a *.aac *.flac *.ogg *.opus *.wma *.mp4 *.mov *.mkv *.webm *.m4v *.avi *.wmv)"
                   ";;Tutti i file (*)")
-        f, _ = QFileDialog.getOpenFileName(self, "Audio o video da marcare", str(Path.home()), filtro)
+        f, _ = QFileDialog.getOpenFileName(self, tr('Audio o video da marcare'), str(Path.home()), filtro)
         if f:
             self.carica(f)
 
     def carica(self, f):
         self.lettore.chiudi()
-        self.l_file.setText("Leggo l'audio…")
+        self.l_file.setText(tr("Leggo l'audio…"))
         self.repaint()
         try:
             audio = leggi_audio(f)
         except Exception as e:
-            self.l_file.setText("Nessun audio")
-            QMessageBox.warning(self, "Audio", str(e))
+            self.l_file.setText(tr('Nessun audio'))
+            QMessageBox.warning(self, tr('Audio'), str(e))
             return
         self.audio, self.file = audio, Path(f)
         e_video = self.video is not None and self.file.suffix.lower() in VIDEO_EXT
@@ -721,7 +717,7 @@ class MarcaVociDialog(QDialog):
     # --- riproduzione
     def _audio_pronto(self):
         if self.audio is None:
-            QMessageBox.information(self, "Audio", "Apri prima un audio.")
+            QMessageBox.information(self, tr('Audio'), tr('Apri prima un audio.'))
             return False
         return True
 
@@ -735,7 +731,7 @@ class MarcaVociDialog(QDialog):
                 pos = self.lettore.posizione()
                 self.lettore.suona(0.0 if pos >= self.onda.durata - 0.05 else pos)
         except Exception as e:
-            QMessageBox.warning(self, "Audio", f"Riproduzione non disponibile: {e}")
+            QMessageBox.warning(self, tr('Audio'), tr('Riproduzione non disponibile: {e}', e=e))
 
     def vai(self, t):
         if self.audio is None:
@@ -756,13 +752,13 @@ class MarcaVociDialog(QDialog):
         if not self._audio_pronto():
             return
         if not self.onda.sel:
-            QMessageBox.information(self, "Selezione", "Trascina sulla forma d'onda per selezionare un tratto.")
+            QMessageBox.information(self, tr('Selezione'), tr("Trascina sulla forma d'onda per selezionare un tratto."))
             return
         a, b = sorted(self.onda.sel)
         try:
             self.lettore.suona(a, b)
         except Exception as e:
-            QMessageBox.warning(self, "Audio", f"Riproduzione non disponibile: {e}")
+            QMessageBox.warning(self, tr('Audio'), tr('Riproduzione non disponibile: {e}', e=e))
 
     def _ascolta_segno(self, riga):
         if 0 <= riga < len(self.segni) and self.audio is not None:
@@ -781,7 +777,7 @@ class MarcaVociDialog(QDialog):
         if self.lettore.in_riproduzione() and pos >= (self.lettore.fine_t or self.onda.durata):
             self.lettore.ferma()
             pos = self.lettore.posizione()
-        self.b_play.setText("⏸ Pausa" if self.lettore.in_riproduzione() else "▶ Ascolta")
+        self.b_play.setText(tr('⏸ Pausa') if self.lettore.in_riproduzione() else tr('▶ Ascolta'))
         self.onda.pos = pos
         if self.lettore.in_riproduzione():
             self.onda.mostra(pos)
@@ -797,7 +793,7 @@ class MarcaVociDialog(QDialog):
     def _persona(self):
         nome = self.c_persona.currentText().strip()
         if not core.nome_valido(nome):
-            QMessageBox.warning(self, "Persona", "Scrivi o scegli il nome della persona, senza caratteri speciali.")
+            QMessageBox.warning(self, tr('Persona'), tr('Scrivi o scegli il nome della persona, senza caratteri speciali.'))
             return None
         if self.c_persona.findText(nome) < 0:
             self.c_persona.addItem(nome)
@@ -807,7 +803,7 @@ class MarcaVociDialog(QDialog):
         if not self._audio_pronto():
             return
         if not self.onda.sel or abs(self.onda.sel[1] - self.onda.sel[0]) < 0.5:
-            QMessageBox.information(self, "Selezione", "Trascina sulla forma d'onda per selezionare almeno mezzo secondo.")
+            QMessageBox.information(self, tr('Selezione'), tr("Trascina sulla forma d'onda per selezionare almeno mezzo secondo."))
             return
         nome = self._persona()
         if not nome:
@@ -863,22 +859,21 @@ class MarcaVociDialog(QDialog):
             stato = "✅" if d >= CONSIGLIATI else ("🟡" if d >= MIN_SECONDI else "🔴")
             parti.append(f"{stato} {nome}: {d:.0f} s")
         self.l_riepilogo.setText(("  ·  ".join(parti) + f"   (servono almeno {MIN_SECONDI} s, meglio {CONSIGLIATI}+)")
-                                 if parti else "Nessun tratto marcato.")
+                                 if parti else tr('Nessun tratto marcato.'))
 
     # --- creazione
     def crea(self):
         durate = self.durate()
         if not durate:
-            QMessageBox.information(self, "Niente da creare", "Marca almeno un tratto per una persona.")
+            QMessageBox.information(self, tr('Niente da creare'), tr('Marca almeno un tratto per una persona.'))
             return
         corte = [n for n, d in durate.items() if d < MIN_SECONDI]
         if corte:
-            QMessageBox.warning(self, "Tratti troppo corti",
+            QMessageBox.warning(self, tr('Tratti troppo corti'),
                                 "Per queste persone servono almeno " f"{MIN_SECONDI} secondi: " + ", ".join(corte))
             return
         if not self.cb_consenso.isChecked():
-            QMessageBox.warning(self, "Consenso", "Le impronte vocali sono dati biometrici: serve il consenso "
-                                "esplicito delle persone. Spunta la casella per confermarlo.")
+            QMessageBox.warning(self, tr('Consenso'), tr('Le impronte vocali sono dati biometrici: serve il consenso esplicito delle persone. Spunta la casella per confermarlo.'))
             return
         self.lettore.chiudi()
         out = []
@@ -910,12 +905,11 @@ class EsportaIphoneDialog(QDialog):
 
     def __init__(self, voci, precedenti=None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Voci per Argo per iPhone")
+        self.setWindowTitle(tr('Voci per Argo per iPhone'))
         self.setMinimumWidth(460)
         self.scelte = []
         lay = QVBoxLayout(self)
-        intro = QLabel("Scegli le persone che l'iPhone deve riconoscere negli incontri. "
-                       "Porta solo quelle che ti servono davvero: il telefono viaggia con te.")
+        intro = QLabel(tr("Scegli le persone che l'iPhone deve riconoscere negli incontri. Porta solo quelle che ti servono davvero: il telefono viaggia con te."))
         intro.setWordWrap(True)
         lay.addWidget(intro)
         self.lista = QListWidget()
@@ -926,17 +920,15 @@ class EsportaIphoneDialog(QDialog):
             it.setCheckState(Qt.Checked if spunta else Qt.Unchecked)
             self.lista.addItem(it)
         lay.addWidget(self.lista, 1)
-        self.cb_consenso = QCheckBox("Le persone scelte sanno che la loro impronta vocale sarà usata anche "
-                                     "sul mio iPhone e hanno dato il consenso esplicito")
+        self.cb_consenso = QCheckBox(tr('Le persone scelte sanno che la loro impronta vocale sarà usata anche sul mio iPhone e hanno dato il consenso esplicito'))
         self.cb_consenso.setStyleSheet("QCheckBox { spacing: 8px; }")
         lay.addWidget(self.cb_consenso)
-        nota = QLabel("Sull'iPhone le impronte restano cifrate dal sistema e non finiscono mai nei pacchetti "
-                      "esportati. Una nuova esportazione sostituisce quella precedente.")
+        nota = QLabel(tr("Sull'iPhone le impronte restano cifrate dal sistema e non finiscono mai nei pacchetti esportati. Una nuova esportazione sostituisce quella precedente."))
         nota.setWordWrap(True)
         nota.setProperty("ruolo", "tenue")
         lay.addWidget(nota)
         bottoni = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bottoni.button(QDialogButtonBox.Ok).setText("Esporta…")
+        bottoni.button(QDialogButtonBox.Ok).setText(tr('Esporta…'))
         bottoni.accepted.connect(self._conferma)
         bottoni.rejected.connect(self.reject)
         lay.addWidget(bottoni)
@@ -945,11 +937,10 @@ class EsportaIphoneDialog(QDialog):
         scelte = [self.lista.item(i).text() for i in range(self.lista.count())
                   if self.lista.item(i).checkState() == Qt.Checked]
         if not scelte:
-            QMessageBox.information(self, "Nessuna voce", "Spunta almeno una persona.")
+            QMessageBox.information(self, tr('Nessuna voce'), tr('Spunta almeno una persona.'))
             return
         if not self.cb_consenso.isChecked():
-            QMessageBox.warning(self, "Consenso", "Le impronte vocali sono dati biometrici: "
-                                "conferma il consenso delle persone scelte.")
+            QMessageBox.warning(self, tr('Consenso'), tr('Le impronte vocali sono dati biometrici: conferma il consenso delle persone scelte.'))
             return
         self.scelte = scelte
         self.accept()

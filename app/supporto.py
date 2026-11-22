@@ -4,6 +4,7 @@ Il pacchetto di supporto si prepara su questo computer e l'utente lo vede, file 
 Non c'è nessun server: si allega a una mail per supporto@argo-net.it. Il supporto lo dà Luca (Argos New Dreams)
 senza tempi garantiti: Argo è un esperimento.
 """
+from lingua import tr
 import json
 import os
 import platform
@@ -288,7 +289,7 @@ class DialogoSupporto(QDialog):
 
     def __init__(self, parent=None, successo="", schermata=None):
         super().__init__(parent)
-        self.setWindowTitle("🛟 Chiedi supporto")
+        self.setWindowTitle(tr('🛟 Chiedi supporto'))
         self.resize(820, 600)
         self.codice = codice_richiesta()
         self.schermata = schermata
@@ -300,37 +301,34 @@ class DialogoSupporto(QDialog):
         # Passo 1: la richiesta
         p1 = QWidget()
         l1 = QVBoxLayout(p1)
-        intro = QLabel(f"Codice della richiesta: <b>{self.codice}</b> · citalo nelle risposte.<br>"
-                       f"La richiesta arriva a <b>{INDIRIZZO}</b>. Risponde Luca, al meglio delle possibilità: "
-                       "Argo è un esperimento e non ci sono tempi garantiti.")
+        intro = QLabel(tr('Codice della richiesta: <b>{codice}</b> · citalo nelle risposte.<br>La richiesta arriva a <b>{indirizzo}</b>. Risponde Luca, al meglio delle possibilità: Argo è un esperimento e non ci sono tempi garantiti.', codice=self.codice, indirizzo=INDIRIZZO))
         intro.setWordWrap(True)
         l1.addWidget(intro)
         f = QFormLayout()
         self.e_facendo = QPlainTextEdit()
-        self.e_facendo.setPlaceholderText("Es.: trascrivevo un file di un'ora con il modello large-v3")
+        self.e_facendo.setPlaceholderText(tr("Es.: trascrivevo un file di un'ora con il modello large-v3"))
         self.e_aspettavi = QPlainTextEdit()
-        self.e_aspettavi.setPlaceholderText("Es.: la trascrizione con i nomi dei parlanti")
+        self.e_aspettavi.setPlaceholderText(tr('Es.: la trascrizione con i nomi dei parlanti'))
         self.e_successo = QPlainTextEdit(successo)
-        self.e_successo.setPlaceholderText("Es.: dopo l'allineamento si è fermata con «Errore»")
+        self.e_successo.setPlaceholderText(tr("Es.: dopo l'allineamento si è fermata con «Errore»"))
         for e in (self.e_facendo, self.e_aspettavi, self.e_successo):
             e.setMaximumHeight(90)
         self.c_urgenza = QComboBox()
         self.c_urgenza.addItems(URGENZE)
         self.c_urgenza.setCurrentIndex(1)
-        f.addRow("Cosa stavi facendo", self.e_facendo)
-        f.addRow("Cosa ti aspettavi", self.e_aspettavi)
-        f.addRow("Cosa è successo", self.e_successo)
-        f.addRow("Urgenza", self.c_urgenza)
+        f.addRow(tr('Cosa stavi facendo'), self.e_facendo)
+        f.addRow(tr('Cosa ti aspettavi'), self.e_aspettavi)
+        f.addRow(tr('Cosa è successo'), self.e_successo)
+        f.addRow(tr('Urgenza'), self.c_urgenza)
         l1.addLayout(f)
-        self.cb_log = QCheckBox("Allega i log degli ultimi 3 giorni (solo dati tecnici, li vedi al passo dopo)")
+        self.cb_log = QCheckBox(tr('Allega i log degli ultimi 3 giorni (solo dati tecnici, li vedi al passo dopo)'))
         self.cb_log.setChecked(True)
-        self.cb_schermata = QCheckBox("Allega una schermata della finestra di Argo")
+        self.cb_schermata = QCheckBox(tr('Allega una schermata della finestra di Argo'))
         self.cb_schermata.setEnabled(schermata is not None)
-        self.cb_schermata.setToolTip("Può mostrare dati riservati: la vedi al passo dopo e puoi toglierla.")
+        self.cb_schermata.setToolTip(tr('Può mostrare dati riservati: la vedi al passo dopo e puoi toglierla.'))
         l1.addWidget(self.cb_log)
         l1.addWidget(self.cb_schermata)
-        nota = QLabel("Nel pacchetto non finiscono mai audio, trascrizioni, relazioni, documenti, token e chiavi. "
-                      "Nessun invio automatico: al passo dopo vedi ogni file prima di creare il pacchetto.")
+        nota = QLabel(tr('Nel pacchetto non finiscono mai audio, trascrizioni, relazioni, documenti, token e chiavi. Nessun invio automatico: al passo dopo vedi ogni file prima di creare il pacchetto.'))
         nota.setWordWrap(True)
         nota.setProperty("ruolo", "tenue")
         l1.addWidget(nota)
@@ -340,8 +338,7 @@ class DialogoSupporto(QDialog):
         # Passo 2: cosa c'è nel pacchetto
         p2 = QWidget()
         l2 = QVBoxLayout(p2)
-        t2 = QLabel("Questo è il contenuto del pacchetto. Seleziona un file per leggerlo; togli la spunta per "
-                    "lasciarlo fuori.")
+        t2 = QLabel(tr('Questo è il contenuto del pacchetto. Seleziona un file per leggerlo; togli la spunta per lasciarlo fuori.'))
         t2.setWordWrap(True)
         l2.addWidget(t2)
         div = QSplitter()
@@ -355,7 +352,7 @@ class DialogoSupporto(QDialog):
         div.setSizes([260, 540])
         l2.addWidget(div, 1)
         r_invio = QHBoxLayout()
-        r_invio.addWidget(QLabel("Invia con"))
+        r_invio.addWidget(QLabel(tr('Invia con')))
         self.c_invio = QComboBox()
         for chiave, etichetta in modi_di_invio():
             self.c_invio.addItem(etichetta, chiave)
@@ -364,9 +361,9 @@ class DialogoSupporto(QDialog):
         self.pile.addWidget(p2)
 
         self.bottoni = QDialogButtonBox()
-        self.b_indietro = self.bottoni.addButton("← Indietro", QDialogButtonBox.ResetRole)
-        self.b_avanti = self.bottoni.addButton("Avanti: vedi il pacchetto →", QDialogButtonBox.AcceptRole)
-        self.bottoni.addButton("Annulla", QDialogButtonBox.RejectRole)
+        self.b_indietro = self.bottoni.addButton(tr('← Indietro'), QDialogButtonBox.ResetRole)
+        self.b_avanti = self.bottoni.addButton(tr('Avanti: vedi il pacchetto →'), QDialogButtonBox.AcceptRole)
+        self.bottoni.addButton(tr('Annulla'), QDialogButtonBox.RejectRole)
         self.b_indietro.hide()
         self.b_indietro.clicked.connect(lambda: self._passo(0))
         self.b_avanti.clicked.connect(self._avanti)
@@ -381,12 +378,12 @@ class DialogoSupporto(QDialog):
     def _passo(self, n):
         self.pile.setCurrentIndex(n)
         self.b_indietro.setVisible(n == 1)
-        self.b_avanti.setText("Avanti: vedi il pacchetto →" if n == 0 else "Crea il pacchetto e scrivi la mail")
+        self.b_avanti.setText(tr('Avanti: vedi il pacchetto →') if n == 0 else tr('Crea il pacchetto e scrivi la mail'))
 
     def _avanti(self):
         if self.pile.currentIndex() == 0:
             if not self.e_successo.toPlainText().strip():
-                QMessageBox.information(self, "Chiedi supporto", "Scrivi almeno cosa è successo.")
+                QMessageBox.information(self, tr('Chiedi supporto'), tr('Scrivi almeno cosa è successo.'))
                 return
             QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
@@ -396,7 +393,7 @@ class DialogoSupporto(QDialog):
                 QApplication.restoreOverrideCursor()
             self.lista.clear()
             for nome, dati, descr in self.file:
-                v = QListWidgetItem(f"{nome}  ·  {max(1, len(dati) // 1024)} kB")
+                v = QListWidgetItem(tr('{nome}  ·  {max} kB', nome=nome, max=max(1, len(dati) // 1024)))
                 v.setToolTip(descr)
                 v.setFlags(v.flags() | Qt.ItemIsUserCheckable)
                 v.setCheckState(Qt.Checked)
@@ -409,7 +406,7 @@ class DialogoSupporto(QDialog):
         try:
             zip_path = crea_zip(scelti, self.codice)
         except Exception as e:
-            QMessageBox.warning(self, "Chiedi supporto", f"Non riesco a creare il pacchetto: {e}")
+            QMessageBox.warning(self, tr('Chiedi supporto'), tr('Non riesco a creare il pacchetto: {e}', e=e))
             return
         modo = self.c_invio.currentData()
         QApplication.setOverrideCursor(Qt.WaitCursor)
@@ -425,7 +422,7 @@ class DialogoSupporto(QDialog):
         diagnostica.log.info("richiesta di supporto %s preparata con %s", self.codice, modo)
         if not allegato:
             mostra_nel_finder(zip_path)
-        QMessageBox.information(self, "Quasi fatto", f"Pacchetto: «{zip_path.name}» in {zip_path.parent}.\n\n"
+        QMessageBox.information(self, tr('Quasi fatto'), f"Pacchetto: «{zip_path.name}» in {zip_path.parent}.\n\n"
                                 + messaggio)
         self.accept()
 
@@ -517,16 +514,15 @@ def _mostra(tipo, messaggio, traccia):
     try:
         m = QMessageBox(finestra)
         m.setIcon(QMessageBox.Critical)
-        m.setWindowTitle("Argo · errore")
+        m.setWindowTitle(tr('Argo · errore'))
         m.setText(("Argo non è riuscito ad aprirsi." if all_avvio else "Si è verificato un errore imprevisto.")
                   + f"\n\n{tipo}: {messaggio}")
-        m.setInformativeText("L'ho scritto nel registro di Argo, solo con dati tecnici. Se si ripete, chiedi "
-                             "supporto: prepari un pacchetto che vedi prima di mandarlo.")
+        m.setInformativeText(tr("L'ho scritto nel registro di Argo, solo con dati tecnici. Se si ripete, chiedi supporto: prepari un pacchetto che vedi prima di mandarlo."))
         m.setDetailedText(traccia)
-        b_sup = m.addButton("🛟 Chiedi supporto…", QMessageBox.ActionRole)
+        b_sup = m.addButton(tr('🛟 Chiedi supporto…'), QMessageBox.ActionRole)
         prec = diagnostica.versione_precedente() if all_avvio else None
-        b_prec = m.addButton(f"Torna alla versione {prec}", QMessageBox.ActionRole) if prec else None
-        m.addButton("Chiudi Argo" if all_avvio else "Continua", QMessageBox.RejectRole)
+        b_prec = m.addButton(tr('Torna alla versione {prec}', prec=prec), QMessageBox.ActionRole) if prec else None
+        m.addButton(tr('Chiudi Argo') if all_avvio else tr('Continua'), QMessageBox.RejectRole)
         m.exec()
         scelto = m.clickedButton()
         if scelto is b_sup:
@@ -547,24 +543,19 @@ def finestra_emergenza(tipo, messaggio, traccia):
 def torna_alla_precedente(parent=None, chiedi=True):
     v = diagnostica.versione_precedente()
     if not v:
-        QMessageBox.information(parent, "Versione precedente", "Non c'è una versione precedente salvata: si crea "
-                                "al primo aggiornamento fatto dall'app.")
+        QMessageBox.information(parent, tr('Versione precedente'), tr("Non c'è una versione precedente salvata: si crea al primo aggiornamento fatto dall'app."))
         return False
     if chiedi and QMessageBox.question(
-            parent, "Tornare alla versione precedente?",
-            f"Argo torna alla versione {v}, salvata all'ultimo aggiornamento, e si riapre.\n\n"
-            "Voci, incontri, impostazioni e dati restano dove sono. La versione attuale resta da parte "
-            "(cartella app_scartata). Le librerie Python non cambiano.") != QMessageBox.Yes:
+            parent, tr('Tornare alla versione precedente?'),
+            tr("Argo torna alla versione {v}, salvata all'ultimo aggiornamento, e si riapre.\n\nVoci, incontri, impostazioni e dati restano dove sono. La versione attuale resta da parte (cartella app_scartata). Le librerie Python non cambiano.", v=v)) != QMessageBox.Yes:
         return False
     try:
         diagnostica.torna_alla_precedente()
     except Exception as e:
-        QMessageBox.warning(parent, "Versione precedente", f"Non sono riuscito a tornare indietro: {e}")
+        QMessageBox.warning(parent, tr('Versione precedente'), tr('Non sono riuscito a tornare indietro: {e}', e=e))
         return False
-    QMessageBox.information(parent, "Versione precedente",
-                            f"Fatto: al prossimo avvio parte la versione {v}. Argo si riapre ora.\n\n"
-                            "Se vuoi restare su questa versione per un po', spegni il controllo automatico degli "
-                            "aggiornamenti in Impostazioni › Aspetto e aggiornamenti.")
+    QMessageBox.information(parent, tr('Versione precedente'),
+                            tr("Fatto: al prossimo avvio parte la versione {v}. Argo si riapre ora.\n\nSe vuoi restare su questa versione per un po', spegni il controllo automatico degli aggiornamenti in Impostazioni › Aspetto e aggiornamenti.", v=v))
     try:
         import aggiornamenti
         aggiornamenti.riavvia()
@@ -584,17 +575,17 @@ def chiedi_avvio_protetto(non_riusciti):
     prec = diagnostica.versione_precedente()
     m = QMessageBox()
     m.setIcon(QMessageBox.Warning)
-    m.setWindowTitle("Argo · avvio protetto")
+    m.setWindowTitle(tr('Argo · avvio protetto'))
     m.setText(f"Gli ultimi {non_riusciti} avvii di Argo non sono arrivati alla finestra."
               + (f"\n\nUltimo errore: {errore}" if errore else ""))
     m.setInformativeText("In modalità sicura Argo parte senza Ponte, trascrizione Live, controllo degli "
                          "aggiornamenti e avvio automatico di Ollama: così puoi lavorare o chiedere supporto."
                          + (f"\n\nPuoi anche tornare alla versione {prec}, salvata all'ultimo aggiornamento."
                             if prec else ""))
-    b_sicura = m.addButton("Avvia in modalità sicura", QMessageBox.AcceptRole)
-    b_prec = m.addButton(f"Torna alla versione {prec}", QMessageBox.ActionRole) if prec else None
-    b_norm = m.addButton("Avvia normalmente", QMessageBox.ActionRole)
-    m.addButton("Esci", QMessageBox.RejectRole)
+    b_sicura = m.addButton(tr('Avvia in modalità sicura'), QMessageBox.AcceptRole)
+    b_prec = m.addButton(tr('Torna alla versione {prec}', prec=prec), QMessageBox.ActionRole) if prec else None
+    b_norm = m.addButton(tr('Avvia normalmente'), QMessageBox.ActionRole)
+    m.addButton(tr('Esci'), QMessageBox.RejectRole)
     m.setDefaultButton(b_sicura)
     m.exec()
     scelto = m.clickedButton()
@@ -638,16 +629,15 @@ class Banda(QFrame):
         diagnostica._applica_livello()
         attiva, motivo, fino = diagnostica.stato_trace()
         if diagnostica.MODALITA_SICURA:
-            self.testo.setText("🛟 Modalità sicura: Ponte, trascrizione Live, aggiornamenti automatici e avvio "
-                               "di Ollama sono spenti.")
-            self.b_azione.setText("Riavvia normalmente")
+            self.testo.setText(tr('🛟 Modalità sicura: Ponte, trascrizione Live, aggiornamenti automatici e avvio di Ollama sono spenti.'))
+            self.b_azione.setText(tr('Riavvia normalmente'))
             self.b_azione.setVisible(True)
             self._cosa = "riavvia"
         elif attiva:
             quando = {"criteri": "impostata dall'IT", "riga_di_comando": "fino alla chiusura (--trace)"}.get(
                 motivo, _fino(fino))
-            self.testo.setText(f"🔍 Modalità trace attiva {quando}: log più dettagliati, mai contenuti.")
-            self.b_azione.setText("Spegni")
+            self.testo.setText(tr('🔍 Modalità trace attiva {quando}: log più dettagliati, mai contenuti.', quando=quando))
+            self.b_azione.setText(tr('Spegni'))
             self.b_azione.setVisible(motivo == "utente")
             self._cosa = "spegni"
         self.setVisible(diagnostica.MODALITA_SICURA or attiva)
@@ -673,16 +663,14 @@ class PannelloSupporto(QWidget):
         self.finestra = finestra
         self.gruppi = []
 
-        g = QGroupBox("Chiedi supporto")
+        g = QGroupBox(tr('Chiedi supporto'))
         lg = QVBoxLayout(g)
-        t = QLabel(f"Prepara un pacchetto con i log e i dati tecnici di questo computer, te lo mostra file per "
-                   f"file e apre una mail per {INDIRIZZO} con un codice ARGO-… da citare. Nessun invio automatico. "
-                   "Risponde Luca, senza tempi garantiti: Argo è un esperimento.")
+        t = QLabel(tr('Prepara un pacchetto con i log e i dati tecnici di questo computer, te lo mostra file per file e apre una mail per {indirizzo} con un codice ARGO-… da citare. Nessun invio automatico. Risponde Luca, senza tempi garantiti: Argo è un esperimento.', indirizzo=INDIRIZZO))
         t.setWordWrap(True)
         t.setProperty("ruolo", "tenue")
         lg.addWidget(t)
         r = QHBoxLayout()
-        b = QPushButton("🛟 Chiedi supporto…")
+        b = QPushButton(tr('🛟 Chiedi supporto…'))
         b.setProperty("primario", True)
         b.clicked.connect(lambda: chiedi_supporto(self.finestra))
         r.addWidget(b)
@@ -690,16 +678,14 @@ class PannelloSupporto(QWidget):
         lg.addLayout(r)
         self.gruppi.append(("supporto", g))
 
-        g = QGroupBox("Modalità trace")
+        g = QGroupBox(tr('Modalità trace'))
         lg = QVBoxLayout(g)
-        t = QLabel("Per un problema che si ripete: per un po' Argo scrive nel registro molti più dettagli tecnici "
-                   "(righe di WhisperX, richieste a Ollama e ai modelli cloud con tempi e codici, passi degli "
-                   "incontri). Mai contenuti. Si spegne da sola.")
+        t = QLabel(tr("Per un problema che si ripete: per un po' Argo scrive nel registro molti più dettagli tecnici (righe di WhisperX, richieste a Ollama e ai modelli cloud con tempi e codici, passi degli incontri). Mai contenuti. Si spegne da sola."))
         t.setWordWrap(True)
         t.setProperty("ruolo", "tenue")
         lg.addWidget(t)
         r = QHBoxLayout()
-        self.cb_trace = QCheckBox("Attiva la modalità trace")
+        self.cb_trace = QCheckBox(tr('Attiva la modalità trace'))
         self.c_durata = QComboBox()
         self.c_durata.addItems(["per 24 ore", "fino al prossimo riavvio di Argo (al massimo 24 ore)"])
         r.addWidget(self.cb_trace)
@@ -713,17 +699,14 @@ class PannelloSupporto(QWidget):
         self.cb_trace.toggled.connect(self._trace)
         self.gruppi.append(("trace", g))
 
-        g = QGroupBox("Registro di Argo (log)")
+        g = QGroupBox(tr('Registro di Argo (log)'))
         lg = QVBoxLayout(g)
-        t = QLabel("Argo tiene un registro su questo computer: avvio e chiusura, versione, sistema, fasi dei lavori "
-                   "con durata ed esito, errori, tempi di Ollama e dei modelli cloud (solo fornitore e modello), "
-                   "aggiornamenti. Mai audio, testi trascritti, domande e risposte dei modelli, nomi dei tuoi file, "
-                   "mail, chiavi e token. Non esce da qui se non lo mandi tu con «Chiedi supporto».")
+        t = QLabel(tr('Argo tiene un registro su questo computer: avvio e chiusura, versione, sistema, fasi dei lavori con durata ed esito, errori, tempi di Ollama e dei modelli cloud (solo fornitore e modello), aggiornamenti. Mai audio, testi trascritti, domande e risposte dei modelli, nomi dei tuoi file, mail, chiavi e token. Non esce da qui se non lo mandi tu con «Chiedi supporto».'))
         t.setWordWrap(True)
         t.setProperty("ruolo", "tenue")
         lg.addWidget(t)
         r = QHBoxLayout()
-        b = QPushButton("Apri la cartella dei log")
+        b = QPushButton(tr('Apri la cartella dei log'))
         b.clicked.connect(self._apri_log)
         r.addWidget(b)
         self.l_log = QLabel()
@@ -732,7 +715,7 @@ class PannelloSupporto(QWidget):
         lg.addLayout(r)
         self.gruppi.append(("log", g))
 
-        g = QGroupBox("Versione precedente")
+        g = QGroupBox(tr('Versione precedente'))
         lg = QVBoxLayout(g)
         self.l_prec = QLabel()
         self.l_prec.setWordWrap(True)
@@ -746,27 +729,23 @@ class PannelloSupporto(QWidget):
         lg.addLayout(r)
         self.gruppi.append(("precedente", g))
 
-        g = QGroupBox("Cosa è uscito da questo computer")
+        g = QGroupBox(tr('Cosa è uscito da questo computer'))
         lg = QVBoxLayout(g)
-        t = QLabel("Di base la conversazione resta qui. Escono solo i dati che decidi tu, e qui c'è l'elenco: verso "
-                   "dove e che tipo di dato, mai il contenuto. Per esempio un modello cloud scelto per un attrezzo, "
-                   "una ricerca web, una bozza in Outlook, un record in Dynamics. Non compaiono il Ponte verso il "
-                   "tuo iPhone (rete locale), i download di modelli e aggiornamenti e le letture da Microsoft 365 e "
-                   "Dynamics.")
+        t = QLabel(tr("Di base la conversazione resta qui. Escono solo i dati che decidi tu, e qui c'è l'elenco: verso dove e che tipo di dato, mai il contenuto. Per esempio un modello cloud scelto per un attrezzo, una ricerca web, una bozza in Outlook, un record in Dynamics. Non compaiono il Ponte verso il tuo iPhone (rete locale), i download di modelli e aggiornamenti e le letture da Microsoft 365 e Dynamics."))
         t.setWordWrap(True)
         t.setProperty("ruolo", "tenue")
         lg.addWidget(t)
         self.tab_uscite = QTableWidget(0, 4)
-        self.tab_uscite.setHorizontalHeaderLabels(["Quando", "Verso", "Che cosa", "Volte"])
+        self.tab_uscite.setHorizontalHeaderLabels([tr('Quando'), tr('Verso'), tr('Che cosa'), tr('Volte')])
         self.tab_uscite.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
         self.tab_uscite.verticalHeader().setVisible(False)
         self.tab_uscite.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tab_uscite.setMinimumHeight(220)
         lg.addWidget(self.tab_uscite)
         r = QHBoxLayout()
-        b = QPushButton("Aggiorna")
+        b = QPushButton(tr('Aggiorna'))
         b.clicked.connect(self.aggiorna_uscite)
-        b2 = QPushButton("Svuota l'elenco")
+        b2 = QPushButton(tr("Svuota l'elenco"))
         b2.clicked.connect(self._svuota_uscite)
         r.addWidget(b)
         r.addWidget(b2)
@@ -791,13 +770,12 @@ class PannelloSupporto(QWidget):
             "utente": f"Attiva {_fino(fino)}." if fino else "",
         }.get(motivo, "Spenta."))
         totale = sum(f.stat().st_size for f in diagnostica.CARTELLA.glob("*.log*")) if diagnostica.CARTELLA.is_dir() else 0
-        self.l_log.setText(f"{diagnostica.CARTELLA} · {totale / 1e6:.1f} MB (al massimo circa 20 MB)")
+        self.l_log.setText(tr('{cartella} · {valore:.1f} MB (al massimo circa 20 MB)', cartella=diagnostica.CARTELLA, valore=totale / 1e6))
         v = diagnostica.versione_precedente()
         self.l_prec.setText(
-            f"All'ultimo aggiornamento dall'app Argo ha salvato la versione {v}. Se quella attuale ti dà problemi "
-            "puoi tornarci: i dati restano dove sono." if v else
-            "Nessuna versione precedente salvata: Argo ne salva una a ogni aggiornamento fatto dall'app.")
-        self.b_prec.setText(f"Torna alla versione {v}…" if v else "Torna alla versione precedente…")
+            tr("All'ultimo aggiornamento dall'app Argo ha salvato la versione {v}. Se quella attuale ti dà problemi puoi tornarci: i dati restano dove sono.", v=v) if v else
+            tr("Nessuna versione precedente salvata: Argo ne salva una a ogni aggiornamento fatto dall'app."))
+        self.b_prec.setText(tr('Torna alla versione {v}…', v=v) if v else tr('Torna alla versione precedente…'))
         self.b_prec.setEnabled(bool(v))
         self.aggiorna_uscite()
 
@@ -809,11 +787,10 @@ class PannelloSupporto(QWidget):
                 self.tab_uscite.setItem(i, j, QTableWidgetItem(v))
         self.tab_uscite.resizeColumnToContents(0)
         self.tab_uscite.resizeColumnToContents(1)
-        self.l_uscite.setText("Nessuna uscita registrata." if not righe else f"Ultime {len(righe)} uscite.")
+        self.l_uscite.setText(tr('Nessuna uscita registrata.') if not righe else tr('Ultime {len} uscite.', len=len(righe)))
 
     def _svuota_uscite(self):
-        if QMessageBox.question(self.finestra, "Svuotare l'elenco?", "L'elenco delle uscite si cancella. "
-                                "Le prossime uscite verranno registrate di nuovo.") == QMessageBox.Yes:
+        if QMessageBox.question(self.finestra, tr("Svuotare l'elenco?"), tr("L'elenco delle uscite si cancella. Le prossime uscite verranno registrate di nuovo.")) == QMessageBox.Yes:
             uscite.svuota()
             self.aggiorna_uscite()
 

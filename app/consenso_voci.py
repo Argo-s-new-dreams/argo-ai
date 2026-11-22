@@ -4,6 +4,7 @@ Le impronte vocali usate per riconoscere una persona possono essere dati biometr
 - tiene il riconoscimento spento finché l'utente non lo attiva (e l'IT può vietarlo con i criteri);
 - usa una voce solo se è registrato il consenso della persona, con la data (voci/<Nome>/consenso.json).
 """
+from lingua import tr
 from PySide6.QtWidgets import (
     QCheckBox, QDialog, QDialogButtonBox, QLabel, QMessageBox, QScrollArea, QVBoxLayout, QWidget,
 )
@@ -66,8 +67,8 @@ def attiva(parent=None):
     """Attiva il riconoscimento. Per le voci già salvate senza consenso chiede di confermarlo una per una:
     quelle non confermate restano salvate ma non vengono usate. Ritorna True se ora è attivo."""
     if core.riconoscimento_vietato():
-        QMessageBox.information(parent, "Riconoscimento delle voci",
-                                "Il riconoscimento delle voci è disattivato dall'IT con i criteri aziendali.")
+        QMessageBox.information(parent, tr('Riconoscimento delle voci'),
+                                tr("Il riconoscimento delle voci è disattivato dall'IT con i criteri aziendali."))
         return False
     if core.riconoscimento_attivo():
         return True
@@ -79,7 +80,7 @@ def attiva(parent=None):
     d = _ElencoNomi("Attivare il riconoscimento delle voci?", testo, senza, "{nome} ha acconsentito a essere "
                     "riconosciuto da Argo", ack="Ho capito: riconoscerò solo persone che hanno dato il consenso",
                     parent=parent, minimo=0)
-    d.bb.button(QDialogButtonBox.Ok).setText("Attiva")
+    d.bb.button(QDialogButtonBox.Ok).setText(tr('Attiva'))
     if d.exec() != QDialog.Accepted:
         return False
     for n in d.confermati():

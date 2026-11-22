@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261120.2033"
+VERSIONE = "20261122.0832"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -35,6 +35,8 @@ import voci_strumenti  # noqa: E402
 import aggiornamenti  # noqa: E402
 import criteri  # noqa: E402
 import tema  # noqa: E402
+import lingua  # noqa: E402
+from lingua import tr  # noqa: E402
 import dettaglio  # noqa: E402
 import m365  # noqa: E402
 import risorse  # noqa: E402
@@ -185,7 +187,7 @@ class RevisioneDialog(QDialog):
 
     def __init__(self, file_json, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Revisione parlanti")
+        self.setWindowTitle(tr('Revisione parlanti'))
         self.resize(860, 480)
         self.file_json = file_json
         self.dati = core.leggi_json(file_json)
@@ -212,13 +214,9 @@ class RevisioneDialog(QDialog):
 
         lay = QVBoxLayout(self)
         lay.addWidget(QLabel(
-            "Controlla i nomi: puoi correggerli scrivendo o scegliendo dall'elenco. I nomi restano salvati.\n"
-            "Due etichette sono la stessa persona? Dai loro lo stesso nome e verranno unite.\n"
-            "Mancano persone o ce ne sono troppe? Chiudi e cambia «Partecipanti» nella coda: Argo rifà solo i parlanti.\n"
-            "Spunta «Memorizza» per salvare l'impronta di quella voce nell'anagrafe: "
-            "le prossime volte verrà riconosciuta da sola."))
+            tr("Controlla i nomi: puoi correggerli scrivendo o scegliendo dall'elenco. I nomi restano salvati.\nDue etichette sono la stessa persona? Dai loro lo stesso nome e verranno unite.\nMancano persone o ce ne sono troppe? Chiudi e cambia «Partecipanti» nella coda: Argo rifà solo i parlanti.\nSpunta «Memorizza» per salvare l'impronta di quella voce nell'anagrafe: le prossime volte verrà riconosciuta da sola.")))
         self.tab = QTableWidget(len(self.mappa), 5)
-        self.tab.setHorizontalHeaderLabels(["Etichetta", "Parla per", "Somiglianza", "Nome", "Memorizza", ])
+        self.tab.setHorizontalHeaderLabels([tr('Etichetta'), tr('Parla per'), tr('Somiglianza'), tr('Nome'), tr('Memorizza'), ])
         self.tab.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
         self.tab.verticalHeader().setVisible(False)
         self.righe = []
@@ -236,8 +234,7 @@ class RevisioneDialog(QDialog):
             chk = QCheckBox()
             chk.setEnabled(spk in self.emb)
             if not self.emb:
-                chk.setToolTip("Per memorizzare le voci attiva il riconoscimento delle voci (pagina Voci) e "
-                               "rifai i parlanti")
+                chk.setToolTip(tr('Per memorizzare le voci attiva il riconoscimento delle voci (pagina Voci) e rifai i parlanti'))
             box = QWidget()
             bl = QHBoxLayout(box)
             bl.setContentsMargins(0, 0, 0, 0)
@@ -245,13 +242,13 @@ class RevisioneDialog(QDialog):
             self.tab.setCellWidget(r, 4, box)
             self.righe.append((spk, combo, chk))
         lay.addWidget(self.tab)
-        self.esempio = QLabel("Passa il mouse su un nome per leggere una frase di quel parlante.")
+        self.esempio = QLabel(tr('Passa il mouse su un nome per leggere una frase di quel parlante.'))
         self.esempio.setWordWrap(True)
         lay.addWidget(self.esempio)
         self.tab.cellClicked.connect(lambda r, c: self.esempio.setText(
             f"{self.righe[r][0]}: «{esempi.get(self.righe[r][0], '')[:300]}»"))
         bb = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
-        bb.button(QDialogButtonBox.Save).setText("Applica e salva")
+        bb.button(QDialogButtonBox.Save).setText(tr('Applica e salva'))
         bb.accepted.connect(self.applica)
         bb.rejected.connect(self.reject)
         lay.addWidget(bb)
@@ -263,7 +260,7 @@ class RevisioneDialog(QDialog):
             nuova[spk] = nome
             if chk.isChecked():
                 if nome.startswith(("Sconosciuto", "Parlante")) or not core.nome_valido(nome):
-                    QMessageBox.warning(self, "Nome mancante", f"Dai un nome vero a {spk} prima di memorizzarlo.")
+                    QMessageBox.warning(self, tr('Nome mancante'), tr('Dai un nome vero a {spk} prima di memorizzarlo.', spk=spk))
                     return
                 da_memorizzare.append((spk, nome))
         if da_memorizzare:
@@ -278,7 +275,7 @@ class RevisioneDialog(QDialog):
         msg = f"Trascrizione aggiornata:\n{self.out}"
         if memorizzate:
             msg += "\n\nVoci memorizzate: " + ", ".join(memorizzate)
-        QMessageBox.information(self, "Fatto", msg)
+        QMessageBox.information(self, tr('Fatto'), msg)
         self.accept()
 
 
@@ -288,7 +285,7 @@ class Finestra(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(f"Argo · Cassetta degli attrezzi AI - versione {VERSIONE}")
+        self.setWindowTitle(tr('Argo · Cassetta degli attrezzi AI - versione {versione}', versione=VERSIONE))
         self.resize(1280, 800)
         self.setAcceptDrops(True)
         self.jobs = []
@@ -316,45 +313,44 @@ class Finestra(QMainWindow):
         self.tab_documenti = attrezzi.SchedaDocumenti()
         self.tab_dettatura = attrezzi.SchedaDettatura()
         self.tab_traduzione = attrezzi.SchedaTraduzione()
-        self.tab_imp = self._pagina(self._tab_impostazioni(), "Impostazioni",
-                                    f"Argo versione {VERSIONE} · scegli un argomento a sinistra")
-        self.pag_voci = self._pagina(self._tab_voci(), "Voci", "Anagrafe delle impronte vocali, solo con il consenso delle persone")
+        self.tab_imp = self._pagina(self._tab_impostazioni(), tr('Impostazioni'),
+                                    tr('Argo versione {versione} · scegli un argomento a sinistra', versione=VERSIONE))
+        self.pag_voci = self._pagina(self._tab_voci(), tr('Voci'), tr('Anagrafe delle impronte vocali, solo con il consenso delle persone'))
         # Menu in tre gruppi, nell'ordine del lavoro (Stile Argo · Organizzazione): il flusso delle riunioni,
         # gli attrezzi indipendenti, la configurazione. Le pagine nel QTabWidget seguono lo stesso ordine.
         pagine = [
-            ("RIUNIONI", None, None, None),
-            ("agenda", "Agenda", "Agenda", self.tab_agenda),
-            ("registra", "Registra", "Registra", self._pagina(
-                self.tab_registra, "Registra",
-                "Riunioni e call Teams: Live (resta solo il testo) o in archivio. Per brevi note tue usa Dettatura.")),
-            ("trascrittore", "Trascrivi", "Trascrivi", self.pag_coda),
-            ("verbale", "Verbale", "Verbale", self._pagina(
-                self.tab_verbale, "Verbale",
-                "Dalla trascrizione con i nomi al verbale, con il modello locale. Per verbale, mail e task in un colpo: Incarichi.")),
-            ("incarichi", "Incarichi", "Incarichi", self.tab_incarichi),
-            ("incontri", "Incontri dall'iPhone", "Incontri", self._pagina(
-                self.tab_incontri, "Incontri",
-                "Fiere e visite ai clienti registrate con Argo per iPhone: trascrizione con i nomi, foto e testo letto.")),
-            ("clienti", "Clienti", "Clienti", self._pagina(
-                self.tab_clienti, "Clienti",
-                "Dynamics 365 Sales: cerca il cliente o prepara la scheda pubblica; dalla call partecipanti, aziende, "
-                "relazione e task.")),
-            ("cervello", "Secondo cervello", "Cervello", self._pagina(
-                self.tab_cervello, "Secondo cervello",
-                "Con chi parli in ogni incontro: aziende catalogate e persone per funzione, solo su questo computer.")),
-            ("ATTREZZI", None, None, None),
-            ("posta", "Posta AI", "Posta", self.tab_posta),
-            ("documenti", "Documenti riservati", "Documenti", self._pagina(
-                self.tab_documenti, "Documenti riservati",
-                "Domande su contratti, NDA e capitolati, con le fonti: documenti e indice restano su questo computer.")),
-            ("dettatura", "Dettatura", "Dettatura", self._pagina(
-                self.tab_dettatura, "Dettatura",
-                "Parli, Argo scrive: per note e mail tue. Per le riunioni usa Registra.")),
-            ("traduzione", "Traduzione", "Traduci", self._pagina(
-                self.tab_traduzione, "Traduzione",
-                "Testi e trascrizioni in IT · EN · DE, con i termini imposti dal glossario aziendale.")),
-            ("voci", "Anagrafe voci", "Voci", self.pag_voci),
-            ("impostazioni", "Impostazioni", "Impostaz.", self.tab_imp),
+            (tr("RIUNIONI"), None, None, None),
+            ("agenda", tr("Agenda"), tr("Agenda"), self.tab_agenda),
+            ("registra", tr("Registra"), tr("Registra"), self._pagina(
+                self.tab_registra, tr('Registra'),
+                tr('Riunioni e call Teams: Live (resta solo il testo) o in archivio. Per brevi note tue usa Dettatura.'))),
+            ("trascrittore", tr("Trascrivi"), tr("Trascrivi"), self.pag_coda),
+            ("verbale", tr("Verbale"), tr("Verbale"), self._pagina(
+                self.tab_verbale, tr('Verbale'),
+                tr('Dalla trascrizione con i nomi al verbale, con il modello locale. Per verbale, mail e task in un colpo: Incarichi.'))),
+            ("incarichi", tr("Incarichi"), tr("Incarichi"), self.tab_incarichi),
+            ("incontri", tr("Incontri dall'iPhone"), tr("Incontri"), self._pagina(
+                self.tab_incontri, tr('Incontri'),
+                tr('Fiere e visite ai clienti registrate con Argo per iPhone: trascrizione con i nomi, foto e testo letto.'))),
+            ("clienti", tr("Clienti"), tr("Clienti"), self._pagina(
+                self.tab_clienti, tr('Clienti'),
+                tr('Dynamics 365 Sales: cerca il cliente o prepara la scheda pubblica; dalla call partecipanti, aziende, relazione e task.'))),
+            ("cervello", tr("Secondo cervello"), tr("Cervello"), self._pagina(
+                self.tab_cervello, tr('Secondo cervello'),
+                tr('Con chi parli in ogni incontro: aziende catalogate e persone per funzione, solo su questo computer.'))),
+            (tr("ATTREZZI"), None, None, None),
+            ("posta", tr("Posta AI"), tr("Posta"), self.tab_posta),
+            ("documenti", tr("Documenti riservati"), tr("Documenti"), self._pagina(
+                self.tab_documenti, tr('Documenti riservati'),
+                tr('Domande su contratti, NDA e capitolati, con le fonti: documenti e indice restano su questo computer.'))),
+            ("dettatura", tr("Dettatura"), tr("Dettatura"), self._pagina(
+                self.tab_dettatura, tr('Dettatura'),
+                tr('Parli, Argo scrive: per note e mail tue. Per le riunioni usa Registra.'))),
+            ("traduzione", tr("Traduzione"), tr("Traduci"), self._pagina(
+                self.tab_traduzione, tr('Traduzione'),
+                tr('Testi e trascrizioni in IT · EN · DE, con i termini imposti dal glossario aziendale.'))),
+            ("voci", tr("Anagrafe voci"), tr("Voci"), self.pag_voci),
+            ("impostazioni", tr("Impostazioni"), tr("Impostaz."), self.tab_imp),
         ]
         for chiave, etichetta, _breve, widget in pagine:
             if widget is not None:
@@ -390,15 +386,15 @@ class Finestra(QMainWindow):
         self.badge = QLabel()
         self.statusBar().addPermanentWidget(self.badge)
         self._aggiorna_badge()
-        self.statusBar().showMessage("Pronto.")  # la località la dice il bollino 🔒 a destra, senza ripeterla
+        self.statusBar().showMessage(tr('Pronto.'))  # la località la dice il bollino 🔒 a destra, senza ripeterla
 
         self._carica_coda()
         self._aggiorna_voci()
         self._stato_m365()
         if not core.leggi_token():
             self.vai_a_impostazioni("hf")
-            QMessageBox.information(self, "Primo avvio",
-                                    "Benvenuto! Inserisci il token Hugging Face nelle Impostazioni e premi «Verifica».")
+            QMessageBox.information(self, tr('Primo avvio'),
+                                    tr('Benvenuto! Inserisci il token Hugging Face nelle Impostazioni e premi «Verifica».'))
 
     def _pagina(self, contenuto, titolo, sottotitolo=""):
         w = QWidget()
@@ -448,9 +444,9 @@ class Finestra(QMainWindow):
         lay = QVBoxLayout(sinistra)
         lay.setContentsMargins(20, 16, 12, 12)
         testa = QHBoxLayout()
-        tit = QLabel("Trascrivi")
+        tit = QLabel(tr('Trascrivi'))
         tit.setProperty("ruolo", "titolo")
-        sotto = QLabel("Trascina qui audio o video · nulla esce da questo computer")
+        sotto = QLabel(tr('Trascina qui audio o video · nulla esce da questo computer'))
         sotto.setProperty("ruolo", "tenue")
         col = QVBoxLayout()
         col.setSpacing(2)
@@ -461,7 +457,7 @@ class Finestra(QMainWindow):
         lay.addLayout(testa)
 
         self.tab_coda = QTableWidget(0, 4)
-        self.tab_coda.setHorizontalHeaderLabels(["File", "Partecipanti", "Stato", "Avanzamento"])
+        self.tab_coda.setHorizontalHeaderLabels([tr('File'), tr('Partecipanti'), tr('Stato'), tr('Avanzamento')])
         h = self.tab_coda.horizontalHeader()
         h.setSectionResizeMode(self.COL_FILE, QHeaderView.Stretch)
         h.setSectionResizeMode(self.COL_STATO, QHeaderView.Interactive)
@@ -483,17 +479,17 @@ class Finestra(QMainWindow):
         self.tab_coda.doubleClicked.connect(lambda _: self.apri_risultato())
 
         bar = QHBoxLayout()
-        self.b_agg = QPushButton("+ Aggiungi file…")
-        self.b_rim = QPushButton("Rimuovi")
-        self.b_rip = QPushButton("Rimetti in coda")
-        self.b_avvia = QPushButton("▶ Avvia coda")
+        self.b_agg = QPushButton(tr('+ Aggiungi file…'))
+        self.b_rim = QPushButton(tr('Rimuovi'))
+        self.b_rip = QPushButton(tr('Rimetti in coda'))
+        self.b_avvia = QPushButton(tr('▶ Avvia coda'))
         self.b_avvia.setProperty("primario", True)
-        self.b_ris = QPushButton("Apri trascrizione")
-        self.b_rev = QPushButton("✏️ Nomi dei parlanti…")
-        self.b_cart = QPushButton("Apri cartella")
-        self.b_verb = QPushButton("Crea verbale →")
-        self.b_word = QPushButton("Esporta in Word")
-        self.b_marca_job = QPushButton("🎧 Marca voci…")
+        self.b_ris = QPushButton(tr('Apri trascrizione'))
+        self.b_rev = QPushButton(tr('✏️ Nomi dei parlanti…'))
+        self.b_cart = QPushButton(tr('Apri cartella'))
+        self.b_verb = QPushButton(tr('Crea verbale →'))
+        self.b_word = QPushButton(tr('Esporta in Word'))
+        self.b_marca_job = QPushButton(tr('🎧 Marca voci…'))
         for b in (self.b_agg, self.b_rim, self.b_rip):
             bar.addWidget(b)
         bar.addStretch()
@@ -576,7 +572,7 @@ class Finestra(QMainWindow):
 
     def scegli_file(self):
         filtro = "Audio/video (" + " ".join("*" + x for x in sorted(AUDIO_EXT)) + ");;Tutti i file (*)"
-        files, _ = QFileDialog.getOpenFileNames(self, "Scegli i file audio", str(Path.home()), filtro)
+        files, _ = QFileDialog.getOpenFileNames(self, tr('Scegli i file audio'), str(Path.home()), filtro)
         self.aggiungi_file(files)
 
     def aggiungi_file(self, files):
@@ -594,7 +590,7 @@ class Finestra(QMainWindow):
         if aggiunti:
             self._ridisegna_coda()
             self._salva_coda()
-            self.statusBar().showMessage(f"{aggiunti} file aggiunti alla coda.")
+            self.statusBar().showMessage(tr('{aggiunti} file aggiunti alla coda.', aggiunti=aggiunti))
 
     def _ridisegna_coda(self):
         t = self.tab_coda
@@ -608,8 +604,7 @@ class Finestra(QMainWindow):
             spin.setSpecialValueText("Auto")
             spin.setValue(j["parlanti"])
             spin.setEnabled(j["stato"] in ("In attesa", "Errore", "Interrotta", "Completata"))
-            spin.setToolTip("Numero di persone che parlano. Su una trascrizione completata, cambiarlo "
-                            "rifà solo la separazione dei parlanti.")
+            spin.setToolTip(tr('Numero di persone che parlano. Su una trascrizione completata, cambiarlo rifà solo la separazione dei parlanti.'))
             spin.valueChanged.connect(lambda v, jid=j["id"]: self._set_parlanti(jid, v))
             t.setCellWidget(r, self.COL_PARL, spin)
             stato = j["stato"] + (f" - {j['nota']}" if j.get("nota") else "")
@@ -641,10 +636,8 @@ class Finestra(QMainWindow):
         if j["stato"] == "Completata" and j.get("json") and Path(j["json"]).exists():
             n = "automatico" if v == 0 else str(v)
             r = QMessageBox.question(
-                self, "Cambiare i partecipanti?",
-                f"Rifaccio solo la separazione dei parlanti di «{Path(j['file']).name}» con partecipanti: {n}.\n\n"
-                "Il testo trascritto resta lo stesso, ci vuole meno tempo di una trascrizione completa. "
-                "I nomi corretti a mano finora andranno riassegnati.",
+                self, tr('Cambiare i partecipanti?'),
+                tr('Rifaccio solo la separazione dei parlanti di «{name}» con partecipanti: {n}.\n\nIl testo trascritto resta lo stesso, ci vuole meno tempo di una trascrizione completa. I nomi corretti a mano finora andranno riassegnati.', name=Path(j['file']).name, n=n),
                 QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
             if r != QMessageBox.Yes:
                 self._ridisegna_coda()  # rimette il numero di prima
@@ -689,19 +682,19 @@ class Finestra(QMainWindow):
         j = self.jobs[r]
         m = QMenu(self)
         if j["stato"] == "Completata":
-            m.addAction("Apri trascrizione", self.apri_trascrizione if hasattr(self, "apri_trascrizione") else self.b_ris.click)
-            m.addAction("✏️ Nomi dei parlanti…", self.rivedi_parlanti)
-            m.addMenu(self._menu_scarica()).setText("⬇️ Scarica trascrizione")
-            m.addAction("Crea verbale →", self.crea_verbale)
+            m.addAction(tr('Apri trascrizione'), self.apri_trascrizione if hasattr(self, "apri_trascrizione") else self.b_ris.click)
+            m.addAction(tr('✏️ Nomi dei parlanti…'), self.rivedi_parlanti)
+            m.addMenu(self._menu_scarica()).setText(tr('⬇️ Scarica trascrizione'))
+            m.addAction(tr('Crea verbale →'), self.crea_verbale)
             m.addSeparator()
-        m.addAction("🎧 Marca voci…", lambda: self.marca_voci(j["file"]))
+        m.addAction(tr('🎧 Marca voci…'), lambda: self.marca_voci(j["file"]))
         if cervello.attivo():
-            m.addAction("🧠 Con chi stai parlando?…",
+            m.addAction(tr('🧠 Con chi stai parlando?…'),
                         lambda: cervello_ui.collega(self, j["file"], Path(j["file"]).stem, "file"))
-        m.addAction("Rimetti in coda", self.rimetti_in_coda)
-        m.addAction("Apri cartella", self.b_cart.click)
+        m.addAction(tr('Rimetti in coda'), self.rimetti_in_coda)
+        m.addAction(tr('Apri cartella'), self.b_cart.click)
         m.addSeparator()
-        m.addAction("Rimuovi dalla coda", self.rimuovi_job)
+        m.addAction(tr('Rimuovi dalla coda'), self.rimuovi_job)
         m.exec(self.tab_coda.viewport().mapToGlobal(pos))
 
     def _in_lavorazione(self, j):
@@ -710,7 +703,7 @@ class Finestra(QMainWindow):
     def rimuovi_job(self):
         sel = [j for j in self._selezionati() if not self._in_lavorazione(j)]
         if not sel and self._selezionati():
-            QMessageBox.information(self, "In lavorazione", "Questo file è in elaborazione: ferma prima la coda.")
+            QMessageBox.information(self, tr('In lavorazione'), tr('Questo file è in elaborazione: ferma prima la coda.'))
             return
         for j in sel:
             self.jobs.remove(j)
@@ -722,11 +715,11 @@ class Finestra(QMainWindow):
         solo = False
         if any(j["stato"] == "Completata" and j.get("json") and Path(j["json"]).exists() for j in sel):
             box = QMessageBox(self)
-            box.setWindowTitle("Rimetti in coda")
-            box.setText("Cosa vuoi rifare per le trascrizioni già completate?")
-            b_parl = box.addButton("Solo i parlanti", QMessageBox.AcceptRole)
-            b_tutto = box.addButton("Tutta la trascrizione", QMessageBox.DestructiveRole)
-            box.addButton("Annulla", QMessageBox.RejectRole)
+            box.setWindowTitle(tr('Rimetti in coda'))
+            box.setText(tr('Cosa vuoi rifare per le trascrizioni già completate?'))
+            b_parl = box.addButton(tr('Solo i parlanti'), QMessageBox.AcceptRole)
+            b_tutto = box.addButton(tr('Tutta la trascrizione'), QMessageBox.DestructiveRole)
+            box.addButton(tr('Annulla'), QMessageBox.RejectRole)
             box.exec()
             if box.clickedButton() not in (b_parl, b_tutto):
                 return
@@ -759,23 +752,23 @@ class Finestra(QMainWindow):
     def avvia_o_ferma(self):
         if self.in_esecuzione:
             self.in_esecuzione = False
-            self.b_avvia.setText("▶ Avvia coda")
+            self.b_avvia.setText(tr('▶ Avvia coda'))
             if self.worker:
                 self.worker.ferma()
-            self.statusBar().showMessage("Coda fermata.")
+            self.statusBar().showMessage(tr('Coda fermata.'))
             return
         if self.worker is not None and self.worker.isRunning():
-            QMessageBox.information(self, "Attendi", "Sto ancora fermando l'elaborazione precedente: riprova tra qualche secondo.")
+            QMessageBox.information(self, tr('Attendi'), tr("Sto ancora fermando l'elaborazione precedente: riprova tra qualche secondo."))
             return
         if not core.leggi_token():
-            QMessageBox.warning(self, "Token mancante", "Inserisci prima il token Hugging Face nelle Impostazioni.")
+            QMessageBox.warning(self, tr('Token mancante'), tr('Inserisci prima il token Hugging Face nelle Impostazioni.'))
             self.vai_a_impostazioni("hf")
             return
         if not any(j["stato"] == "In attesa" for j in self.jobs):
-            QMessageBox.information(self, "Coda vuota", "Non ci sono file «In attesa». Aggiungi dei file o rimettili in coda.")
+            QMessageBox.information(self, tr('Coda vuota'), tr('Non ci sono file «In attesa». Aggiungi dei file o rimettili in coda.'))
             return
         self.in_esecuzione = True
-        self.b_avvia.setText("■ Ferma coda")
+        self.b_avvia.setText(tr('■ Ferma coda'))
         self._prossimo()
 
     def _prossimo(self):
@@ -784,9 +777,9 @@ class Finestra(QMainWindow):
         job = next((j for j in self.jobs if j["stato"] == "In attesa"), None)
         if job is None:
             self.in_esecuzione = False
-            self.b_avvia.setText("▶ Avvia coda")
+            self.b_avvia.setText(tr('▶ Avvia coda'))
             self.fase.setText("")
-            self.statusBar().showMessage("Coda completata.")
+            self.statusBar().showMessage(tr('Coda completata.'))
             QApplication.alert(self)
             return
         if not Path(job["file"]).exists():
@@ -848,7 +841,7 @@ class Finestra(QMainWindow):
             job["progresso"] = ini + (fine - ini) * float(m.group(1)) / 100
             self._aggiorna_riga(job)
         minuti = int((time.time() - self.t_inizio) // 60)
-        self.fase.setText(f"{Path(job['file']).name}: {job.get('nota', '')} - {minuti} min trascorsi")
+        self.fase.setText(tr('{name}: {get} - {minuti} min trascorsi', name=Path(job['file']).name, get=job.get('nota', ''), minuti=minuti))
 
     def _fine_whisperx(self, codice, w=None, job=None):
         if w is not None and w is not self.worker:  # segnale tardivo di un lavoro già sostituito
@@ -919,7 +912,7 @@ class Finestra(QMainWindow):
     def _job_selezionato(self):
         sel = self._selezionati()
         if not sel:
-            QMessageBox.information(self, "Seleziona", "Seleziona prima una riga della coda.")
+            QMessageBox.information(self, tr('Seleziona'), tr('Seleziona prima una riga della coda.'))
             return None
         return sel[0]
 
@@ -928,14 +921,14 @@ class Finestra(QMainWindow):
         if j and j.get("txt") and Path(j["txt"]).exists():
             QDesktopServices.openUrl(QUrl.fromLocalFile(j["txt"]))
         elif j:
-            QMessageBox.information(self, "Non pronta", "La trascrizione non è ancora disponibile.")
+            QMessageBox.information(self, tr('Non pronta'), tr('La trascrizione non è ancora disponibile.'))
 
     def rivedi_parlanti(self):
         j = self._job_selezionato()
         if not j:
             return
         if not (j.get("json") and Path(j["json"]).exists()):
-            QMessageBox.information(self, "Non pronta", "Prima completa la trascrizione.")
+            QMessageBox.information(self, tr('Non pronta'), tr('Prima completa la trascrizione.'))
             return
         dlg = RevisioneDialog(j["json"], self)
         if dlg.exec():
@@ -962,7 +955,7 @@ class Finestra(QMainWindow):
         if not j:
             return
         if not (j.get("txt") and Path(j["txt"]).exists()):
-            QMessageBox.information(self, "Non pronta", "Prima completa la trascrizione.")
+            QMessageBox.information(self, tr('Non pronta'), tr('Prima completa la trascrizione.'))
             return
         self.tab_verbale.carica(j["txt"])
         self.vai_a(self.tab_verbale)
@@ -973,7 +966,7 @@ class Finestra(QMainWindow):
         if not j:
             return None
         if not (j.get("txt") and Path(j["txt"]).exists()):
-            QMessageBox.information(self, "Non pronta", "Prima completa la trascrizione.")
+            QMessageBox.information(self, tr('Non pronta'), tr('Prima completa la trascrizione.'))
             return None
         txt = Path(j["txt"])
         nome = txt.stem.replace("_nomi", "")
@@ -991,32 +984,31 @@ class Finestra(QMainWindow):
             self.badge_cervello.setVisible(acceso)
             if acceso:
                 n = len(cervello_base.voci())
-                self.badge_cervello.setText(f"🧠 Secondo cervello attivo · {n} {'voce' if n == 1 else 'voci'} nella Base")
-                self.badge_cervello.setToolTip("Argo chiede con chi parli a ogni registrazione; i dati restano su "
-                                               "questo computer. Clic per aprire la pagina.")
+                self.badge_cervello.setText(tr('🧠 Secondo cervello attivo · {n} {valore} nella Base', n=n, valore='voce' if n == 1 else 'voci'))
+                self.badge_cervello.setToolTip(tr('Argo chiede con chi parli a ogni registrazione; i dati restano su questo computer. Clic per aprire la pagina.'))
                 self.badge_cervello.setStyleSheet(f"color: {tema.colori()['accento']};"
                                                   " font-weight: 600; padding: 0 8px; border: none; background: transparent;")
         url = core.carica_impostazioni().get("ollama_url", "")
         nel_cloud = [cloud.NOMI_ATTREZZI[a] for a in cloud.NOMI_ATTREZZI if cloud.e_cloud(a)]
         if nel_cloud:  # almeno un attrezzo usa un modello cloud: il badge non può dire «100% locale»
             self.badge.setText("☁️ Audio e trascrizioni in locale · modello cloud per: " + ", ".join(nel_cloud))
-            self.badge.setToolTip("Scelto in Impostazioni › Modelli cloud")
+            self.badge.setToolTip(tr('Scelto in Impostazioni › Modelli cloud'))
             self.badge.setStyleSheet(f"color: {tema.colori()['warn']}; font-weight: 600; padding-right: 8px;")
         elif llm_locale.e_locale(url) and m365.account():
-            self.badge.setText("🔒 Locale · Microsoft 365 collegato: solo i risultati che confermi vanno su M365")
+            self.badge.setText(tr('🔒 Locale · Microsoft 365 collegato: solo i risultati che confermi vanno su M365'))
             self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
         elif llm_locale.e_locale(url) and (backup.nel_cloud(backup.cartella_backup()) or backup.condivisione_attiva()):
             servizi = {backup.nel_cloud(backup.cartella_backup())} | (
                 {backup.nel_cloud(core.carica_impostazioni().get("condivisione_cartella", ""))}
                 if backup.condivisione_attiva() else set())
             self.badge.setText("🔒 Locale · backup e configurazione anche in " + ", ".join(sorted(x for x in servizi if x)))
-            self.badge.setToolTip("Scelto in Impostazioni › Backup e più computer")
+            self.badge.setToolTip(tr('Scelto in Impostazioni › Backup e più computer'))
             self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
         elif llm_locale.e_locale(url):
-            self.badge.setText("🔒 100% locale: audio e testi non lasciano questo computer")
+            self.badge.setText(tr('🔒 100% locale: audio e testi non lasciano questo computer'))
             self.badge.setStyleSheet(f"color: {tema.colori()['ok']}; font-weight: 600; padding-right: 8px;")
         else:
-            self.badge.setText("⚠️ Il modello linguistico punta a un server esterno")
+            self.badge.setText(tr('⚠️ Il modello linguistico punta a un server esterno'))
             self.badge.setStyleSheet(f"color: {tema.colori()['warn']}; font-weight: 600; padding-right: 8px;")
 
     def apri_cartella(self):
@@ -1032,25 +1024,25 @@ class Finestra(QMainWindow):
         # singola voce compaiono solo quando ne scegli una; Elimina sta in disparte.
         bar = QHBoxLayout()
         self.b_nuova_voce = QToolButton()
-        self.b_nuova_voce.setText("＋ Nuova voce ▾")
+        self.b_nuova_voce.setText(tr('＋ Nuova voce ▾'))
         self.b_nuova_voce.setProperty("primario", True)
         self.b_nuova_voce.setPopupMode(QToolButton.InstantPopup)
         m = QMenu(self.b_nuova_voce)
-        self.b_reg_voce = m.addAction("🎙  Registra ora al microfono  ·  la persona parla 20-60 secondi")
-        self.b_nuova = m.addAction("📄  Da un file in cui parla solo lei")
-        self.b_marca = m.addAction("🎧  Segnando dove parla in una registrazione")
+        self.b_reg_voce = m.addAction(tr('🎙  Registra ora al microfono  ·  la persona parla 20-60 secondi'))
+        self.b_nuova = m.addAction(tr('📄  Da un file in cui parla solo lei'))
+        self.b_marca = m.addAction(tr('🎧  Segnando dove parla in una registrazione'))
         self.b_nuova_voce.setMenu(m)
         bar.addWidget(self.b_nuova_voce)
-        self.b_iphone = QPushButton("📱 Per iPhone…")
-        self.b_iphone.setToolTip("Esporta le voci scelte per Argo per iPhone (file .argovoci da passare con AirDrop)")
+        self.b_iphone = QPushButton(tr('📱 Per iPhone…'))
+        self.b_iphone.setToolTip(tr('Esporta le voci scelte per Argo per iPhone (file .argovoci da passare con AirDrop)'))
         bar.addWidget(self.b_iphone)
         bar.addStretch()
-        self.b_camp = QPushButton("Aggiungi campione…")
-        self.b_camp.setToolTip("Un altro audio della stessa persona: più campioni, riconoscimento migliore")
-        self.b_ren = QPushButton("Rinomina…")
-        self.b_del = QPushButton("Elimina")
-        self.b_consenso = QPushButton("Conferma consenso…")
-        self.b_consenso.setToolTip("La persona ha acconsentito a essere riconosciuta: da ora la sua voce si usa")
+        self.b_camp = QPushButton(tr('Aggiungi campione…'))
+        self.b_camp.setToolTip(tr('Un altro audio della stessa persona: più campioni, riconoscimento migliore'))
+        self.b_ren = QPushButton(tr('Rinomina…'))
+        self.b_del = QPushButton(tr('Elimina'))
+        self.b_consenso = QPushButton(tr('Conferma consenso…'))
+        self.b_consenso.setToolTip(tr('La persona ha acconsentito a essere riconosciuta: da ora la sua voce si usa'))
         self.b_consenso.clicked.connect(self.conferma_consenso)
         for b in (self.b_consenso, self.b_camp, self.b_ren):
             bar.addWidget(b)
@@ -1062,13 +1054,13 @@ class Finestra(QMainWindow):
         bvl = QHBoxLayout(self.banda_voci)
         self.l_banda_voci = QLabel()
         self.l_banda_voci.setWordWrap(True)
-        self.b_attiva_voci = QPushButton("Attiva il riconoscimento…")
+        self.b_attiva_voci = QPushButton(tr('Attiva il riconoscimento…'))
         self.b_attiva_voci.clicked.connect(self.attiva_riconoscimento)
         bvl.addWidget(self.l_banda_voci, 1)
         bvl.addWidget(self.b_attiva_voci)
         lay.addWidget(self.banda_voci)
         self.tab_voci = QTableWidget(0, 3)
-        self.tab_voci.setHorizontalHeaderLabels(["Nome", "Campioni", "Consenso"])
+        self.tab_voci.setHorizontalHeaderLabels([tr('Nome'), tr('Campioni'), tr('Consenso')])
         self.tab_voci.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.tab_voci.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tab_voci.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -1103,14 +1095,11 @@ class Finestra(QMainWindow):
         self.b_camp.setEnabled(attivo)
         self.banda_voci.setVisible(not attivo or bool(core.senza_consenso()))
         if vietato:
-            self.l_banda_voci.setText("🏢 Il riconoscimento delle voci è disattivato dall'IT. Le trascrizioni "
-                                      "usano «Parlante 1, 2…».")
+            self.l_banda_voci.setText(tr("🏢 Il riconoscimento delle voci è disattivato dall'IT. Le trascrizioni usano «Parlante 1, 2…»."))
         elif not attivo:
-            self.l_banda_voci.setText("Riconoscimento delle voci spento: le trascrizioni usano «Parlante 1, 2…» e "
-                                      "non si salvano impronte. Attivalo solo con il consenso delle persone.")
+            self.l_banda_voci.setText(tr('Riconoscimento delle voci spento: le trascrizioni usano «Parlante 1, 2…» e non si salvano impronte. Attivalo solo con il consenso delle persone.'))
         else:
-            self.l_banda_voci.setText("⚠️ Alcune voci non hanno il consenso registrato e non vengono usate: "
-                                      "selezionale e premi «Conferma consenso…».")
+            self.l_banda_voci.setText(tr('⚠️ Alcune voci non hanno il consenso registrato e non vengono usate: selezionale e premi «Conferma consenso…».'))
         self.b_attiva_voci.setVisible(not attivo and not vietato)
         vuota = self.tab_voci.rowCount() == 0
         self.b_iphone.setVisible(not vuota)
@@ -1134,7 +1123,7 @@ class Finestra(QMainWindow):
 
     def attiva_riconoscimento(self):
         if consenso_voci.attiva(self):
-            self.statusBar().showMessage("Riconoscimento delle voci attivato.", 6000)
+            self.statusBar().showMessage(tr('Riconoscimento delle voci attivato.'), 6000)
         self._aggiorna_voci()
         if hasattr(self, "cb_riconoscimento"):
             self.cb_riconoscimento.blockSignals(True)
@@ -1146,8 +1135,7 @@ class Finestra(QMainWindow):
             self.attiva_riconoscimento()
         else:
             consenso_voci.disattiva()
-            self.statusBar().showMessage("Riconoscimento delle voci spento: le voci salvate restano, "
-                                         "inutilizzate.", 6000)
+            self.statusBar().showMessage(tr('Riconoscimento delle voci spento: le voci salvate restano, inutilizzate.'), 6000)
             self._aggiorna_voci()
 
     def conferma_consenso(self):
@@ -1157,33 +1145,33 @@ class Finestra(QMainWindow):
 
     def iscrivi_voce(self, nome):
         if self.worker_voce:
-            QMessageBox.information(self, "Attendi", "Sto già elaborando una voce.")
+            QMessageBox.information(self, tr('Attendi'), tr('Sto già elaborando una voce.'))
             return
         if not core.leggi_token():
-            QMessageBox.warning(self, "Token mancante", "Inserisci prima il token nelle Impostazioni.")
+            QMessageBox.warning(self, tr('Token mancante'), tr('Inserisci prima il token nelle Impostazioni.'))
             return
         if not core.riconoscimento_attivo() and not consenso_voci.attiva(self):
             return
         if nome is None:
-            nome, ok = QInputDialog.getText(self, "Nuova voce", "Nome della persona:")
+            nome, ok = QInputDialog.getText(self, tr('Nuova voce'), tr('Nome della persona:'))
             if not ok:
                 return
             nome = nome.strip()
         if not core.nome_valido(nome or ""):
-            QMessageBox.warning(self, "Nome non valido", "Scegli un nome senza caratteri speciali.")
+            QMessageBox.warning(self, tr('Nome non valido'), tr('Scegli un nome senza caratteri speciali.'))
             return
         filtro = "Audio o video (" + " ".join("*" + x for x in sorted(AUDIO_EXT)) + ")"
-        f, _ = QFileDialog.getOpenFileName(self, f"Audio con la sola voce di {nome}", str(Path.home()), filtro)
+        f, _ = QFileDialog.getOpenFileName(self, tr('Audio con la sola voce di {nome}', nome=nome), str(Path.home()), filtro)
         if not f:
             return
         self._avvia_iscrizioni([(nome, f)])
 
     def _pronto_per_voci(self):
         if self.worker_voce:
-            QMessageBox.information(self, "Attendi", "Sto già elaborando una voce.")
+            QMessageBox.information(self, tr('Attendi'), tr('Sto già elaborando una voce.'))
             return False
         if not core.leggi_token():
-            QMessageBox.warning(self, "Token mancante", "Inserisci prima il token nelle Impostazioni.")
+            QMessageBox.warning(self, tr('Token mancante'), tr('Inserisci prima il token nelle Impostazioni.'))
             return False
         if not core.riconoscimento_attivo() and not consenso_voci.attiva(self):
             return False
@@ -1216,7 +1204,7 @@ class Finestra(QMainWindow):
         scartate = sorted({n for n, _ in coppie if n not in ok})
         coppie = [(n, f) for n, f in coppie if n in ok]
         if scartate:
-            QMessageBox.information(self, "Senza consenso", "Impronta non salvata per: " + ", ".join(scartate) + ".")
+            QMessageBox.information(self, tr('Senza consenso'), "Impronta non salvata per: " + ", ".join(scartate) + ".")
         if not coppie:
             return
         self._coda_voci = list(coppie)
@@ -1241,7 +1229,7 @@ class Finestra(QMainWindow):
         device = core.carica_impostazioni().get("device", "cpu")
         cmd = [sys.executable, str(Path(core.__file__).resolve()), "iscrivi", nome, f, device]
         resto = f" (poi altre {len(self._coda_voci)})" if self._coda_voci else ""
-        self.stato_voci.setText(f"Calcolo dell'impronta di {nome} in corso (1-2 minuti){resto}…")
+        self.stato_voci.setText(tr("Calcolo dell'impronta di {nome} in corso (1-2 minuti){resto}…", nome=nome, resto=resto))
         for b in (self.b_nuova, self.b_camp, self.b_reg_voce, self.b_marca):
             b.setEnabled(False)
         self._righe_voce = []
@@ -1270,28 +1258,28 @@ class Finestra(QMainWindow):
         n = self._voce_selezionata()
         if not n:
             return
-        nuovo, ok = QInputDialog.getText(self, "Rinomina", "Nuovo nome:", text=n)
+        nuovo, ok = QInputDialog.getText(self, tr('Rinomina'), tr('Nuovo nome:'), text=n)
         if ok and nuovo.strip() and nuovo.strip() != n:
             try:
                 core.rinomina_voce(n, nuovo.strip())
             except Exception as e:
-                QMessageBox.warning(self, "Errore", str(e))
+                QMessageBox.warning(self, tr('Errore'), str(e))
             self._aggiorna_voci()
 
     def elimina_voce(self):
         n = self._voce_selezionata()
-        if n and QMessageBox.question(self, "Elimina", f"Eliminare la voce di {n} e tutti i suoi campioni?") == QMessageBox.Yes:
+        if n and QMessageBox.question(self, tr('Elimina'), tr('Eliminare la voce di {n} e tutti i suoi campioni?', n=n)) == QMessageBox.Yes:
             core.elimina_voce(n)
             self._aggiorna_voci()
 
     def esporta_voci_iphone(self):
         """Anagrafe → Argo per iPhone: scelta delle persone, conferma del consenso, file .argovoci."""
         if not core.riconoscimento_attivo():
-            QMessageBox.information(self, "Voci per iPhone", "Attiva prima il riconoscimento delle voci.")
+            QMessageBox.information(self, tr('Voci per iPhone'), tr('Attiva prima il riconoscimento delle voci.'))
             return
         voci = [n for n, _ in core.elenco_voci() if core.consenso(n) is not None]
         if not voci:
-            QMessageBox.information(self, "Voci per iPhone", "Nessuna voce con il consenso registrato.")
+            QMessageBox.information(self, tr('Voci per iPhone'), tr('Nessuna voce con il consenso registrato.'))
             return
         imp = core.carica_impostazioni()
         dlg = voci_strumenti.EsportaIphoneDialog(voci, imp.get("voci_iphone"), self)
@@ -1304,33 +1292,30 @@ class Finestra(QMainWindow):
         if ponte.dispositivi():
             # Con il Ponte l'iPhone scarica da solo la scelta; il file serve solo per altre vie (AirDrop).
             r = QMessageBox.question(
-                self, "Voci per iPhone",
-                f"Fatto: l'iPhone collegato riceverà {n} voci alla prossima sincronizzazione.\n\n"
-                "Vuoi anche un file .argovoci da passare con AirDrop?",
+                self, tr('Voci per iPhone'),
+                tr("Fatto: l'iPhone collegato riceverà {n} voci alla prossima sincronizzazione.\n\nVuoi anche un file .argovoci da passare con AirDrop?", n=n),
                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if r != QMessageBox.Yes:
-                self.stato_voci.setText(f"{n} voci pronte per l'iPhone (Ponte).")
+                self.stato_voci.setText(tr("{n} voci pronte per l'iPhone (Ponte).", n=n))
                 return
         predefinito = str(Path.home() / "Desktop" / ("anagrafe" + core.ESTENSIONE_IPHONE))
-        f, _ = QFileDialog.getSaveFileName(self, "Salva l'anagrafe per iPhone", predefinito,
+        f, _ = QFileDialog.getSaveFileName(self, tr("Salva l'anagrafe per iPhone"), predefinito,
                                            f"Anagrafe voci per iPhone (*{core.ESTENSIONE_IPHONE})")
         if not f:
             return
         try:
             percorso, n = core.esporta_per_iphone(f, dlg.scelte)
         except Exception as e:
-            QMessageBox.warning(self, "Esportazione non riuscita", str(e))
+            QMessageBox.warning(self, tr('Esportazione non riuscita'), str(e))
             return
         if sys.platform == "darwin":
             subprocess.run(["open", "-R", str(percorso)], check=False)
         else:
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(percorso.parent)))
-        self.stato_voci.setText(f"{n} voci esportate in {percorso.name}.")
+        self.stato_voci.setText(tr('{n} voci esportate in {name}.', n=n, name=percorso.name))
         QMessageBox.information(
-            self, "Anagrafe per iPhone pronta",
-            f"Ho salvato {n} voci in «{percorso.name}».\n\n"
-            "Sul Mac: tasto destro sul file › Condividi › AirDrop › il tuo iPhone, poi «Apri con Argo».\n\n"
-            "Contiene impronte vocali (dati biometrici): dopo il trasferimento cancellalo dal Mac.")
+            self, tr('Anagrafe per iPhone pronta'),
+            tr('Ho salvato {n} voci in «{name}».\n\nSul Mac: tasto destro sul file › Condividi › AirDrop › il tuo iPhone, poi «Apri con Argo».\n\nContiene impronte vocali (dati biometrici): dopo il trasferimento cancellalo dal Mac.', n=n, name=percorso.name))
 
     # ------------------------------------------------------------ tab impostazioni
     def _tab_impostazioni(self):
@@ -1338,31 +1323,30 @@ class Finestra(QMainWindow):
         lay = QVBoxLayout(w)
         imp = core.carica_impostazioni()
 
-        g1 = QGroupBox("Hugging Face (serve solo per scaricare i modelli)")
+        g1 = QGroupBox(tr('Hugging Face (serve solo per scaricare i modelli)'))
         f1 = QFormLayout(g1)
         self.e_token = QLineEdit(core.leggi_token())
         self.e_token.setEchoMode(QLineEdit.Password)
-        self.e_token.setPlaceholderText("hf_...")
+        self.e_token.setPlaceholderText(tr('hf_...'))
         riga = QHBoxLayout()
         riga.addWidget(self.e_token)
-        b_mostra = QPushButton("Mostra")
+        b_mostra = QPushButton(tr('Mostra'))
         b_mostra.setCheckable(True)
         b_mostra.toggled.connect(lambda on: self.e_token.setEchoMode(QLineEdit.Normal if on else QLineEdit.Password))
-        b_ver = QPushButton("Salva e verifica")
+        b_ver = QPushButton(tr('Salva e verifica'))
         b_ver.clicked.connect(self.verifica_token)
         riga.addWidget(b_mostra)
         riga.addWidget(b_ver)
-        f1.addRow("Token (Read):", riga)
+        f1.addRow(tr('Token (Read):'), riga)
         self.l_token = QLabel("")
         self.l_token.setWordWrap(True)
         f1.addRow("", self.l_token)
-        link = QLabel('1) <a href="https://huggingface.co/pyannote/speaker-diarization-community-1">Accetta le condizioni del modello</a>'
-                      ' &nbsp; 2) <a href="https://huggingface.co/settings/tokens">Crea un token di tipo Read</a>')
+        link = QLabel(tr('1) <a href="https://huggingface.co/pyannote/speaker-diarization-community-1">Accetta le condizioni del modello</a> &nbsp; 2) <a href="https://huggingface.co/settings/tokens">Crea un token di tipo Read</a>'))
         link.setOpenExternalLinks(True)
         f1.addRow("", link)
         lay.addWidget(g1)
 
-        g2 = QGroupBox("Trascrizione")
+        g2 = QGroupBox(tr('Trascrizione'))
         f2 = QFormLayout(g2)
         self.c_modello = QComboBox()
         for k, t in MODELLI:
@@ -1373,50 +1357,48 @@ class Finestra(QMainWindow):
             self.c_lingua.addItem(t, k)
         self.c_lingua.setCurrentIndex(next((i for i, (k, _) in enumerate(LINGUE) if k == imp["language"]), 0))
         self.c_device = QComboBox()
-        self.c_device.addItem("CPU (sempre disponibile)", "cpu")
-        self.c_device.addItem("GPU NVIDIA (CUDA)", "cuda")
+        self.c_device.addItem(tr('CPU (sempre disponibile)'), "cpu")
+        self.c_device.addItem(tr('GPU NVIDIA (CUDA)'), "cuda")
         self.c_device.setCurrentIndex(1 if imp["device"] == "cuda" else 0)
         self.e_hot = QLineEdit(imp.get("hotwords", ""))
-        self.e_hot.setPlaceholderText("es. Copilot, Azure, EOS Solutions, nomi dei partecipanti")
-        f2.addRow("Modello:", self.c_modello)
-        f2.addRow("Lingua:", self.c_lingua)
-        f2.addRow("Calcolo su:", self.c_device)
-        f2.addRow("Parole chiave:", self.e_hot)
+        self.e_hot.setPlaceholderText(tr('es. Copilot, Azure, EOS Solutions, nomi dei partecipanti'))
+        f2.addRow(tr('Modello:'), self.c_modello)
+        f2.addRow(tr('Lingua:'), self.c_lingua)
+        f2.addRow(tr('Calcolo su:'), self.c_device)
+        f2.addRow(tr('Parole chiave:'), self.e_hot)
         self.c_risorse = QComboBox()
         for k, testo in risorse.PROFILI:
             self.c_risorse.addItem(testo, k)
         self.c_risorse.setCurrentIndex(max(0, self.c_risorse.findData(imp.get("risorse", "auto"))))
-        self.c_risorse.setToolTip("Quanta CPU e memoria può usare Argo per trascrivere e per i riassunti.\n"
-                                  "Se il PC si blocca durante le elaborazioni, scegli Leggero.")
+        self.c_risorse.setToolTip(tr('Quanta CPU e memoria può usare Argo per trascrivere e per i riassunti.\nSe il PC si blocca durante le elaborazioni, scegli Leggero.'))
         self.l_risorse = QLabel()
         self.l_risorse.setWordWrap(True)
         self.c_risorse.currentIndexChanged.connect(
             lambda _i: self.l_risorse.setText(risorse.descrizione(self.c_risorse.currentData())))
         self.l_risorse.setText(risorse.descrizione(self.c_risorse.currentData()))
-        f2.addRow("Uso del computer:", self.c_risorse)
+        f2.addRow(tr('Uso del computer:'), self.c_risorse)
         f2.addRow("", self.l_risorse)
-        self.b_adatta = QPushButton("🖥️ Adatta a questo computer…")
-        self.b_adatta.setToolTip("Legge processore, core, RAM e GPU di questo computer e propone modello di "
-                                 "trascrizione, uso del computer e modelli di Ollama adatti. Scegli tu cosa applicare.")
+        self.b_adatta = QPushButton(tr('🖥️ Adatta a questo computer…'))
+        self.b_adatta.setToolTip(tr('Legge processore, core, RAM e GPU di questo computer e propone modello di trascrizione, uso del computer e modelli di Ollama adatti. Scegli tu cosa applicare.'))
         self.b_adatta.clicked.connect(self.adatta_al_computer)
         f2.addRow("", self.b_adatta)
         lay.addWidget(g2)
 
-        g3 = QGroupBox("Riconoscimento voci")
+        g3 = QGroupBox(tr('Riconoscimento voci'))
         f3 = QFormLayout(g3)
-        self.cb_riconoscimento = QCheckBox("Riconosci le persone dalla voce (anagrafe voci, solo con il loro consenso)")
+        self.cb_riconoscimento = QCheckBox(tr('Riconosci le persone dalla voce (anagrafe voci, solo con il loro consenso)'))
         self.cb_riconoscimento.setChecked(core.riconoscimento_attivo())
         self.cb_riconoscimento.setEnabled(not core.riconoscimento_vietato())
         if core.riconoscimento_vietato():
-            self.cb_riconoscimento.setToolTip("Disattivato dall'IT con i criteri aziendali")
+            self.cb_riconoscimento.setToolTip(tr("Disattivato dall'IT con i criteri aziendali"))
         self.cb_riconoscimento.toggled.connect(self._cambia_riconoscimento)
         f3.addRow(self.cb_riconoscimento)
         self.s_soglia = QDoubleSpinBox()
         self.s_soglia.setRange(0.2, 0.95)
         self.s_soglia.setSingleStep(0.05)
         self.s_soglia.setValue(float(imp["soglia"]))
-        f3.addRow("Somiglianza minima:", self.s_soglia)
-        nota = QLabel("Più alta = meno errori ma più «Sconosciuto». 0,50 è un buon punto di partenza.")
+        f3.addRow(tr('Somiglianza minima:'), self.s_soglia)
+        nota = QLabel(tr('Più alta = meno errori ma più «Sconosciuto». 0,50 è un buon punto di partenza.'))
         nota.setWordWrap(True)
         f3.addRow("", nota)
         lay.addWidget(g3)
@@ -1429,18 +1411,18 @@ class Finestra(QMainWindow):
         self.pannello_cloud.cambiato.connect(lambda: self._aggiorna_badge() if hasattr(self, "badge") else None)
         lay.addWidget(self.pannello_cloud)
 
-        g6 = QGroupBox("Microsoft 365 (facoltativo) · per Agenda, Posta e Incarichi")
+        g6 = QGroupBox(tr('Microsoft 365 (facoltativo) · per Agenda, Posta e Incarichi'))
         f6 = QFormLayout(g6)
         self.e_m365_client = QLineEdit(imp.get("m365_client_id", ""))
-        self.e_m365_client.setPlaceholderText("Application (client) ID dell'app registrata in Entra ID")
+        self.e_m365_client.setPlaceholderText(tr("Application (client) ID dell'app registrata in Entra ID"))
         self.e_m365_tenant = QLineEdit(imp.get("m365_tenant_id", ""))
-        self.e_m365_tenant.setPlaceholderText("Directory (tenant) ID")
-        f6.addRow("Client ID:", self.e_m365_client)
-        f6.addRow("Tenant ID:", self.e_m365_tenant)
+        self.e_m365_tenant.setPlaceholderText(tr('Directory (tenant) ID'))
+        f6.addRow(tr('Client ID:'), self.e_m365_client)
+        f6.addRow(tr('Tenant ID:'), self.e_m365_tenant)
         r6 = QHBoxLayout()
-        self.b_m365 = QPushButton("Collega")
+        self.b_m365 = QPushButton(tr('Collega'))
         self.b_m365.clicked.connect(self.collega_m365)
-        self.b_m365_off = QPushButton("Scollega")
+        self.b_m365_off = QPushButton(tr('Scollega'))
         self.b_m365_off.clicked.connect(self.scollega_m365)
         self.l_m365 = QLabel("")
         self.l_m365.setWordWrap(True)
@@ -1448,80 +1430,85 @@ class Finestra(QMainWindow):
         r6.addWidget(self.b_m365_off)
         r6.addWidget(self.l_m365, 1)
         f6.addRow("", r6)
-        self.cb_posta = QCheckBox("Leggi la posta per «Posta AI» (le mail vengono elaborate su questo computer, "
-                                  "salvo un modello cloud scelto per Posta)")
+        self.cb_posta = QCheckBox(tr('Leggi la posta per «Posta AI» (le mail vengono elaborate su questo computer, salvo un modello cloud scelto per Posta)'))
         self.cb_posta.setChecked(bool(imp.get("m365_leggi_posta")))
         self.cb_posta.toggled.connect(self._pref_posta)
         f6.addRow("", self.cb_posta)
-        n6 = QLabel("Su Microsoft 365 vanno solo i risultati che confermi (bozze di Outlook, task in Planner). Argo legge "
-                    "il calendario per Agenda e Incarichi e, solo se lo attivi, la posta per Posta AI: i testi vengono "
-                    "elaborati dal modello locale. Audio, trascrizioni e documenti restano qui.")
+        n6 = QLabel(tr('Su Microsoft 365 vanno solo i risultati che confermi (bozze di Outlook, task in Planner). Argo legge il calendario per Agenda e Incarichi e, solo se lo attivi, la posta per Posta AI: i testi vengono elaborati dal modello locale. Audio, trascrizioni e documenti restano qui.'))
         n6.setWordWrap(True)
         n6.setProperty("ruolo", "tenue")
         f6.addRow("", n6)
         lay.addWidget(g6)
 
-        g7 = QGroupBox("Dynamics 365 Sales (facoltativo) · per Incontri e Clienti")
+        g7 = QGroupBox(tr('Dynamics 365 Sales (facoltativo) · per Incontri e Clienti'))
         f7 = QFormLayout(g7)
         self.e_d365 = QLineEdit(imp.get("d365_url", ""))
         self.e_d365.setPlaceholderText("https://nome-ambiente.crm4.dynamics.com")
-        f7.addRow("Ambiente:", self.e_d365)
+        f7.addRow(tr('Ambiente:'), self.e_d365)
         r7 = QHBoxLayout()
-        self.b_d365 = QPushButton("Collega")
+        self.b_d365 = QPushButton(tr('Collega'))
         self.b_d365.clicked.connect(self.collega_d365)
-        self.l_d365 = QLabel("Usa Client ID e Tenant ID di Microsoft 365 qui sopra.")
+        self.l_d365 = QLabel(tr('Usa Client ID e Tenant ID di Microsoft 365 qui sopra.'))
         self.l_d365.setWordWrap(True)
         r7.addWidget(self.b_d365)
         r7.addWidget(self.l_d365, 1)
         f7.addRow("", r7)
-        n7 = QLabel("Nell'app Entra di Argo serve in più il permesso delegato «Dynamics CRM · user_impersonation» "
-                    "(API permissions › Add › Dynamics CRM, poi «Grant admin consent»). Su Dynamics vanno solo i dati "
-                    "che confermi nella finestra «Invia a Dynamics» di un incontro.")
+        n7 = QLabel(tr("Nell'app Entra di Argo serve in più il permesso delegato «Dynamics CRM · user_impersonation» (API permissions › Add › Dynamics CRM, poi «Grant admin consent»). Su Dynamics vanno solo i dati che confermi nella finestra «Invia a Dynamics» di un incontro."))
         n7.setWordWrap(True)
         n7.setProperty("ruolo", "tenue")
         f7.addRow("", n7)
         lay.addWidget(g7)
 
-        g8 = QGroupBox("Ricerca web (facoltativa) · scheda pubblica dei clienti")
+        g8 = QGroupBox(tr('Ricerca web (facoltativa) · scheda pubblica dei clienti'))
         f8 = QFormLayout(g8)
         import ricerca_web
         self.e_web = QLineEdit(ricerca_web.chiave())
         self.e_web.setEchoMode(QLineEdit.Password)
-        self.e_web.setPlaceholderText("Chiave API di Ollama Web Search (ollama.com › Settings › Keys)")
-        f8.addRow("Chiave:", self.e_web)
+        self.e_web.setPlaceholderText(tr('Chiave API di Ollama Web Search (ollama.com › Settings › Keys)'))
+        f8.addRow(tr('Chiave:'), self.e_web)
         r8 = QHBoxLayout()
-        b_web = QPushButton("Salva e prova")
+        b_web = QPushButton(tr('Salva e prova'))
         b_web.clicked.connect(self.prova_ricerca_web)
         self.l_web = QLabel("")
         self.l_web.setWordWrap(True)
         r8.addWidget(b_web)
         r8.addWidget(self.l_web, 1)
         f8.addRow("", r8)
-        n8 = QLabel("Serve un account Ollama gratuito. Sul web esce solo il nome dell'azienda cercata: trascrizioni, "
-                    "partecipanti e documenti restano qui. La scheda la scrive il modello locale, solo dalle pagine "
-                    "trovate, con le regole di Client Intel Scout.")
+        n8 = QLabel(tr("Serve un account Ollama gratuito. Sul web esce solo il nome dell'azienda cercata: trascrizioni, partecipanti e documenti restano qui. La scheda la scrive il modello locale, solo dalle pagine trovate, con le regole di Client Intel Scout."))
         n8.setWordWrap(True)
         n8.setProperty("ruolo", "tenue")
         f8.addRow("", n8)
         lay.addWidget(g8)
 
-        g5 = QGroupBox("Aspetto")
+        g5 = QGroupBox(tr('Aspetto'))
         f5 = QHBoxLayout(g5)
-        f5.addWidget(QLabel("Tema:"))
+        f5.addWidget(QLabel(tr('Tema:')))
         self.c_tema = QComboBox()
-        for etichetta, val in (("Notte (scuro)", "scuro"), ("Carta (chiaro)", "chiaro"), ("Come il sistema", "sistema")):
+        for etichetta, val in ((tr("Notte (scuro)"), "scuro"), (tr("Carta (chiaro)"), "chiaro"),
+                               (tr("Come il sistema"), "sistema")):
             self.c_tema.addItem(etichetta, val)
         self.c_tema.setCurrentIndex(max(0, self.c_tema.findData(imp.get("tema", "scuro"))))
         self.c_tema.currentIndexChanged.connect(lambda _: self.cambia_tema(self.c_tema.currentData()))
         f5.addWidget(self.c_tema)
+        # Lingua dell'interfaccia (non delle trascrizioni): vale dal prossimo avvio
+        f5.addSpacing(24)
+        f5.addWidget(QLabel(tr("Lingua:")))
+        self.c_lingua = QComboBox()
+        self.c_lingua.addItem(tr("Come il sistema"), "auto")
+        for codice, nome in lingua.LINGUE.items():
+            self.c_lingua.addItem(nome, codice)  # ogni lingua scritta nella sua lingua
+        self.c_lingua.setCurrentIndex(max(0, self.c_lingua.findData(imp.get("lingua_interfaccia", "auto"))))
+        self.c_lingua.currentIndexChanged.connect(lambda _: self.cambia_lingua(self.c_lingua.currentData()))
+        self.c_lingua.setToolTip(tr("Lingua dei menu e delle finestre di Argo. Trascrizioni e relazioni hanno la loro lingua."))
+        f5.addWidget(self.c_lingua)
         f5.addStretch()
         lay.addWidget(g5)
 
-        g4 = QGroupBox(f"Aggiornamenti · versione installata {VERSIONE}")
+        g4 = QGroupBox(tr('Aggiornamenti · versione installata {versione}', versione=VERSIONE))
         f4 = QVBoxLayout(g4)
         crit = criteri.carica()
         r_canale = QHBoxLayout()
-        r_canale.addWidget(QLabel("Canale:"))
+        r_canale.addWidget(QLabel(tr('Canale:')))
         self.c_canale = QComboBox()
         for val, etichetta in aggiornamenti.CANALI.items():
             self.c_canale.addItem(etichetta, val)
@@ -1532,24 +1519,21 @@ class Finestra(QMainWindow):
         f4.addLayout(r_canale)
         if "canale_aggiornamenti" in crit:
             self.c_canale.setEnabled(False)
-            self.c_canale.setToolTip("Impostato dall'IT con i criteri aziendali")
-        nota_canale = QLabel("<b>Pro</b>: solo versioni rilasciate, con pacchetto verificato (impronta SHA-256 "
-                             "e firma) e librerie a versione fissa. <b>Lab</b>: ogni novità appena pubblicata, "
-                             "senza verifiche: per chi sperimenta.")
+            self.c_canale.setToolTip(tr("Impostato dall'IT con i criteri aziendali"))
+        nota_canale = QLabel(tr('<b>Pro</b>: solo versioni rilasciate, con pacchetto verificato (impronta SHA-256 e firma) e librerie a versione fissa. <b>Lab</b>: ogni novità appena pubblicata, senza verifiche: per chi sperimenta.'))
         nota_canale.setWordWrap(True)
         f4.addWidget(nota_canale)
-        self.cb_agg = QCheckBox("Controlla all'avvio se su GitHub c'è una versione nuova")
+        self.cb_agg = QCheckBox(tr("Controlla all'avvio se su GitHub c'è una versione nuova"))
         self.cb_agg.setChecked(bool(imp.get("controlla_aggiornamenti", True)))
         self.cb_agg.toggled.connect(self._salva_pref_agg)
         f4.addWidget(self.cb_agg)
-        nota_agg = QLabel("Argo legge da GitHub solo il numero dell'ultima versione e le novità: nessun dato, "
-                          "audio o documento viene inviato. Voci, impostazioni e glossario restano dove sono.")
+        nota_agg = QLabel(tr("Argo legge da GitHub solo il numero dell'ultima versione e le novità: nessun dato, audio o documento viene inviato. Voci, impostazioni e glossario restano dove sono."))
         nota_agg.setWordWrap(True)
         f4.addWidget(nota_agg)
         r4 = QHBoxLayout()
-        self.b_agg = QPushButton("Controlla ora")
+        self.b_agg = QPushButton(tr('Controlla ora'))
         self.b_agg.clicked.connect(lambda: self.controlla_aggiornamenti(manuale=True))
-        b_gh = QPushButton("Apri GitHub")
+        b_gh = QPushButton(tr('Apri GitHub'))
         b_gh.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(aggiornamenti.URL_GITHUB)))
         self.l_agg = QLabel("")
         r4.addWidget(self.b_agg)
@@ -1559,15 +1543,15 @@ class Finestra(QMainWindow):
         if crit.get("aggiornamenti_dall_app") is False:
             for wdg in (self.cb_agg, self.b_agg, self.c_canale):
                 wdg.setEnabled(False)
-            self.l_agg.setText("Gli aggiornamenti di Argo li distribuisce l'IT.")
+            self.l_agg.setText(tr("Gli aggiornamenti di Argo li distribuisce l'IT."))
         if crit:
-            nota_it = QLabel(f"🏢 Alcune impostazioni sono gestite dall'IT ({criteri.percorso()}).")
+            nota_it = QLabel(tr("🏢 Alcune impostazioni sono gestite dall'IT ({percorso}).", percorso=criteri.percorso()))
             nota_it.setWordWrap(True)
             f4.addWidget(nota_it)
         lay.addWidget(g4)
 
         # Disinstallare Argo: senza scaricare niente
-        g9 = QGroupBox("Disinstallare Argo")
+        g9 = QGroupBox(tr('Disinstallare Argo'))
         l9 = QVBoxLayout(g9)
         if os.name == "nt":
             dove = ("Anche da Impostazioni di Windows › App › App installate › «Argo AI» › Disinstalla, "
@@ -1581,7 +1565,7 @@ class Finestra(QMainWindow):
         t9.setWordWrap(True)
         t9.setProperty("ruolo", "tenue")
         l9.addWidget(t9)
-        b9 = QPushButton("Disinstalla Argo…")
+        b9 = QPushButton(tr('Disinstalla Argo…'))
         b9.clicked.connect(self.disinstalla)
         r9 = QHBoxLayout()
         r9.addWidget(b9)
@@ -1590,11 +1574,9 @@ class Finestra(QMainWindow):
 
         # Relazioni: i template (editor in incontri.py)
         import incontri
-        g_rel = QGroupBox("Template della relazione degli incontri")
+        g_rel = QGroupBox(tr('Template della relazione degli incontri'))
         lr = QVBoxLayout(g_rel)
-        spiega = QLabel("Un template dice come scrivere la relazione: quali sezioni e in che ordine, quanto lunga, "
-                        "e le tue indicazioni («come la voglio»). Si sceglie in Incontri accanto a «✨ Scrivi relazione»; "
-                        "il ★ predefinito vale anche per Clienti › Dalla call.")
+        spiega = QLabel(tr('Un template dice come scrivere la relazione: quali sezioni e in che ordine, quanto lunga, e le tue indicazioni («come la voglio»). Si sceglie in Incontri accanto a «✨ Scrivi relazione»; il ★ predefinito vale anche per Clienti › Dalla call.'))
         spiega.setWordWrap(True)
         spiega.setProperty("ruolo", "tenue")
         lr.addWidget(spiega)
@@ -1616,7 +1598,7 @@ class Finestra(QMainWindow):
              [("relazioni", g_rel)]),
             ("🔗  Collegamenti", "Microsoft 365, Dynamics 365 Sales e ricerca web: tutti facoltativi",
              [("m365", g6), ("dynamics", g7), ("web", g8)]),
-            ("⚙️  Aspetto e aggiornamenti", "Tema chiaro o scuro, canale e aggiornamenti di Argo",
+            (tr("⚙️  Aspetto e aggiornamenti"), tr("Tema chiaro o scuro, lingua, canale e aggiornamenti di Argo"),
              [("aspetto", g5), ("aggiornamenti", g4), ("disinstalla", g9)]),
             ("💾  Backup e più computer", "Backup ora, alla chiusura e programmati; ripristino anche da OneDrive e "
              "Google Drive; configurazione condivisa tra Mac e Windows", self.pannello_backup.gruppi),
@@ -1664,16 +1646,15 @@ class Finestra(QMainWindow):
         rl.addLayout(corpo, 1)
 
         riga2 = QHBoxLayout()
-        b_salva = QPushButton("Salva impostazioni")
+        b_salva = QPushButton(tr('Salva impostazioni'))
         b_salva.setProperty("primario", True)  # sempre in vista, qualunque argomento sia aperto
-        b_salva.setToolTip("Salva token, trascrizione, voci, collegamenti e aggiornamenti. "
-                           "Modelli, modelli cloud e template si salvano già nei loro riquadri.")
+        b_salva.setToolTip(tr('Salva token, trascrizione, voci, collegamenti e aggiornamenti. Modelli, modelli cloud e template si salvano già nei loro riquadri.'))
         b_salva.clicked.connect(self.salva_impostazioni)
-        b_dati = QPushButton("Apri cartella dati")
+        b_dati = QPushButton(tr('Apri cartella dati'))
         b_dati.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(core.APP_HOME))))
         riga2.addWidget(b_salva)
         riga2.addWidget(b_dati)
-        info = QLabel(f"Dati in: {core.APP_HOME}  ·  L'audio non lascia mai questo computer.")
+        info = QLabel(tr("Dati in: {app_home}  ·  L'audio non lascia mai questo computer.", app_home=core.APP_HOME))
         info.setProperty("ruolo", "tenue")
         riga2.addWidget(info, 1)
         rl.addLayout(riga2)
@@ -1685,31 +1666,28 @@ class Finestra(QMainWindow):
 
     def disinstalla(self):
         if QMessageBox.question(
-                self, "Disinstallare Argo?",
-                "Si apre il disinstallatore in una finestra a parte e Argo si chiude.\n\n"
-                "Lì potrai fare un backup e confermare: finché non confermi non viene cancellato niente.") \
+                self, tr('Disinstallare Argo?'),
+                tr('Si apre il disinstallatore in una finestra a parte e Argo si chiude.\n\nLì potrai fare un backup e confermare: finché non confermi non viene cancellato niente.')) \
                 != QMessageBox.Yes:
             return
         if getattr(self, "tab_incontri", None) and self.tab_incontri.occupata():
-            QMessageBox.information(self, "Un momento", "C'è un'elaborazione in corso negli Incontri: "
-                                    "aspetta che finisca o fermala, poi riprova.")
+            QMessageBox.information(self, tr('Un momento'), tr("C'è un'elaborazione in corso negli Incontri: aspetta che finisca o fermala, poi riprova."))
             return
         try:
             partito = disinstalla.avvia()
         except Exception as e:
             partito = False
-            QMessageBox.warning(self, "Disinstallazione", f"Non riesco ad aprire il disinstallatore: {e}")
+            QMessageBox.warning(self, tr('Disinstallazione'), tr('Non riesco ad aprire il disinstallatore: {e}', e=e))
             return
         if not partito:
-            QMessageBox.warning(self, "Disinstallazione", "Disinstallatore non trovato in questa installazione: "
-                                "usa Disinstalla-Argo dal pacchetto di Argo (vedi il manuale, §14).")
+            QMessageBox.warning(self, tr('Disinstallazione'), tr('Disinstallatore non trovato in questa installazione: usa Disinstalla-Argo dal pacchetto di Argo (vedi il manuale, §14).'))
             return
         QTimer.singleShot(800, self.close)  # closeEvent: ferma Ponte e lavori, salva le code
 
     def _stato_m365(self):
         acc = m365.account()
         if hasattr(self, "l_m365"):
-            self.l_m365.setText(f"✅ Collegato come {acc}" if acc else "Non collegato")
+            self.l_m365.setText(tr('✅ Collegato come {acc}', acc=acc) if acc else tr('Non collegato'))
             self.b_m365_off.setVisible(bool(acc))  # Scollega solo se collegato
         if hasattr(self, "tab_incarichi"):
             self.tab_incarichi.aggiorna_m365()
@@ -1732,10 +1710,9 @@ class Finestra(QMainWindow):
         imp["m365_tenant_id"] = self.e_m365_tenant.text().strip()
         core.salva_impostazioni(imp)
         if not m365.configurato():
-            QMessageBox.warning(self, "Microsoft 365", "Inserisci Client ID e Tenant ID.")
+            QMessageBox.warning(self, tr('Microsoft 365'), tr('Inserisci Client ID e Tenant ID.'))
             return
-        self.l_m365.setText("Si è aperto il browser: accedi con il tuo account Microsoft e accetta i permessi "
-                            "(hai 5 minuti)…")
+        self.l_m365.setText(tr('Si è aperto il browser: accedi con il tuo account Microsoft e accetta i permessi (hai 5 minuti)…'))
         self.b_m365.setEnabled(False)
         lav = attrezzi.Lavoro(lambda _l: m365.accedi_interattivo(), self)
 
@@ -1748,7 +1725,7 @@ class Finestra(QMainWindow):
         def errore(e):
             self.b_m365.setEnabled(True)
             self._stato_m365()
-            QMessageBox.warning(self, "Microsoft 365", e)
+            QMessageBox.warning(self, tr('Microsoft 365'), e)
 
         lav.sig_fine.connect(fine)
         lav.sig_errore.connect(errore)
@@ -1763,16 +1740,15 @@ class Finestra(QMainWindow):
         imp["d365_url"] = self.e_d365.text().strip()
         core.salva_impostazioni(imp)
         if not crm_dynamics.configurato():
-            QMessageBox.warning(self, "Dynamics 365", "Inserisci Client ID e Tenant ID (Microsoft 365) e l'indirizzo "
-                                "dell'ambiente Dynamics.")
+            QMessageBox.warning(self, tr('Dynamics 365'), tr("Inserisci Client ID e Tenant ID (Microsoft 365) e l'indirizzo dell'ambiente Dynamics."))
             return
-        self.l_d365.setText("Si è aperto il browser: accedi e accetta il permesso per Dynamics (hai 5 minuti)…")
+        self.l_d365.setText(tr('Si è aperto il browser: accedi e accetta il permesso per Dynamics (hai 5 minuti)…'))
         self.b_d365.setEnabled(False)
         lav = attrezzi.Lavoro(lambda _l: crm_dynamics.accedi(), self)
 
         def fine(utente):
             self.b_d365.setEnabled(True)
-            self.l_d365.setText(f"✅ Collegato a {crm_dynamics.ambiente()} come {utente}")
+            self.l_d365.setText(tr('✅ Collegato a {ambiente} come {utente}', ambiente=crm_dynamics.ambiente(), utente=utente))
             self.raise_()
             self.activateWindow()
 
@@ -1788,9 +1764,9 @@ class Finestra(QMainWindow):
     def prova_ricerca_web(self):
         import ricerca_web
         ricerca_web.salva_chiave(self.e_web.text())
-        self.l_web.setText("Provo…")
+        self.l_web.setText(tr('Provo…'))
         lav = attrezzi.Lavoro(lambda _l: ricerca_web.cerca("Argo AI Ollama", 1), self)
-        lav.sig_fine.connect(lambda r: self.l_web.setText("✅ Ricerca web attiva." if r is not None else "⚠️ Nessuna risposta."))
+        lav.sig_fine.connect(lambda r: self.l_web.setText(tr('✅ Ricerca web attiva.') if r is not None else tr('⚠️ Nessuna risposta.')))
         lav.sig_errore.connect(lambda e: self.l_web.setText(f"⚠️ {e}"))
         self._lav_web = lav
         lav.start()
@@ -1800,6 +1776,22 @@ class Finestra(QMainWindow):
     def scollega_m365(self):
         m365.scollega()
         self._stato_m365()
+
+    def cambia_lingua(self, codice):
+        imp = core.carica_impostazioni()
+        if imp.get("lingua_interfaccia", "auto") == codice:
+            return
+        imp["lingua_interfaccia"] = codice
+        core.salva_impostazioni(imp)
+        nuova = lingua.scegli(imp)
+        risposta = QMessageBox.question(
+            self, tr("Lingua dell'interfaccia"),
+            tr("La nuova lingua vale dal prossimo avvio di Argo. Riavvio adesso?"))
+        if risposta == QMessageBox.Yes:
+            diagnostica.log.info("lingua dell'interfaccia: %s, riavvio", nuova)
+            self._salva_coda()
+            aggiornamenti.riavvia()
+            QApplication.quit()
 
     def cambia_tema(self, nome):
         imp = core.carica_impostazioni()
@@ -1822,7 +1814,7 @@ class Finestra(QMainWindow):
         imp["canale_aggiornamenti"] = canale
         core.salva_impostazioni(imp)
         if hasattr(self, "l_agg"):
-            self.l_agg.setText(f"Canale {canale.capitalize()}: premi «Controlla ora».")
+            self.l_agg.setText(tr('Canale {capitalize}: premi «Controlla ora».', capitalize=canale.capitalize()))
 
     def _canale(self):
         return aggiornamenti.canale_effettivo(core.carica_impostazioni(), criteri.carica())
@@ -1844,7 +1836,7 @@ class Finestra(QMainWindow):
         lav.sig_stato.connect(lambda m: self.statusBar().showMessage(m, 10000))
         lav.sig_fine.connect(lambda r: self._esito_ollama(r, url, forzato))
         lav.sig_errore.connect(lambda e: (setattr(self, "_lav_modelli", None),
-                                          self.statusBar().showMessage(f"Ollama: {e}", 10000)))
+                                          self.statusBar().showMessage(tr('Ollama: {e}', e=e), 10000)))
         self._lav_modelli = lav
         lav.start()
 
@@ -1877,13 +1869,13 @@ class Finestra(QMainWindow):
         if r["esito"] == "assente":
             msg = "Ollama non è installato: per Verbale, Documenti, Dettatura, Traduzione e Incontri scaricalo da ollama.com."
             if forzato:
-                QMessageBox.information(self, "Ollama non installato", msg)
+                QMessageBox.information(self, tr('Ollama non installato'), msg)
             self.statusBar().showMessage(msg, 15000)
             return
         if r["esito"] != "ok":
             msg = f"Ollama non risponde su {url}: avvialo e riprova da Impostazioni › Ollama."
             if forzato:
-                QMessageBox.warning(self, "Ollama spento", msg)
+                QMessageBox.warning(self, tr('Ollama spento'), msg)
             self.statusBar().showMessage(msg, 15000)
             return
         scelti = self._scegli_modelli(r)
@@ -1894,9 +1886,8 @@ class Finestra(QMainWindow):
         self._modelli_troppo_grandi = modelli_ollama.troppo_grandi(r["chat"], r.get("dim") or {})
         if not da_scaricare:
             if forzato:
-                QMessageBox.information(self, "Modelli già presenti",
-                                        "Ollama ha già un modello per i testi e uno per i documenti.\n"
-                                        "Per aggiungerne altri usa «Scarica un modello».")
+                QMessageBox.information(self, tr('Modelli già presenti'),
+                                        tr('Ollama ha già un modello per i testi e uno per i documenti.\nPer aggiungerne altri usa «Scarica un modello».'))
             return
         s = core.carica_impostazioni()
         chiave = "modello_leggero_rifiutato" if self._modelli_troppo_grandi else "modelli_consigliati_rifiutati"
@@ -1909,7 +1900,7 @@ class Finestra(QMainWindow):
         righe = [f"•  {n} (circa {modelli_ollama.DIMENSIONI_GB.get(n, 0):.1f} GB) - "
                  + ruoli.get(n, "per verbali, riassunti, traduzioni e relazioni, anche dalle foto") for n in nomi]
         box = QMessageBox(self)
-        box.setWindowTitle("Modelli per l'AI locale")
+        box.setWindowTitle(tr("Modelli per l'AI locale"))
         box.setIcon(QMessageBox.Question)
         premessa = (f"I modelli per i testi installati in Ollama sono troppo grandi per i {risorse.ram_gb():.0f} GB di "
                     "RAM di questo computer: relazioni e verbali andrebbero in errore o sarebbero lentissimi.\n\n"
@@ -1919,8 +1910,8 @@ class Finestra(QMainWindow):
                     + f"\n\nTotale circa {modelli_ollama.peso(nomi):.1f} GB, una volta sola. Restano su questo "
                     "computer: nessun testo esce. Li scarico adesso? Poi li scelgo io, e tu potrai cambiarli "
                     "in Impostazioni › Ollama.")
-        si = box.addButton("Scarica ora", QMessageBox.AcceptRole)
-        box.addButton("Non ora", QMessageBox.RejectRole)
+        si = box.addButton(tr('Scarica ora'), QMessageBox.AcceptRole)
+        box.addButton(tr('Non ora'), QMessageBox.RejectRole)
         box.setDefaultButton(si)
         box.exec()
         if box.clickedButton() is not si:
@@ -1929,8 +1920,7 @@ class Finestra(QMainWindow):
                 s["modello_leggero_rifiutato" if getattr(self, "_modelli_troppo_grandi", False)
                   else "modelli_consigliati_rifiutati"] = True
                 core.salva_impostazioni(s)
-            self.statusBar().showMessage("Puoi scaricarli quando vuoi: Impostazioni › Ollama › "
-                                         "«Scarica modelli consigliati».", 15000)
+            self.statusBar().showMessage(tr('Puoi scaricarli quando vuoi: Impostazioni › Ollama › «Scarica modelli consigliati».'), 15000)
             return
 
         def lavoro(lav):
@@ -1972,7 +1962,7 @@ class Finestra(QMainWindow):
             return
         canale = self._canale()
         if hasattr(self, "l_agg"):
-            self.l_agg.setText(f"Controllo su GitHub (canale {canale.capitalize()})…")
+            self.l_agg.setText(tr('Controllo su GitHub (canale {capitalize})…', capitalize=canale.capitalize()))
         lav = attrezzi.Lavoro(lambda _l: aggiornamenti.controlla(VERSIONE, canale), self)
         lav.sig_fine.connect(lambda r: self._esito_controllo(r, manuale))
         lav.sig_errore.connect(lambda e: self._errore_controllo(e, manuale))
@@ -1982,39 +1972,37 @@ class Finestra(QMainWindow):
     def _errore_controllo(self, e, manuale):
         self._lav_agg = None
         if hasattr(self, "l_agg"):
-            self.l_agg.setText("Controllo non riuscito (sei offline?)")
+            self.l_agg.setText(tr('Controllo non riuscito (sei offline?)'))
         if manuale:
-            QMessageBox.warning(self, "Aggiornamenti", f"Non riesco a contattare GitHub:\n{e}")
+            QMessageBox.warning(self, tr('Aggiornamenti'), tr('Non riesco a contattare GitHub:\n{e}', e=e))
 
     def _esito_controllo(self, r, manuale):
         self._lav_agg = None
         nuova, remota, testo = r
         if not nuova:
             if hasattr(self, "l_agg"):
-                self.l_agg.setText(f"✅ Hai l'ultima versione ({VERSIONE}).")
+                self.l_agg.setText(tr("✅ Hai l'ultima versione ({versione}).", versione=VERSIONE))
             if manuale:
-                QMessageBox.information(self, "Aggiornamenti", f"Hai già l'ultima versione ({VERSIONE}).")
+                QMessageBox.information(self, tr('Aggiornamenti'), tr("Hai già l'ultima versione ({versione}).", versione=VERSIONE))
             return
         if hasattr(self, "l_agg"):
-            self.l_agg.setText(f"🆕 Disponibile la versione {remota}.")
+            self.l_agg.setText(tr('🆕 Disponibile la versione {remota}.', remota=remota))
         self._proponi_aggiornamento(remota, testo)
 
     def _proponi_aggiornamento(self, remota, testo):
         dlg = QDialog(self)
-        dlg.setWindowTitle("Nuova versione di Argo")
+        dlg.setWindowTitle(tr('Nuova versione di Argo'))
         dlg.resize(620, 480)
         lay = QVBoxLayout(dlg)
-        lay.addWidget(QLabel(f"<b>È disponibile la versione {remota}</b> (hai la {VERSIONE}).<br>"
-                             "L'aggiornamento sostituisce solo i file del programma: voci, token, impostazioni, "
-                             "glossario e documenti indicizzati restano come sono."))
+        lay.addWidget(QLabel(tr("<b>È disponibile la versione {remota}</b> (hai la {versione}).<br>L'aggiornamento sostituisce solo i file del programma: voci, token, impostazioni, glossario e documenti indicizzati restano come sono.", remota=remota, versione=VERSIONE)))
         box = QPlainTextEdit(testo or "Novità: vedi CHANGELOG su GitHub.")
         box.setReadOnly(True)
         lay.addWidget(box, 1)
         bar = QHBoxLayout()
-        b_ora = QPushButton("Aggiorna ora")
+        b_ora = QPushButton(tr('Aggiorna ora'))
         b_ora.setProperty("primario", True)
-        b_dopo = QPushButton("Più tardi")
-        b_gh = QPushButton("Apri GitHub")
+        b_dopo = QPushButton(tr('Più tardi'))
+        b_gh = QPushButton(tr('Apri GitHub'))
         bar.addWidget(b_gh)
         bar.addStretch()
         bar.addWidget(b_dopo)
@@ -2028,10 +2016,10 @@ class Finestra(QMainWindow):
 
     def installa_aggiornamento(self):
         if self.worker or self.worker_voce:
-            QMessageBox.information(self, "Aggiornamento", "Aspetta che finisca l'elaborazione in corso, poi riprova.")
+            QMessageBox.information(self, tr('Aggiornamento'), tr("Aspetta che finisca l'elaborazione in corso, poi riprova."))
             return
         if criteri.carica().get("aggiornamenti_dall_app") is False:
-            QMessageBox.information(self, "Aggiornamento", "Gli aggiornamenti di Argo li distribuisce l'IT.")
+            QMessageBox.information(self, tr('Aggiornamento'), tr("Gli aggiornamenti di Argo li distribuisce l'IT."))
             return
         cartella = Path(__file__).resolve().parent
         canale = self._canale()
@@ -2039,11 +2027,11 @@ class Finestra(QMainWindow):
         lav.sig_stato.connect(lambda t: self.statusBar().showMessage(t))
         lav.sig_fine.connect(self._fine_aggiornamento)
         lav.sig_errore.connect(lambda e: (QMessageBox.warning(
-            self, "Aggiornamento non riuscito",
-            f"{e}\n\nLa versione attuale non è stata toccata. Puoi scaricare il pacchetto da GitHub e rilanciare l'installer."),
+            self, tr('Aggiornamento non riuscito'),
+            tr("{e}\n\nLa versione attuale non è stata toccata. Puoi scaricare il pacchetto da GitHub e rilanciare l'installer.", e=e)),
             setattr(self, "_lav_inst", None)))
         self._lav_inst = lav
-        self.statusBar().showMessage("Aggiornamento in corso…")
+        self.statusBar().showMessage(tr('Aggiornamento in corso…'))
         lav.start()
 
     def _fine_aggiornamento(self, esito):
@@ -2056,12 +2044,10 @@ class Finestra(QMainWindow):
         elif lib.startswith("errore"):
             extra = f"\n\nAggiornamento delle librerie non riuscito: {lib[7:]}\nRilancia l'installer dal pacchetto su GitHub."
         r = QMessageBox.question(
-            self, "Aggiornamento installato",
-            f"Argo {esito['versione']} è installato (canale {esito.get('canale', 'lab').capitalize()}, "
-            f"verifica: {esito.get('verifica', 'nessuna')}).{extra}\n\nRiavvio Argo adesso per usarlo?\n"
-            f"(La versione precedente è salvata in {esito['backup']}.)",
+            self, tr('Aggiornamento installato'),
+            tr('Argo {versione} è installato (canale {capitalize}, verifica: {get}).{extra}\n\nRiavvio Argo adesso per usarlo?\n(La versione precedente è salvata in {backup}.)', versione=esito['versione'], capitalize=esito.get('canale', 'lab').capitalize(), get=esito.get('verifica', 'nessuna'), extra=extra, backup=esito['backup']),
             QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-        self.statusBar().showMessage(f"Aggiornato alla versione {esito['versione']}.")
+        self.statusBar().showMessage(tr('Aggiornato alla versione {versione}.', versione=esito['versione']))
         if r == QMessageBox.Yes:
             self._salva_coda()
             aggiornamenti.riavvia()
@@ -2070,10 +2056,10 @@ class Finestra(QMainWindow):
     def verifica_token(self):
         tok = self.e_token.text().strip()
         if not tok.startswith("hf_"):
-            self.l_token.setText("❌ Il token deve iniziare con hf_")
+            self.l_token.setText(tr('❌ Il token deve iniziare con hf_'))
             return
         core.salva_token(tok)
-        self.l_token.setText("Verifica in corso…")
+        self.l_token.setText(tr('Verifica in corso…'))
         QApplication.processEvents()
         ok, msg = core.verifica_token(tok)
         self.l_token.setText(("✅ " if ok else "❌ ") + msg)
@@ -2091,22 +2077,22 @@ class Finestra(QMainWindow):
             return pc, ollama, adatta_computer.proposte(s, pc, ollama)
 
         self.b_adatta.setEnabled(False)
-        self.b_adatta.setText("Leggo com'è fatto il computer…")
+        self.b_adatta.setText(tr("Leggo com'è fatto il computer…"))
         lav = attrezzi.Lavoro(lavoro, self)
         lav.sig_fine.connect(lambda r: self._mostra_adatta(*r, url))
-        lav.sig_errore.connect(lambda e: (self._fine_adatta(), QMessageBox.warning(self, "Adatta a questo computer", e)))
+        lav.sig_errore.connect(lambda e: (self._fine_adatta(), QMessageBox.warning(self, tr('Adatta a questo computer'), e)))
         self._lav_adatta = lav
         lav.start()
 
     def _fine_adatta(self):
         self._lav_adatta = None
         self.b_adatta.setEnabled(True)
-        self.b_adatta.setText("🖥️ Adatta a questo computer…")
+        self.b_adatta.setText(tr('🖥️ Adatta a questo computer…'))
 
     def _mostra_adatta(self, pc, ollama, proposte, url):
         self._fine_adatta()
         d = QDialog(self)
-        d.setWindowTitle("Adatta a questo computer")
+        d.setWindowTitle(tr('Adatta a questo computer'))
         d.setMinimumWidth(620)
         lay = QVBoxLayout(d)
         testa = QLabel(f"<b>Questo computer:</b> {adatta_computer.descrivi(pc)}"
@@ -2116,9 +2102,9 @@ class Finestra(QMainWindow):
         lay.addWidget(testa)
         caselle = []
         if not proposte:
-            lay.addWidget(QLabel("✅ La configurazione è già adatta a questo computer."))
+            lay.addWidget(QLabel(tr('✅ La configurazione è già adatta a questo computer.')))
         else:
-            lay.addWidget(QLabel("Cambi consigliati (togli la spunta a quelli che non vuoi):"))
+            lay.addWidget(QLabel(tr('Cambi consigliati (togli la spunta a quelli che non vuoi):')))
             for p in proposte:
                 if p["chiave"] == "scarica":
                     testo = f"{p['ruolo']}: {p['nuovo']} — {p['motivo']}"
@@ -2137,9 +2123,9 @@ class Finestra(QMainWindow):
                 caselle.append((cb, p))
                 lay.addLayout(riga)
         bb = QDialogButtonBox(QDialogButtonBox.Close)
-        bb.button(QDialogButtonBox.Close).setText("Chiudi")
+        bb.button(QDialogButtonBox.Close).setText(tr('Chiudi'))
         if proposte:
-            bb.addButton("Applica", QDialogButtonBox.AcceptRole)
+            bb.addButton(tr('Applica'), QDialogButtonBox.AcceptRole)
         bb.accepted.connect(d.accept)
         bb.rejected.connect(d.reject)
         lay.addWidget(bb)
@@ -2157,7 +2143,7 @@ class Finestra(QMainWindow):
         attrezzi.segnale_modelli.cambiato.emit()
         logging.getLogger("argo").info("adattato al computer (%s): %s", adatta_computer.descrivi(pc),
                                        "; ".join(f"{p['chiave']}={p['nuovo']}" for p in scelte) or "nessun cambio")
-        self.statusBar().showMessage(f"Configurazione adattata a questo computer: {len(scelte)} cambi.", 10000)
+        self.statusBar().showMessage(tr('Configurazione adattata a questo computer: {len} cambi.', len=len(scelte)), 10000)
         da_scaricare = [p["nuovo"] for p in scelte if p["chiave"] == "scarica"]
         if da_scaricare:
             self._modelli_troppo_grandi = True
@@ -2171,24 +2157,21 @@ class Finestra(QMainWindow):
         core.salva_impostazioni(imp)
         if self.e_token.text().strip():
             core.salva_token(self.e_token.text().strip())
-        self.statusBar().showMessage("Impostazioni salvate.", 5000)
+        self.statusBar().showMessage(tr('Impostazioni salvate.'), 5000)
 
     def closeEvent(self, e):
         if self.tab_incontri.occupata() and QMessageBox.question(
-                self, "Uscire?", "Sto scrivendo la relazione di un incontro: verrà interrotta. La coda resta salvata "
-                "e la riprendi con «▶ Riprendi coda». Uscire comunque?") != QMessageBox.Yes:
+                self, tr('Uscire?'), tr('Sto scrivendo la relazione di un incontro: verrà interrotta. La coda resta salvata e la riprendi con «▶ Riprendi coda». Uscire comunque?')) != QMessageBox.Yes:
             e.ignore()
             return
         self.tab_incontri.ferma()
         if self.tab_registra.occupata():
-            if QMessageBox.question(self, "Uscire?", "C'è una registrazione in corso: verrà fermata. In modalità Live "
-                                    "l'audio non ancora trascritto resta in una cartella privata e Argo ti chiederà "
-                                    "cosa farne al prossimo avvio. Uscire comunque?") != QMessageBox.Yes:
+            if QMessageBox.question(self, tr('Uscire?'), tr("C'è una registrazione in corso: verrà fermata. In modalità Live l'audio non ancora trascritto resta in una cartella privata e Argo ti chiederà cosa farne al prossimo avvio. Uscire comunque?")) != QMessageBox.Yes:
                 e.ignore()
                 return
             self.tab_registra.chiudi()
         if self.worker or self.worker_voce:
-            if QMessageBox.question(self, "Uscire?", "C'è un'elaborazione in corso: verrà interrotta. Uscire comunque?") != QMessageBox.Yes:
+            if QMessageBox.question(self, tr('Uscire?'), tr("C'è un'elaborazione in corso: verrà interrotta. Uscire comunque?")) != QMessageBox.Yes:
                 e.ignore()
                 return
             for w in (self.worker, self.worker_voce):
@@ -2216,6 +2199,8 @@ def main():
     precedenti = diagnostica.inizia(VERSIONE)
     app = QApplication(sys.argv)
     app.setApplicationName("Argo AI")
+    lingua.imposta(lingua.scegli(core.carica_impostazioni()))  # prima di ogni testo dell'interfaccia
+    lingua.installa_qt(app)
     tema.applica(app, core.carica_impostazioni().get("tema", "scuro"))
     icona = Path(__file__).resolve().parent / "icon.png"
     if icona.exists():
@@ -2246,7 +2231,7 @@ def main():
     f = Finestra()
     f.show()
     if condivisa_da:
-        f.statusBar().showMessage(f"Configurazione aggiornata da {condivisa_da} (cartella condivisa).", 15000)
+        f.statusBar().showMessage(tr('Configurazione aggiornata da {condivisa_da} (cartella condivisa).', condivisa_da=condivisa_da), 15000)
     QTimer.singleShot(8000, diagnostica.avvio_riuscito)  # finestra rimasta aperta: avvio riuscito
     prova = os.environ.get("ARGO_PROVA_AVVIO", "")
     if prova.isdigit():  # prova automatica di avvio (GitHub Actions): Argo si chiude da solo dopo N secondi

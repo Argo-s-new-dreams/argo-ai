@@ -8,6 +8,7 @@ Scheda «Dalla call»
   propone l'azienda cercando prima nel CRM (dominio email, azienda dal biglietto, nome); poi relazione, contatti e
   note in Dynamics, e task: ogni volta si sceglie se in Planner o come attività di Dynamics.
 """
+from lingua import tr
 import json
 import threading
 from datetime import datetime
@@ -77,9 +78,9 @@ class DialogoCandidati(QDialog):
 
     def __init__(self, candidati, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Più aziende con questo nome")
+        self.setWindowTitle(tr('Più aziende con questo nome'))
         lay = QVBoxLayout(self)
-        lay.addWidget(QLabel("Ho trovato aziende diverse con lo stesso nome. Quale cerchi?"))
+        lay.addWidget(QLabel(tr('Ho trovato aziende diverse con lo stesso nome. Quale cerchi?')))
         self.lista = QListWidget()
         for c in candidati:
             it = QListWidgetItem(" · ".join(x for x in (c.get("nome"), c.get("sede"), c.get("sito"), c.get("descrizione")) if x))
@@ -105,10 +106,10 @@ class DialogoAccount(QDialog):
 
     def __init__(self, proposta, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Nuovo account in Dynamics")
+        self.setWindowTitle(tr('Nuovo account in Dynamics'))
         self.resize(560, 560)
         lay = QVBoxLayout(self)
-        nota = QLabel("Dati presi dalla scheda pubblica: controllali prima di creare l'account.")
+        nota = QLabel(tr("Dati presi dalla scheda pubblica: controllali prima di creare l'account."))
         nota.setWordWrap(True)
         lay.addWidget(nota)
         f = QFormLayout()
@@ -130,18 +131,18 @@ class DialogoAccount(QDialog):
                 self.e[chiave] = QLineEdit(_testo(valore))
             f.addRow(etichetta + ":", self.e[chiave])
         lay.addLayout(f)
-        self.cb_nota = QCheckBox("Allega la scheda pubblica come nota sull'account")
+        self.cb_nota = QCheckBox(tr("Allega la scheda pubblica come nota sull'account"))
         self.cb_nota.setChecked(True)
         lay.addWidget(self.cb_nota)
         b = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        b.button(QDialogButtonBox.Ok).setText("Crea account")
+        b.button(QDialogButtonBox.Ok).setText(tr('Crea account'))
         b.accepted.connect(self._ok)
         b.rejected.connect(self.reject)
         lay.addWidget(b)
 
     def _ok(self):
         if not self.e["ragione_sociale"].text().strip():
-            QMessageBox.warning(self, "Manca la ragione sociale", "La ragione sociale è obbligatoria.")
+            QMessageBox.warning(self, tr('Manca la ragione sociale'), tr('La ragione sociale è obbligatoria.'))
             return
         self.accept()
 
@@ -155,10 +156,10 @@ class DialogoTask(QDialog):
 
     def __init__(self, azioni, account, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Crea i task")
+        self.setWindowTitle(tr('Crea i task'))
         self.resize(620, 520)
         lay = QVBoxLayout(self)
-        lay.addWidget(QLabel("Azioni dalla relazione (togli la spunta a quelle da non creare):"))
+        lay.addWidget(QLabel(tr('Azioni dalla relazione (togli la spunta a quelle da non creare):')))
         self.lista = QListWidget()
         for a in azioni:
             it = QListWidgetItem(" · ".join(x for x in (a.get("descrizione"), a.get("responsabile"),
@@ -168,21 +169,21 @@ class DialogoTask(QDialog):
             it.setData(Qt.UserRole, a)
             self.lista.addItem(it)
         lay.addWidget(self.lista, 1)
-        lay.addWidget(QLabel("Dove li creo?"))
-        self.r_planner = QRadioButton("Planner (Microsoft 365)")
-        self.r_dyn = QRadioButton("Attività di Dynamics 365 (collegate al cliente)")
+        lay.addWidget(QLabel(tr('Dove li creo?')))
+        self.r_planner = QRadioButton(tr('Planner (Microsoft 365)'))
+        self.r_dyn = QRadioButton(tr('Attività di Dynamics 365 (collegate al cliente)'))
         lay.addWidget(self.r_planner)
         riga_p = QHBoxLayout()
         self.c_piano = QComboBox()
         self.c_bucket = QComboBox()
-        riga_p.addWidget(QLabel("   Piano:"))
+        riga_p.addWidget(QLabel(tr('   Piano:')))
         riga_p.addWidget(self.c_piano, 1)
-        riga_p.addWidget(QLabel("Bucket:"))
+        riga_p.addWidget(QLabel(tr('Bucket:')))
         riga_p.addWidget(self.c_bucket, 1)
         lay.addLayout(riga_p)
         lay.addWidget(self.r_dyn)
         riga_d = QHBoxLayout()
-        riga_d.addWidget(QLabel("   Cliente:"))
+        riga_d.addWidget(QLabel(tr('   Cliente:')))
         self.c_account = QComboBox()
         for a in account:
             self.c_account.addItem(a["name"], a["accountid"])
@@ -197,7 +198,7 @@ class DialogoTask(QDialog):
         self.l_stato.setProperty("ruolo", "tenue")
         lay.addWidget(self.l_stato)
         b = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        b.button(QDialogButtonBox.Ok).setText("Crea task")
+        b.button(QDialogButtonBox.Ok).setText(tr('Crea task'))
         b.accepted.connect(self._ok)
         b.rejected.connect(self.reject)
         lay.addWidget(b)
@@ -218,7 +219,7 @@ class DialogoTask(QDialog):
                     self.c_piano.addItem(p["titolo"], p["id"])
                 self._piani_caricati = True
             except Exception as e:
-                self.l_stato.setText(f"⚠️ Planner: {e}")
+                self.l_stato.setText(tr('⚠️ Planner: {e}', e=e))
 
     def _bucket(self):
         import m365
@@ -228,14 +229,14 @@ class DialogoTask(QDialog):
                 for b in m365.bucket(self.c_piano.currentData()):
                     self.c_bucket.addItem(b["nome"], b["id"])
             except Exception as e:
-                self.l_stato.setText(f"⚠️ Planner: {e}")
+                self.l_stato.setText(tr('⚠️ Planner: {e}', e=e))
 
     def _ok(self):
         if not (self.r_planner.isChecked() or self.r_dyn.isChecked()):
-            QMessageBox.information(self, "Dove?", "Scegli Planner o Dynamics.")
+            QMessageBox.information(self, tr('Dove?'), tr('Scegli Planner o Dynamics.'))
             return
         if self.r_planner.isChecked() and not (self.c_piano.currentData() and self.c_bucket.currentData()):
-            QMessageBox.information(self, "Planner", "Scegli piano e bucket.")
+            QMessageBox.information(self, tr('Planner'), tr('Scegli piano e bucket.'))
             return
         self.accept()
 
@@ -254,8 +255,8 @@ class SchedaClienti(QWidget):
         self.lavoro = None
         lay = QVBoxLayout(self)
         self.schede = QTabWidget()
-        self.schede.addTab(self._tab_cliente(), "Cliente")
-        self.schede.addTab(self._tab_call(), "Dalla call")
+        self.schede.addTab(self._tab_cliente(), tr('Cliente'))
+        self.schede.addTab(self._tab_call(), tr('Dalla call'))
         lay.addWidget(self.schede, 1)
         self.l_stato = QLabel("")
         self.l_stato.setProperty("ruolo", "tenue")
@@ -280,12 +281,11 @@ class SchedaClienti(QWidget):
         elif not web.configurata():
             manca.append("<a href='web'>chiave di Ollama Web Search</a>")
         self.l_stato.setText(("Da configurare nelle Impostazioni: " + " · ".join(manca)) if manca else
-                             "🔒 Trascrizioni e partecipanti restano su questo computer; sul web esce solo il nome "
-                             "dell'azienda; su Dynamics va solo ciò che confermi.")
+                             tr("🔒 Trascrizioni e partecipanti restano su questo computer; sul web esce solo il nome dell'azienda; su Dynamics va solo ciò che confermi."))
 
     def _avvia(self, fn, fine, stato_iniziale="", con_barra=False):
         if self.lavoro:
-            QMessageBox.information(self, "Attendi", "Sto già lavorando: aspetta la fine.")
+            QMessageBox.information(self, tr('Attendi'), tr('Sto già lavorando: aspetta la fine.'))
             return
         self.lavoro = Lavoro(fn, self)
         self.lavoro.sig_stato.connect(self.l_stato.setText)
@@ -314,36 +314,35 @@ class SchedaClienti(QWidget):
         lay = QVBoxLayout(w)
         riga = QHBoxLayout()
         self.e_cerca = QLineEdit()
-        self.e_cerca.setPlaceholderText("Nome dell'azienda, sito o dominio email (es. weleda.it)")
+        self.e_cerca.setPlaceholderText(tr("Nome dell'azienda, sito o dominio email (es. weleda.it)"))
         self.e_cerca.returnPressed.connect(self.cerca_cliente)
         riga.addWidget(self.e_cerca, 3)
         self.e_extra = QLineEdit()
-        self.e_extra.setPlaceholderText("Sito, sede o P.IVA (solo se ci sono omonimi)")
+        self.e_extra.setPlaceholderText(tr('Sito, sede o P.IVA (solo se ci sono omonimi)'))
         riga.addWidget(self.e_extra, 2)
         lay.addLayout(riga)
         comandi = QHBoxLayout()
-        b_cerca = QPushButton("🔍 Cerca in Dynamics")
+        b_cerca = QPushButton(tr('🔍 Cerca in Dynamics'))
         b_cerca.setProperty("primario", True)
         b_cerca.clicked.connect(self.cerca_cliente)
         comandi.addWidget(b_cerca)
-        self.b_scheda = QPushButton("🌐 Scheda pubblica")
-        self.b_scheda.setToolTip("Regole di Client Intel Scout: fonti pubbliche con data, niente dati inventati, "
-                                 "10 sezioni. Ricerca con Ollama Web Search, scrittura con il modello locale.")
+        self.b_scheda = QPushButton(tr('🌐 Scheda pubblica'))
+        self.b_scheda.setToolTip(tr('Regole di Client Intel Scout: fonti pubbliche con data, niente dati inventati, 10 sezioni. Ricerca con Ollama Web Search, scrittura con il modello locale.'))
         self.b_scheda.clicked.connect(self.scheda_pubblica)
         comandi.addWidget(self.b_scheda)
-        self.b_crea = QPushButton("➕ Crea account…")
+        self.b_crea = QPushButton(tr('➕ Crea account…'))
         self.b_crea.setVisible(False)  # compare quando c'è una scheda pubblica da trasformare in account
         self.b_crea.clicked.connect(self.crea_account)
         comandi.addWidget(self.b_crea)
         comandi.addStretch()
-        self.b_apri = QPushButton("Apri in Dynamics")
+        self.b_apri = QPushButton(tr('Apri in Dynamics'))
         self.b_apri.setVisible(False)  # compare quando scegli un account trovato
         self.b_apri.clicked.connect(self._apri_account)
         comandi.addWidget(self.b_apri)
         lay.addLayout(comandi)
         div = QSplitter(Qt.Horizontal)
         self.t_account = QTableWidget(0, 4)
-        self.t_account.setHorizontalHeaderLabels(["Account", "Città", "Sito", "Dipendenti"])
+        self.t_account.setHorizontalHeaderLabels([tr('Account'), tr('Città'), tr('Sito'), tr('Dipendenti')])
         self.t_account.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.t_account.verticalHeader().setVisible(False)
         self.t_account.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -373,7 +372,7 @@ class SchedaClienti(QWidget):
         if not testo:
             return
         if not crm.configurato():
-            QMessageBox.information(self, "Dynamics", "Prima collega Dynamics in Impostazioni › Dynamics 365 Sales.")
+            QMessageBox.information(self, tr('Dynamics'), tr('Prima collega Dynamics in Impostazioni › Dynamics 365 Sales.'))
             return
         self._avvia(lambda _l: crm.cerca_account(testo), self._account_trovati, f"Cerco «{testo}» in Dynamics…")
 
@@ -386,14 +385,14 @@ class SchedaClienti(QWidget):
         testo = self.e_cerca.text().strip()
         salvate = scheda.schede_salvate(testo)
         if account:
-            self.l_stato.setText(f"{len(account)} account trovati in Dynamics.")
+            self.l_stato.setText(tr('{len} account trovati in Dynamics.', len=len(account)))
             self.t_account.selectRow(0)
         else:
             self.v_cliente.setMarkdown(f"### «{testo}» non è in Dynamics\n\nPremi **🌐 Scheda pubblica** per raccogliere "
                                        "le informazioni pubbliche e proporre l'account."
                                        + (f"\n\nC'è già una scheda del {salvate[0].stem[7:15]}: la apro qui sotto.\n\n---\n\n"
                                           + salvate[0].read_text(encoding="utf-8") if salvate else ""))
-            self.l_stato.setText("Nessun account trovato.")
+            self.l_stato.setText(tr('Nessun account trovato.'))
 
     def _account_corrente(self):
         r = self.t_account.currentRow()
@@ -429,13 +428,13 @@ class SchedaClienti(QWidget):
     def scheda_pubblica(self, scelta=None):
         nome = self.e_cerca.text().strip()
         if not nome:
-            QMessageBox.information(self, "Scheda pubblica", "Scrivi il nome dell'azienda.")
+            QMessageBox.information(self, tr('Scheda pubblica'), tr("Scrivi il nome dell'azienda."))
             return
         if web.vietata():
-            QMessageBox.information(self, "Ricerca web", "La ricerca web è disattivata dall'IT con i criteri aziendali.")
+            QMessageBox.information(self, tr('Ricerca web'), tr("La ricerca web è disattivata dall'IT con i criteri aziendali."))
             return
         if not web.configurata():
-            QMessageBox.information(self, "Ricerca web", "Serve la chiave di Ollama Web Search: Impostazioni › Ricerca web.")
+            QMessageBox.information(self, tr('Ricerca web'), tr('Serve la chiave di Ollama Web Search: Impostazioni › Ricerca web.'))
             return
         extra = self.e_extra.text().strip()
 
@@ -451,12 +450,12 @@ class SchedaClienti(QWidget):
             if d.exec() and d.scelta():
                 self.scheda_pubblica(d.scelta())
             else:
-                self.l_stato.setText("Più aziende omonime: indica sito, sede o P.IVA e riprova.")
+                self.l_stato.setText(tr('Più aziende omonime: indica sito, sede o P.IVA e riprova.'))
             return
         self._scheda = r
         self.v_cliente.setMarkdown(r["markdown"])
         self.b_crea.setVisible(crm.configurato())
-        self.l_stato.setText(f"Scheda salvata in {r['cartella']}. Rileggila: poi «➕ Crea account…».")
+        self.l_stato.setText(tr('Scheda salvata in {cartella}. Rileggila: poi «➕ Crea account…».', cartella=r['cartella']))
 
     def crea_account(self):
         if not self._scheda:
@@ -473,7 +472,7 @@ class SchedaClienti(QWidget):
             return aid
 
         def fine(aid):
-            self.l_stato.setText(f"✅ Account creato: {campi['ragione_sociale']}")
+            self.l_stato.setText(tr('✅ Account creato: {ragione_sociale}', ragione_sociale=campi['ragione_sociale']))
             QDesktopServices.openUrl(QUrl(crm.link("account", aid)))
             self.e_cerca.setText(campi["ragione_sociale"])
             self.cerca_cliente()
@@ -485,40 +484,40 @@ class SchedaClienti(QWidget):
         w = QWidget()
         lay = QVBoxLayout(w)
         riga = QHBoxLayout()
-        riga.addWidget(QLabel("Call:"))
+        riga.addWidget(QLabel(tr('Call:')))
         self.c_call = QComboBox()
         self.c_call.currentIndexChanged.connect(self._call_scelta)
         riga.addWidget(self.c_call, 1)
         self.b_importa = QToolButton()
-        self.b_importa.setText("Dal computer ▾")
-        self.b_importa.setToolTip("Porta una trascrizione fatta con Trascrivi tra le call (e tra gli Incontri)")
+        self.b_importa.setText(tr('Dal computer ▾'))
+        self.b_importa.setToolTip(tr('Porta una trascrizione fatta con Trascrivi tra le call (e tra gli Incontri)'))
         self.b_importa.setPopupMode(QToolButton.InstantPopup)
         self.b_importa.clicked.connect(self._menu_trascrizioni)
         riga.addWidget(self.b_importa)
         b_agg = QPushButton("↻")
-        b_agg.setToolTip("Aggiorna l'elenco")
+        b_agg.setToolTip(tr("Aggiorna l'elenco"))
         b_agg.clicked.connect(self.aggiorna_call)
         riga.addWidget(b_agg)
         lay.addLayout(riga)
 
         comandi = QHBoxLayout()
-        b_proponi = QPushButton("🏢 Proponi aziende dal CRM")
+        b_proponi = QPushButton(tr('🏢 Proponi aziende dal CRM'))
         b_proponi.setProperty("primario", True)
-        b_proponi.setToolTip("Per ogni partecipante: dominio email, azienda del biglietto da visita, nome → account in Dynamics")
+        b_proponi.setToolTip(tr('Per ogni partecipante: dominio email, azienda del biglietto da visita, nome → account in Dynamics'))
         b_proponi.clicked.connect(self.proponi_aziende)
         comandi.addWidget(b_proponi)
-        b_cal = QPushButton("📅 Invitati dal calendario")
-        b_cal.setToolTip("Aggiunge gli invitati (con email) della riunione di Outlook più vicina all'orario della call")
+        b_cal = QPushButton(tr('📅 Invitati dal calendario'))
+        b_cal.setToolTip(tr("Aggiunge gli invitati (con email) della riunione di Outlook più vicina all'orario della call"))
         b_cal.clicked.connect(self.invitati_calendario)
         comandi.addWidget(b_cal)
-        b_add = QPushButton("+ Partecipante")
+        b_add = QPushButton(tr('+ Partecipante'))
         b_add.clicked.connect(lambda: self._aggiungi_riga({"nome": ""}))
         comandi.addWidget(b_add)
         comandi.addStretch()
         lay.addLayout(comandi)
 
         self.t_part = QTableWidget(0, 4)
-        self.t_part.setHorizontalHeaderLabels(["Partecipante", "Email", "Azienda", "Contatto in CRM"])
+        self.t_part.setHorizontalHeaderLabels([tr('Partecipante'), tr('Email'), tr('Azienda'), tr('Contatto in CRM')])
         h = self.t_part.horizontalHeader()
         h.setSectionResizeMode(self.COL_NOME, QHeaderView.Stretch)
         h.setSectionResizeMode(self.COL_AZIENDA, QHeaderView.Stretch)
@@ -528,15 +527,15 @@ class SchedaClienti(QWidget):
         lay.addWidget(self.t_part, 2)
 
         azioni = QHBoxLayout()
-        self.b_rel = QPushButton("✨ Relazione")
+        self.b_rel = QPushButton(tr('✨ Relazione'))
         self.b_rel.clicked.connect(self.relazione)
         azioni.addWidget(self.b_rel)
-        self.b_crm = QPushButton("☁️ Salva in Dynamics")
-        self.b_crm.setToolTip("Contatti nuovi per i partecipanti spuntati e relazione come nota sugli account scelti")
+        self.b_crm = QPushButton(tr('☁️ Salva in Dynamics'))
+        self.b_crm.setToolTip(tr('Contatti nuovi per i partecipanti spuntati e relazione come nota sugli account scelti'))
         self.b_crm.clicked.connect(self.salva_crm)
         azioni.addWidget(self.b_crm)
-        self.b_task = QPushButton("✅ Crea task…")
-        self.b_task.setToolTip("Le azioni della relazione: in Planner o come attività di Dynamics (scegli ogni volta)")
+        self.b_task = QPushButton(tr('✅ Crea task…'))
+        self.b_task.setToolTip(tr('Le azioni della relazione: in Planner o come attività di Dynamics (scegli ogni volta)'))
         self.b_task.clicked.connect(self.crea_task)
         azioni.addWidget(self.b_task)
         azioni.addStretch()
@@ -570,14 +569,14 @@ class SchedaClienti(QWidget):
             a = m.addAction(("✓ " if gia else "") + nome)
             a.triggered.connect(lambda _c=False, j=job: self._importa(j))
         if not voci:
-            m.addAction("Nessuna trascrizione completata in Trascrivi").setEnabled(False)
+            m.addAction(tr('Nessuna trascrizione completata in Trascrivi')).setEnabled(False)
         m.exec(self.b_importa.mapToGlobal(self.b_importa.rect().bottomLeft()))
 
     def _importa(self, job):
         try:
             id_incontro = chiamate.importa_trascrizione(job["json"])
         except Exception as e:
-            QMessageBox.warning(self, "Trascrizione", str(e))
+            QMessageBox.warning(self, tr('Trascrizione'), str(e))
             return
         self.aggiorna_call()
         self.c_call.setCurrentIndex(max(0, self.c_call.findData(id_incontro)))
@@ -629,12 +628,12 @@ class SchedaClienti(QWidget):
         self.t_part.setItem(r, self.COL_NOME, it)
         self.t_part.setItem(r, self.COL_EMAIL, QTableWidgetItem(p.get("email", "")))
         combo = QComboBox()
-        combo.addItem("❓ Da decidere", (DA_DECIDERE, None))
-        combo.addItem("🏠 Interno (la mia azienda)", (INTERNO, None))
+        combo.addItem(tr('❓ Da decidere'), (DA_DECIDERE, None))
+        combo.addItem(tr('🏠 Interno (la mia azienda)'), (INTERNO, None))
         for a in p.get("proposte", []):
             combo.addItem(f"🏢 {a['name']}" + (f" · {a['citta']}" if a.get("citta") else ""), ("account", a))
-        combo.addItem("🔎 Altra azienda in Dynamics…", (ALTRA, None))
-        combo.addItem("➕ Nuovo cliente (scheda pubblica)…", (NUOVO, None))
+        combo.addItem(tr('🔎 Altra azienda in Dynamics…'), (ALTRA, None))
+        combo.addItem(tr('➕ Nuovo cliente (scheda pubblica)…'), (NUOVO, None))
         scelta = p.get("scelta")
         if scelta:
             for i in range(combo.count()):
@@ -643,7 +642,7 @@ class SchedaClienti(QWidget):
                     combo.setCurrentIndex(i)
         combo.activated.connect(lambda _i, c=combo, riga=it: self._azienda_scelta(c, riga))
         self.t_part.setCellWidget(r, self.COL_AZIENDA, combo)
-        cb = QCheckBox("crea se manca")
+        cb = QCheckBox(tr('crea se manca'))
         cb.setChecked(bool(p.get("crea_contatto", True)))
         box = QWidget()
         bl = QHBoxLayout(box)
@@ -675,11 +674,11 @@ class SchedaClienti(QWidget):
     def _azienda_scelta(self, combo, riga):
         tipo, _dati = combo.currentData()
         if tipo == ALTRA:
-            testo, ok = QInputDialog.getText(self, "Cerca in Dynamics", "Nome, sito o dominio dell'azienda:")
+            testo, ok = QInputDialog.getText(self, tr('Cerca in Dynamics'), tr("Nome, sito o dominio dell'azienda:"))
             if ok and testo.strip():
                 def fine(account):
                     if not account:
-                        QMessageBox.information(self, "Dynamics", f"«{testo}» non è in Dynamics: usa «Nuovo cliente».")
+                        QMessageBox.information(self, tr('Dynamics'), tr('«{testo}» non è in Dynamics: usa «Nuovo cliente».', testo=testo))
                         combo.setCurrentIndex(0)
                         return
                     for a in account:
@@ -695,7 +694,7 @@ class SchedaClienti(QWidget):
             p = riga.data(Qt.UserRole) or {}
             self.schede.setCurrentIndex(0)
             self.e_cerca.setText(p.get("azienda_testo") or (crm.dominio_email(p.get("email")) or ""))
-            self.l_stato.setText("Cerca il cliente o prepara la scheda pubblica; poi torna su «Dalla call» e scegli l'account.")
+            self.l_stato.setText(tr("Cerca il cliente o prepara la scheda pubblica; poi torna su «Dalla call» e scegli l'account."))
             combo.setCurrentIndex(0)
             return
         self._salva_righe()
@@ -708,7 +707,7 @@ class SchedaClienti(QWidget):
         def fine(r):
             oggetto, persone = r
             if not persone:
-                self.l_stato.setText("Nessuna riunione di calendario vicina all'orario della call (o Microsoft 365 non collegato).")
+                self.l_stato.setText(tr("Nessuna riunione di calendario vicina all'orario della call (o Microsoft 365 non collegato)."))
                 return
             presenti = {self.t_part.item(i, self.COL_NOME).text().lower(): i for i in range(self.t_part.rowCount())}
             aggiunti = 0
@@ -720,13 +719,13 @@ class SchedaClienti(QWidget):
                     self._aggiungi_riga(p)
                     aggiunti += 1
             self._salva_righe()
-            self.l_stato.setText(f"📅 «{oggetto}»: {len(persone)} invitati ({aggiunti} nuovi). Ora «🏢 Proponi aziende».")
+            self.l_stato.setText(tr('📅 «{oggetto}»: {len} invitati ({aggiunti} nuovi). Ora «🏢 Proponi aziende».', oggetto=oggetto, len=len(persone), aggiunti=aggiunti))
 
         self._avvia(lambda _l: chiamate.invitati(d), fine, "Cerco la riunione nel calendario…")
 
     def proponi_aziende(self):
         if not crm.configurato():
-            QMessageBox.information(self, "Dynamics", "Prima collega Dynamics in Impostazioni › Dynamics 365 Sales.")
+            QMessageBox.information(self, tr('Dynamics'), tr('Prima collega Dynamics in Impostazioni › Dynamics 365 Sales.'))
             return
         righe = self._righe()
         import m365
@@ -773,8 +772,7 @@ class SchedaClienti(QWidget):
             for p in righe:
                 self._aggiungi_riga(p)
             self._salva_righe()
-            self.l_stato.setText(f"Aziende proposte per {n} partecipanti su {len(righe)}: controlla la colonna «Azienda». "
-                                 "Dove non c'è nulla: «Altra azienda» o «Nuovo cliente».")
+            self.l_stato.setText(tr("Aziende proposte per {n} partecipanti su {len}: controlla la colonna «Azienda». Dove non c'è nulla: «Altra azienda» o «Nuovo cliente».", n=n, len=len(righe)))
 
         self._avvia(fn, fine, "Cerco le aziende nel CRM…")
 
@@ -783,7 +781,7 @@ class SchedaClienti(QWidget):
         if not cartella:
             return
         if (Path(cartella) / rel.FILE_TESTO).exists() and QMessageBox.question(
-                self, "Relazione", "Esiste già una relazione: rifarla?") != QMessageBox.Yes:
+                self, tr('Relazione'), tr('Esiste già una relazione: rifarla?')) != QMessageBox.Yes:
             return
         import voci_core as core
         import llm_locale as llm
@@ -797,7 +795,7 @@ class SchedaClienti(QWidget):
 
         def fine(_r):
             self._call_scelta()
-            self.l_stato.setText("Relazione pronta: rileggila, poi «☁️ Salva in Dynamics» e «✅ Crea task…».")
+            self.l_stato.setText(tr('Relazione pronta: rileggila, poi «☁️ Salva in Dynamics» e «✅ Crea task…».'))
             if hasattr(self.finestra, "tab_incontri"):
                 self.finestra.tab_incontri.aggiorna()
 
@@ -818,7 +816,7 @@ class SchedaClienti(QWidget):
         righe = self._righe()
         account = self._account_scelti()
         if not account:
-            QMessageBox.information(self, "Dynamics", "Scegli prima l'azienda di almeno un partecipante.")
+            QMessageBox.information(self, tr('Dynamics'), tr("Scegli prima l'azienda di almeno un partecipante."))
             return
         testo_file = Path(cartella) / rel.FILE_TESTO
         testo = testo_file.read_text(encoding="utf-8") if testo_file.exists() else ""
@@ -827,7 +825,7 @@ class SchedaClienti(QWidget):
         domanda = (f"Su Dynamics:\n• {len(nuovi)} contatti nuovi\n"
                    + (f"• relazione come nota su: {', '.join(a['name'] for a in account)}" if testo else "• (nessuna relazione da allegare)")
                    + "\n\nProcedo?")
-        if QMessageBox.question(self, "Salva in Dynamics", domanda) != QMessageBox.Yes:
+        if QMessageBox.question(self, tr('Salva in Dynamics'), domanda) != QMessageBox.Yes:
             return
 
         def fn(lav):
@@ -868,7 +866,7 @@ class SchedaClienti(QWidget):
             return
         azioni = (rel.carica(cartella).get("relazione") or {}).get("azioni") or []
         if not azioni:
-            QMessageBox.information(self, "Task", "La relazione non ha azioni: premi prima «✨ Relazione».")
+            QMessageBox.information(self, tr('Task'), tr('La relazione non ha azioni: premi prima «✨ Relazione».'))
             return
         d = DialogoTask(azioni, self._account_scelti(), self)
         if not d.exec():
@@ -884,8 +882,7 @@ class SchedaClienti(QWidget):
                 return m365.crea_task(piano, bucket, [{"titolo": a.get("descrizione", "Azione"),
                                                        "responsabile": a.get("responsabile")} for a in scelte], utenti)
 
-            self._avvia(fn, lambda r: self.l_stato.setText(f"✅ {len(r)} task creati in Planner "
-                                                           f"({sum(1 for t in r if t['assegnato'])} assegnati)."),
+            self._avvia(fn, lambda r: self.l_stato.setText(tr('✅ {len} task creati in Planner ({sum} assegnati).', len=len(r), sum=sum(1 for t in r if t['assegnato']))),
                         "Creo i task in Planner…")
         else:
             aid, nome = d.c_account.currentData(), d.c_account.currentText()
@@ -893,5 +890,5 @@ class SchedaClienti(QWidget):
             def fn(_l):
                 return [crm.crea_attivita("account", aid, a) for a in scelte]
 
-            self._avvia(fn, lambda r: self.l_stato.setText(f"✅ {len(r)} attività create in Dynamics su {nome}."),
+            self._avvia(fn, lambda r: self.l_stato.setText(tr('✅ {len} attività create in Dynamics su {nome}.', len=len(r), nome=nome)),
                         "Creo le attività in Dynamics…")
