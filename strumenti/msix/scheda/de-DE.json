@@ -1,0 +1,23 @@
+{
+  "shortDescription": "Lokale digitale Stenografin: nimmt auf, transkribiert und erstellt Berichte auf deinem PC, ohne Cloud.",
+  "description": "Benötigt Ollama (kostenlos, https://ollama.com) für Zusammenfassungen und Berichte mit lokalen Modellen. Die Transkription funktioniert auch ohne.\nArgo nutzt generative künstliche Intelligenz: Berichte und Zusammenfassungen werden von KI-Modellen erstellt und sollten immer gegengelesen werden.\n\nArgo AI ist eine lokale digitale Stenografin für alle, die mit Menschen arbeiten: Besprechungen, Teams-Anrufe, Kundenbesuche, Interviews.\n\nSie ist kein Aufnahmegerät. Sie hört nur zu, während du sie benutzt, transkribiert auf deinem PC und speichert die Stimme nicht. Standardmäßig geht das Gespräch in keine Cloud: Es verlassen nur die Daten den Computer, die du bestimmst, Werkzeug für Werkzeug.\n\nWAS SIE KANN\n• Nimmt über das Mikrofon und den Ton des PCs auf (auch Anrufe) und transkribiert live, in Blöcken\n• Transkribiert bereits aufgenommene Audio- und Videodateien\n• Trennt die Stimmen: Du weißt, wer was gesagt hat (optional, mit deiner Einwilligung und der der Teilnehmenden)\n• Erstellt Berichte und Zusammenfassungen mit lokalen KI-Modellen (Ollama), mit anpassbaren Vorlagen\n• Exportiert nach Word; verbindet sich optional mit Microsoft 365 und Dynamics 365 Sales\n\nDATENSCHUTZ, ERNST GEMEINT\n• Kein Argo-Konto, keine Werbung, keine Telemetrie\n• Die Liste „Was diesen Computer verlassen hat“ zeigt alle Daten, die den Computer verlassen haben, mit ihrem Ziel\n• Die IT kann Argo mit Unternehmensrichtlinien steuern (Cloud-Modelle, Aufnahme, Stimmerkennung)\n\nMIT RESPEKT NUTZEN\nSag den Anwesenden vor der Aufnahme Bescheid. Argo bittet dich bei jeder Aufnahme, den Hinweis zu bestätigen.\n\nArgo ist ein persönliches Projekt von Luca Borio (Argos New Dreams), angeboten wie besehen, ohne garantierte Supportzeiten.\nSupport: supporto@argo-net.it · Meldungen zu erzeugten Inhalten: Einstellungen › Support › Support anfragen",
+  "features": [
+    "Lokale Live-Transkription",
+    "Transkription von Audio- und Videodateien",
+    "Stimmentrennung mit Einwilligung",
+    "Berichte mit lokaler KI (Ollama)",
+    "Export nach Word",
+    "Keine Telemetrie"
+  ],
+  "keywords": [
+    "Transkription",
+    "Besprechungsprotokoll",
+    "Stenografin",
+    "lokale KI",
+    "Datenschutz",
+    "Teams",
+    "Bericht"
+  ],
+  "privacyUrl": "https://argosnewdreams.blog/argo-privacy-desktop/de/",
+  "supportUrl": "https://argosnewdreams.blog/supporto/de/"
+}

@@ -1,0 +1,23 @@
+{
+  "shortDescription": "Local digital stenographer: records, transcribes and prepares reports on your PC, without the cloud.",
+  "description": "Requires Ollama (free, https://ollama.com) for summaries and reports with local models. Transcription works without it too.\nArgo uses generative artificial intelligence: reports and summaries are produced by AI models and should always be reviewed.\n\nArgo AI is a local digital stenographer for people who work with people: meetings, Teams calls, customer visits, interviews.\n\nIt is not a recorder. It only listens while you use it, transcribes on your PC and does not keep the voice. By default the conversation does not go to any cloud: only the data you decide leaves, tool by tool.\n\nWHAT IT DOES\n• Records from the microphone and from the PC's audio (calls too) and transcribes live, in blocks\n• Transcribes audio and video files you have already recorded\n• Separates the voices: you know who said what (optional, with your consent and that of the participants)\n• Prepares reports and summaries with local AI models (Ollama), with configurable templates\n• Exports to Word; optionally connects to Microsoft 365 and Dynamics 365 Sales\n\nPRIVACY, FOR REAL\n• No Argo account, no advertising, no telemetry\n• The list \"What has left this computer\" shows every piece of data that left, with its destination\n• IT can govern Argo with company policies (cloud models, recording, voice recognition)\n\nUSE IT WITH RESPECT\nBefore recording, tell the people present. Argo asks you to confirm the notice at every recording.\n\nArgo is a personal project by Luca Borio (Argos New Dreams), offered as is, without guaranteed support times.\nSupport: supporto@argo-net.it · Reports about generated content: Settings › Support › Ask for support",
+  "features": [
+    "Local live transcription",
+    "Transcription of audio and video files",
+    "Voice separation with consent",
+    "Reports with local AI (Ollama)",
+    "Export to Word",
+    "No telemetry"
+  ],
+  "keywords": [
+    "transcription",
+    "meeting minutes",
+    "stenographer",
+    "local AI",
+    "privacy",
+    "Teams",
+    "report"
+  ],
+  "privacyUrl": "https://argosnewdreams.blog/argo-privacy-desktop/en/",
+  "supportUrl": "https://argosnewdreams.blog/supporto/en/"
+}

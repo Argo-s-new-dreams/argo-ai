@@ -1,0 +1,23 @@
+{
+  "shortDescription": "Stenografa digitale locale: registra, trascrive e prepara relazioni sul tuo PC, senza cloud.",
+  "description": "Richiede Ollama (gratuito, https://ollama.com) per riassunti e relazioni con i modelli locali. La trascrizione funziona anche senza.\nArgo usa l'intelligenza artificiale generativa: relazioni e riassunti sono prodotti da modelli AI e vanno sempre riletti.\n\nArgo AI è una stenografa digitale locale per chi lavora con le persone: riunioni, call Teams, visite ai clienti, interviste.\n\nNon è un registratore. Ascolta solo mentre lo usi, trascrive sul tuo PC e non conserva la voce. Di base la conversazione non va in nessun cloud: escono solo i dati che decidi tu, attrezzo per attrezzo.\n\nCOSA FA\n• Registra dal microfono e dall'audio del PC (anche le call) e trascrive in diretta, a blocchi\n• Trascrive file audio e video già registrati\n• Divide le voci: sai chi ha detto cosa (facoltativo, con il tuo consenso e quello dei partecipanti)\n• Prepara relazioni e riassunti con modelli AI locali (Ollama), con template configurabili\n• Esporta in Word; si collega facoltativamente a Microsoft 365 e Dynamics 365 Sales\n\nPRIVACY, SUL SERIO\n• Nessun account Argo, nessuna pubblicità, nessuna telemetria\n• L'elenco «Cosa è uscito da questo computer» mostra ogni dato uscito, con la destinazione\n• L'IT può governare Argo con criteri aziendali (modelli cloud, registrazione, riconoscimento voci)\n\nUSALO CON RISPETTO\nPrima di registrare, avvisa le persone presenti. Argo chiede conferma dell'informativa a ogni registrazione.\n\nArgo è un progetto personale di Luca Borio (Argos New Dreams), offerto così com'è, senza tempi di assistenza garantiti.\nSupporto: supporto@argo-net.it · Segnalazioni su contenuti generati: Impostazioni › Supporto › Chiedi supporto",
+  "features": [
+    "Trascrizione locale in diretta",
+    "Trascrizione di file audio e video",
+    "Divisione delle voci con consenso",
+    "Relazioni con AI locale (Ollama)",
+    "Esportazione in Word",
+    "Nessuna telemetria"
+  ],
+  "keywords": [
+    "trascrizione",
+    "verbale riunione",
+    "stenografa",
+    "AI locale",
+    "privacy",
+    "Teams",
+    "relazione"
+  ],
+  "privacyUrl": "https://argosnewdreams.blog/argo-privacy-desktop/",
+  "supportUrl": "https://argosnewdreams.blog/supporto/"
+}

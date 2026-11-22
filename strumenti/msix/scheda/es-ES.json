@@ -1,0 +1,23 @@
+{
+  "shortDescription": "Estenógrafa digital local: graba, transcribe y prepara informes en tu PC, sin nube.",
+  "description": "Requiere Ollama (gratuito, https://ollama.com) para resúmenes e informes con modelos locales. La transcripción funciona también sin él.\nArgo usa inteligencia artificial generativa: los informes y resúmenes los producen modelos de IA y siempre hay que revisarlos.\n\nArgo AI es una estenógrafa digital local para quien trabaja con personas: reuniones, llamadas de Teams, visitas a clientes, entrevistas.\n\nNo es una grabadora. Solo escucha mientras la usas, transcribe en tu PC y no conserva la voz. De forma predeterminada la conversación no va a ninguna nube: solo salen los datos que tú decides, herramienta por herramienta.\n\nQUÉ HACE\n• Graba desde el micrófono y desde el audio del PC (también las llamadas) y transcribe en directo, por bloques\n• Transcribe archivos de audio y vídeo ya grabados\n• Separa las voces: sabes quién ha dicho qué (opcional, con tu consentimiento y el de los participantes)\n• Prepara informes y resúmenes con modelos de IA locales (Ollama), con plantillas configurables\n• Exporta a Word; se conecta de forma opcional a Microsoft 365 y Dynamics 365 Sales\n\nPRIVACIDAD, DE VERDAD\n• Sin cuenta de Argo, sin publicidad, sin telemetría\n• La lista «Qué ha salido de este ordenador» muestra cada dato que ha salido, con su destino\n• El departamento de TI puede gobernar Argo con directivas de empresa (modelos en la nube, grabación, reconocimiento de voces)\n\nÚSALA CON RESPETO\nAntes de grabar, avisa a las personas presentes. Argo te pide que confirmes el aviso en cada grabación.\n\nArgo es un proyecto personal de Luca Borio (Argos New Dreams), ofrecido tal cual, sin plazos de soporte garantizados.\nSoporte: supporto@argo-net.it · Avisos sobre contenidos generados: Ajustes › Soporte › Pedir soporte",
+  "features": [
+    "Transcripción local en directo",
+    "Transcripción de archivos de audio y vídeo",
+    "Separación de voces con consentimiento",
+    "Informes con IA local (Ollama)",
+    "Exportación a Word",
+    "Sin telemetría"
+  ],
+  "keywords": [
+    "transcripción",
+    "acta de reunión",
+    "estenógrafa",
+    "IA local",
+    "privacidad",
+    "Teams",
+    "informe"
+  ],
+  "privacyUrl": "https://argosnewdreams.blog/argo-privacy-desktop/es/",
+  "supportUrl": "https://argosnewdreams.blog/supporto/es/"
+}
