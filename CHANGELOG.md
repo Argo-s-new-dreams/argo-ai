@@ -2,6 +2,13 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261123.1250: Secondo cervello, prepara l'incontro con la Base
+- **💡 Prepara** (nuova scheda della pagina *Secondo cervello*): scegli il tipo di azienda, le funzioni delle persone e, se vuoi, l'argomento previsto. **💡 Suggerisci** propone **domande da fare**, **temi da toccare** e **cosa è emerso in casi simili**, presi dagli incontri simili della Base. Subito e senza modello.
+- **✨ Scaletta su misura**: il modello su questo computer riordina i suggerimenti in una scaletta per quell'incontro, nella lingua dell'interfaccia. Usa solo le voci della Base, già anonime, e passa dal filtro etico.
+- **💡 Suggerimenti** anche nel dialogo *Con chi stai parlando?* prima di registrare: si apre accanto con azienda e funzioni già scelte e resta aperto mentre registri.
+- Incontri simili: stesso settore (conta di più), dimensione, tipo di attività e area dell'azienda; stessa area e livello delle funzioni; con l'argomento e il modello per i Documenti anche la somiglianza del testo. Nulla esce dal computer.
+- Manuale §5quinquies aggiornato (*Prepara l'incontro*); testi nuovi tradotti in inglese, spagnolo e tedesco. I suggerimenti durante la Live arrivano in una prossima versione.
+
 ## 20261122.1237: Impostazioni tradotte anche nelle categorie
 - Con l'interfaccia in inglese, tedesco o spagnolo, le categorie delle Impostazioni (*Trascrizione e voci*, *Modelli AI*, *Relazioni*, *Collegamenti*, *Backup e più computer*, *Supporto*) e le loro descrizioni restavano in italiano. Ora seguono la lingua scelta.
 

@@ -425,7 +425,7 @@ Non è un client di posta completo: è un **assistente** accanto a Outlook. Most
 
 Una base di conoscenza che cresce a ogni incontro e ti aiuta nel lavoro: domande da fare e temi da toccare, prima e durante le interviste. Segue il metodo **CODE**: *cattura, organizza, distilla, esprimi*. È **facoltativo e spento** finché non lo attivi dalla pagina **Secondo cervello**; l'IT può vietarlo (`"secondo_cervello": false`).
 
-Arriva a blocchi. **In questa versione ci sono «Organizza»** (con chi parli in ogni incontro) **e «Distilla»** (i fatti di lavoro nella Base, anonimi). I suggerimenti prima e durante gli incontri arrivano nella prossima versione.
+Arriva a blocchi. **In questa versione ci sono «Organizza»** (con chi parli in ogni incontro), **«Distilla»** (i fatti di lavoro nella Base, anonimi) **ed «Esprimi» prima dell'incontro** (domande e temi dagli incontri simili). I suggerimenti durante la trascrizione Live arrivano nella prossima versione.
 
 Quando è attivo, nella barra in basso, accanto a «🔒 100% locale», compare **🧠 Secondo cervello attivo · N voci nella Base**: un clic apre la pagina.
 
@@ -436,11 +436,11 @@ Con il Secondo cervello attivo, prima di ogni registrazione (*Registra*, Live o 
 - **Azienda**: scegli dal catalogo o creane una nuova. Puoi anche lasciare «nessuna o non lo so».
 - **Persone, per funzione**: ruolo, area e livello (per esempio *Responsabile IT · Informatica · Responsabile*). **Niente nomi**: le persone si catalogano per funzione, non per identità.
 
-Puoi sempre premere **Salta** e completare dopo. Per gli incontri dall'iPhone e i file in *Trascrivi* lo stesso dialogo si apre dal menu del tasto destro: **🧠 Con chi stai parlando?…**. Se un file registrato in archivio finisce in coda, la scheda lo segue; per la Live passa alla trascrizione salvata.
+Puoi sempre premere **Salta** e completare dopo. Con **💡 Suggerimenti** apri accanto le domande e i temi presi dagli incontri simili della Base (vedi *Prepara l'incontro*): la finestra resta aperta anche dopo **Salva**, mentre registri. Per gli incontri dall'iPhone e i file in *Trascrivi* lo stesso dialogo si apre dal menu del tasto destro: **🧠 Con chi stai parlando?…**. Se un file registrato in archivio finisce in coda, la scheda lo segue; per la Live passa alla trascrizione salvata.
 
 ### I cataloghi
 
-La pagina **Secondo cervello** ha tre schede:
+La pagina **Secondo cervello** ha cinque schede: **Incontri**, **Base** (vedi *Distilla e la Base*), **💡 Prepara** (vedi *Prepara l'incontro*), **Aziende** e **Funzioni**.
 
 | Scheda | Cosa contiene |
 | --- | --- |
@@ -462,7 +462,23 @@ Il **modello su questo computer** (Ollama, mai un modello cloud) estrae: sintesi
 2. Il modello scrive al posto dei nomi le categorie («un'azienda manifatturiera», «il responsabile IT»). Nomi di software, tecnologie e standard restano (per esempio Microsoft 365, SAP, ISO 9001).
 3. Sul risultato Argo ripete il controllo dei nomi noti e chiede di nuovo al modello se restano nomi propri di persone, aziende, enti o località più piccole di una regione: quelli trovati diventano «[…]». Poi il filtro etico.
 
-Ogni voce della **Base** contiene solo: mese, categorie dell'azienda, funzioni e contenuti. Nessun titolo, percorso o identificativo dell'incontro: da una voce non si risale all'incontro. Solo la scheda dell'incontro, nell'archivio locale, ricorda che è già stato distillato (colonna **Base**); distillarlo di nuovo sostituisce la voce. Nella scheda **Base** puoi leggere, **modificare** (Argo ripassa anonimizzazione e filtro etico) ed **eliminare** ogni voce. Se c'è il modello per i Documenti (bge-m3), Argo calcola anche l'embedding che servirà ai suggerimenti.
+Ogni voce della **Base** contiene solo: mese, categorie dell'azienda, funzioni e contenuti. Nessun titolo, percorso o identificativo dell'incontro: da una voce non si risale all'incontro. Solo la scheda dell'incontro, nell'archivio locale, ricorda che è già stato distillato (colonna **Base**); distillarlo di nuovo sostituisce la voce. Nella scheda **Base** puoi leggere, **modificare** (Argo ripassa anonimizzazione e filtro etico) ed **eliminare** ogni voce. Se c'è il modello per i Documenti (bge-m3), Argo calcola anche l'embedding che serve ai suggerimenti.
+
+### Prepara l'incontro
+
+Prima di un incontro, nella scheda **💡 Prepara** scegli il tipo di azienda (dal catalogo, o «qualsiasi»), una o più **funzioni** delle persone e, se vuoi, l'**argomento previsto** (per esempio «migrazione al cloud»). Lo stesso pannello si apre con **💡 Suggerimenti** nel dialogo *Con chi stai parlando?*, già compilato.
+
+**💡 Suggerisci** cerca nella Base gli **incontri simili** e propone, subito e senza modello:
+
+| Sezione | Da dove arriva |
+| --- | --- |
+| **Domande da fare** | Le *domande che hanno funzionato* negli incontri simili e i *punti rimasti aperti* |
+| **Temi da toccare** | I temi degli incontri simili |
+| **Cosa è emerso in casi simili** | Esigenze e problemi ricorrenti, da verificare |
+
+Sotto trovi da quali voci della Base arrivano (solo mese e contesto anonimo). **✨ Scaletta su misura** chiede al **modello su questo computer** di riordinare tutto in una scaletta per questo incontro, nella lingua dell'interfaccia; usa solo le voci simili della Base, già anonime, e passa dal filtro etico. **Copia** mette il testo negli appunti.
+
+Come si decide che un incontro è simile: stesso **settore** (conta di più), stessa dimensione, tipo di attività e area; stessa **area di funzione** e stesso **livello** delle persone. Con un argomento e il modello per i Documenti (bge-m3), conta anche quanto il testo della voce è vicino all'argomento. Se non trova nulla, prova con meno criteri. **Niente esce da questo computer.**
 
 ### Regole
 

@@ -8,12 +8,13 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import (
-    QAbstractItemView, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QFrame, QHBoxLayout, QHeaderView, QLabel,
+    QAbstractItemView, QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QFrame, QHBoxLayout, QHeaderView, QLabel,
     QLineEdit, QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton, QSplitter, QTableWidget,
     QTableWidgetItem, QTabWidget, QTextBrowser, QVBoxLayout, QWidget,
 )
 
 import cervello_base as base
+import cervello_suggerimenti as sug
 import secondo_cervello as sc
 import veglia
 
@@ -26,7 +27,9 @@ SPIEGAZIONE = (
     "<b>Distilla</b>: dagli incontri catalogati il modello locale estrae solo fatti utili al lavoro e li salva nella "
     "<b>Base</b>, anonimizzati in modo <b>irreversibile</b>: niente nomi, niente collegamento all'incontro, niente "
     "questioni personali o giudizi sulle persone.<br>"
-    "Tutto resta <b>su questo computer</b>. I suggerimenti prima e durante gli incontri arrivano nella prossima versione.")
+    "<b>Esprimi</b>: prima di un incontro, nella scheda <b>Prepara</b> (o con «💡 Suggerimenti» quando scegli con chi "
+    "parli), Argo propone domande e temi presi dagli incontri simili della Base.<br>"
+    "Tutto resta <b>su questo computer</b>. I suggerimenti durante la trascrizione Live arrivano nella prossima versione.")
 
 
 class _Lavoro(QObject):
@@ -194,6 +197,151 @@ class DialogoFunzione(QDialog):
         self.accept()
 
 
+# ---------------------------------------------------------------- suggerimenti prima dell'incontro
+class PannelloSuggerimenti(QWidget):
+    """Domande e temi dagli incontri simili della Base. Con scelta=True mostra anche azienda e funzioni da scegliere
+    (scheda «Prepara»); altrimenti usa quelle passate (dialogo «Con chi stai parlando?»)."""
+
+    def __init__(self, azienda_id="", funzioni_id=(), scelta=False, parent=None):
+        super().__init__(parent)
+        self.azienda_id, self.funzioni_id = azienda_id, list(funzioni_id or [])
+        self._lavoro = None
+        self._testo = ""
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        self.c_azienda = self.l_funzioni = None
+        if scelta:
+            form = QFormLayout()
+            self.c_azienda = QComboBox()
+            form.addRow(tr('Azienda'), self.c_azienda)
+            self.l_funzioni = QListWidget()
+            self.l_funzioni.setSelectionMode(QAbstractItemView.MultiSelection)
+            self.l_funzioni.setFixedHeight(96)
+            form.addRow(tr('Persone (funzioni)'), self.l_funzioni)
+            lay.addLayout(form)
+            self.riempi()
+        else:
+            l_ctx = QLabel(tr('<b>Contesto</b>: {contesto}',
+                              contesto=sug.descrivi_contesto(azienda_id, funzioni_id) or tr('non indicato')))
+            l_ctx.setWordWrap(True)
+            lay.addWidget(l_ctx)
+        riga = QHBoxLayout()
+        self.e_argomento = QLineEdit()
+        self.e_argomento.setPlaceholderText(tr("Argomento previsto (facoltativo), per esempio «migrazione al cloud»"))
+        self.e_argomento.returnPressed.connect(lambda: self.suggerisci(False))
+        riga.addWidget(self.e_argomento, 1)
+        self.b_suggerisci = QPushButton(tr('💡 Suggerisci'))
+        self.b_suggerisci.setToolTip(tr('Domande, temi e cosa è emerso negli incontri simili della Base. Senza modello, subito.'))
+        self.b_suggerisci.clicked.connect(lambda: self.suggerisci(False))
+        riga.addWidget(self.b_suggerisci)
+        self.b_modello = QPushButton(tr('✨ Scaletta su misura'))
+        self.b_modello.setToolTip(tr('Il modello locale riordina i suggerimenti in una scaletta per questo incontro. Usa solo la Base anonima.'))
+        self.b_modello.clicked.connect(lambda: self.suggerisci(True))
+        riga.addWidget(self.b_modello)
+        lay.addLayout(riga)
+        self.v = QTextBrowser()
+        self.v.setOpenExternalLinks(False)
+        lay.addWidget(self.v, 1)
+        riga = QHBoxLayout()
+        self.l_stato = QLabel("")
+        self.l_stato.setProperty("ruolo", "tenue")
+        self.l_stato.setWordWrap(True)
+        riga.addWidget(self.l_stato, 1)
+        self.b_copia = QPushButton(tr('Copia'))
+        self.b_copia.setEnabled(False)
+        self.b_copia.clicked.connect(lambda: QApplication.clipboard().setText(self._testo))
+        riga.addWidget(self.b_copia)
+        lay.addLayout(riga)
+        if not base.voci():
+            self.v.setMarkdown(tr("La Base è ancora vuota: distilla qualche incontro (scheda Incontri › ✨ Distilla) e "
+                                  "qui troverai domande e temi dagli incontri simili."))
+
+    def riempi(self):
+        if self.c_azienda is None:
+            return
+        attuale = self.c_azienda.currentData()
+        self.c_azienda.clear()
+        self.c_azienda.addItem(tr('— qualsiasi —'), "")
+        for a in sc.aziende():
+            self.c_azienda.addItem(sc.descrivi_azienda(a), a["id"])
+        i = self.c_azienda.findData(attuale)
+        self.c_azienda.setCurrentIndex(i if i >= 0 else 0)
+        scelte = {self.l_funzioni.item(n).data(Qt.UserRole) for n in range(self.l_funzioni.count())
+                  if self.l_funzioni.item(n).isSelected()}
+        self.l_funzioni.clear()
+        for f in sc.funzioni():
+            voce = QListWidgetItem(sc.descrivi_funzione(f))
+            voce.setData(Qt.UserRole, f["id"])
+            self.l_funzioni.addItem(voce)
+            voce.setSelected(f["id"] in scelte)
+
+    def _scelta(self):
+        if self.c_azienda is None:
+            return self.azienda_id, self.funzioni_id
+        return (self.c_azienda.currentData() or "",
+                [i.data(Qt.UserRole) for i in self.l_funzioni.selectedItems()])
+
+    def suggerisci(self, con_modello):
+        if self._lavoro:
+            return
+        azienda_id, funzioni_id = self._scelta()
+        argomento = self.e_argomento.text().strip()
+        if not azienda_id and not funzioni_id and not argomento:
+            self.l_stato.setText(tr("Scegli l'azienda o almeno una funzione, oppure scrivi l'argomento."))
+            return
+        for b in (self.b_suggerisci, self.b_modello):
+            b.setEnabled(False)
+        self.l_stato.setText(tr('Il modello prepara la scaletta…') if con_modello else tr('Cerco gli incontri simili…'))
+        self._lavoro = _Lavoro(lambda _stato: sug.prepara(azienda_id, funzioni_id, argomento, con_modello), self)
+        self._lavoro.sig_fine.connect(self._mostra)
+        self._lavoro.sig_errore.connect(self._errore)
+        self._lavoro.start()
+
+    def _fine(self):
+        self._lavoro = None
+        for b in (self.b_suggerisci, self.b_modello):
+            b.setEnabled(True)
+
+    def _mostra(self, esito):
+        self._fine()
+        suggerimenti, trovati = esito
+        if not trovati:
+            self._testo = ""
+            self.b_copia.setEnabled(False)
+            self.v.setMarkdown(tr("Nella Base non ci sono ancora incontri simili a questo. Prova con meno criteri "
+                                  "(solo l'azienda o solo una funzione) o con un argomento."))
+            self.l_stato.setText("")
+            return
+        titoli = {"domande": tr('Domande da fare'), "temi": tr('Temi da toccare'),
+                  "emerso": tr('Cosa è emerso in casi simili')}
+        self._testo = sug.in_markdown(suggerimenti, trovati, titoli)
+        fonti = "\n".join(f"- {v.get('mese', '')} · {base.descrivi(v) or tr('contesto non indicato')}"
+                           for _p, v in trovati)
+        self.v.setMarkdown(self._testo + "\n\n---\n" + tr('**Dagli incontri simili della Base ({n})**', n=len(trovati))
+                           + "\n\n" + fonti)
+        self.b_copia.setEnabled(bool(self._testo))
+        self.l_stato.setText(tr('Suggerimenti dalla Base anonima: niente è uscito da questo computer.'))
+
+    def _errore(self, testo):
+        self._fine()
+        self.l_stato.setText("")
+        QMessageBox.warning(self, tr('Suggerimenti'), testo)
+
+
+class DialogoSuggerimenti(QDialog):
+    def __init__(self, azienda_id, funzioni_id, titolo="", parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(tr('Suggerimenti per «{titolo}»', titolo=titolo) if titolo else tr('Suggerimenti'))
+        self.resize(640, 560)
+        lay = QVBoxLayout(self)
+        self.pannello = PannelloSuggerimenti(azienda_id, funzioni_id, parent=self)
+        lay.addWidget(self.pannello, 1)
+        bb = QDialogButtonBox(QDialogButtonBox.Close)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+        self.pannello.suggerisci(False)
+
+
 # ---------------------------------------------------------------- «Con chi stai parlando?»
 class DialogoInterlocutori(QDialog):
     """Azienda e funzioni delle persone di un incontro. scelta() -> (id azienda, [id funzioni])."""
@@ -244,7 +392,12 @@ class DialogoInterlocutori(QDialog):
         riga_f.addWidget(b_togli)
         lay.addLayout(riga_f)
 
+        self._titolo = titolo
         bb = QDialogButtonBox()
+        self.b_sugg = bb.addButton(tr('💡 Suggerimenti'), QDialogButtonBox.ActionRole)
+        self.b_sugg.setToolTip(tr("Domande e temi dagli incontri simili della Base, per prepararti all'incontro"))
+        self.b_sugg.setEnabled(bool(base.voci()))
+        self.b_sugg.clicked.connect(self._suggerimenti)
         bb.addButton(tr('Salta'), QDialogButtonBox.RejectRole)
         bb.addButton(tr('Salva'), QDialogButtonBox.AcceptRole)
         bb.accepted.connect(self.accept)
@@ -288,6 +441,15 @@ class DialogoInterlocutori(QDialog):
         if d.exec() == QDialog.Accepted and d.salvata:
             self._riempi_funzioni()
             self._aggiungi_voce(d.salvata)
+
+    def _suggerimenti(self):
+        azienda_id, funzioni_id = self.scelta()
+        if not azienda_id and not funzioni_id:
+            QMessageBox.information(self, tr('Suggerimenti'), tr("Scegli prima l'azienda o almeno una funzione."))
+            return
+        d = DialogoSuggerimenti(azienda_id, funzioni_id, self._titolo, self.parent() or self)
+        d.setModal(False)
+        d.show()  # resta aperto accanto, anche dopo «Salva»
 
     def scelta(self):
         return (self.c_azienda.currentData() if self.c_azienda.currentData() != self.NUOVA else "",
@@ -413,6 +575,17 @@ class PaginaCervello(QWidget):
         wl.addLayout(self._comandi([("Modifica…", self.modifica_voce), ("Elimina", self.elimina_voce)]))
         self.schede.addTab(w, tr('Base'))
         self._scheda_base = w
+        # prepara
+        w = QWidget()
+        wl = QVBoxLayout(w)
+        nota = QLabel(tr("Prima di un incontro: scegli il tipo di azienda e le funzioni delle persone, e Argo propone "
+                         "domande e temi dagli incontri simili della Base."))
+        nota.setProperty("ruolo", "tenue")
+        nota.setWordWrap(True)
+        wl.addWidget(nota)
+        self.p_prepara = PannelloSuggerimenti(scelta=True, parent=w)
+        wl.addWidget(self.p_prepara, 1)
+        self.schede.addTab(w, tr('💡 Prepara'))
         # aziende
         w = QWidget()
         wl = QVBoxLayout(w)
@@ -480,6 +653,8 @@ class PaginaCervello(QWidget):
         for v in sorted(base.voci(), key=lambda x: x.get("mese", ""), reverse=True):
             _riga(self.t_base, [v.get("mese"), base.descrivi(v), (v.get("contenuti") or {}).get("sintesi", "")], v["id"])
         self.v_base.clear()
+        if hasattr(self, "p_prepara"):
+            self.p_prepara.riempi()
         self.schede.setTabText(self.schede.indexOf(self._scheda_base), tr('Base ({rowcount})', rowcount=self.t_base.rowCount()))
         for t in (self.t_incontri, self.t_aziende, self.t_funzioni, self.t_base):
             t.resizeColumnsToContents()
