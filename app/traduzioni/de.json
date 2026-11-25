@@ -1020,5 +1020,19 @@
  "Non riesco a creare la relazione unica: {e}": "Der gemeinsame Bericht lässt sich nicht erstellen: {e}",
  "Forma:": "Form:",
  "Capitoli e contenuti del documento, uno per riga. Per esempio:\n## 1. Executive summary: …\n## 2. Il processo attuale: …\nLe foto vanno da sole dentro i capitoli dove aiutano a spiegare.": "Kapitel und Inhalte des Dokuments, eines pro Zeile. Zum Beispiel:\n## 1. Executive Summary: …\n## 2. Der aktuelle Prozess: …\nFotos kommen in die Kapitel, wo sie beim Erklären helfen.",
- "Struttura del documento:": "Aufbau des Dokuments:"
+ "Struttura del documento:": "Aufbau des Dokuments:",
+ "<b>💡 Dal vivo</b>": "<b>💡 Live-Vorschläge</b>",
+ "✨ Cosa chiedere ora": "✨ Was jetzt fragen",
+ "Il modello locale legge gli ultimi minuti, anonimi, e propone le domande da fare adesso. Niente esce dal computer.": "Das lokale Modell liest die letzten Minuten, anonymisiert, und schlägt die Fragen vor, die jetzt zu stellen sind. Nichts verlässt den Computer.",
+ "ogni {n} minuti": "alle {n} Minuten",
+ "Contesto: {contesto}": "Kontext: {contesto}",
+ "Cerco nella Base gli incontri simili…": "Ich suche ähnliche Termine in der Basis…",
+ "Il modello locale legge gli ultimi minuti…": "Das lokale Modell liest die letzten Minuten…",
+ "Non disponibile con il profilo Leggero (Impostazioni › Uso del computer): il modello rallenterebbe la trascrizione.": "Mit dem Profil Leicht nicht verfügbar (Einstellungen › Computernutzung): Das Modell würde die Transkription verlangsamen.",
+ "Nella Base non ci sono incontri simili: la scaletta è vuota, ma «Cosa chiedere ora» funziona lo stesso sulla trascrizione.": "In der Basis gibt es keine ähnlichen Termine: Der Leitfaden ist leer, aber «Was jetzt fragen» funktioniert trotzdem mit der Transkription.",
+ "Dagli incontri simili della Base ({n}). I temi toccati si spuntano da soli.": "Aus ähnlichen Terminen der Basis ({n}). Besprochene Themen werden automatisch abgehakt.",
+ "Domande dal modello locale: niente è uscito da questo computer.": "Fragen vom lokalen Modell: Nichts hat diesen Computer verlassen.",
+ "Il modello non ha proposto domande: riprova tra qualche minuto.": "Das Modell hat keine Fragen vorgeschlagen: Versuche es in ein paar Minuten erneut.",
+ "Da verificare: {x}": "Zu prüfen: {x}",
+ "**Adesso potresti chiedere:**": "**Jetzt könntest du fragen:**"
 }

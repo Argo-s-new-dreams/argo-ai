@@ -21,7 +21,8 @@ from PySide6.QtCore import QObject, QProcess, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 from PySide6.QtWidgets import (
     QButtonGroup, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, QLineEdit,
-    QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QRadioButton, QSlider, QToolButton, QVBoxLayout, QWidget,
+    QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QRadioButton, QSlider, QSplitter, QToolButton, QVBoxLayout,
+    QWidget,
 )
 
 import cattura_audio as ca
@@ -219,7 +220,15 @@ class SchedaRegistra(QWidget):
         self.testo = QPlainTextEdit()
         self.testo.setReadOnly(True)
         self.testo.setPlaceholderText(tr('In modalità Live la trascrizione compare qui, blocco dopo blocco (con 20-45 secondi di ritardo).\n\nConsiglio: nelle call usa le cuffie, così il microfono non riprende anche le voci che escono dagli altoparlanti.'))
-        lay.addWidget(self.testo, 1)
+        self.dal_vivo = cervello_ui.PannelloDalVivo()  # Secondo cervello: scaletta e domande accanto alla Live
+        self.dal_vivo.hide()
+        divisore = QSplitter(Qt.Horizontal)
+        divisore.addWidget(self.testo)
+        divisore.addWidget(self.dal_vivo)
+        divisore.setStretchFactor(0, 3)
+        divisore.setStretchFactor(1, 2)
+        divisore.setChildrenCollapsible(False)
+        lay.addWidget(divisore, 1)
         tema.imposta_filigrana(self.testo, True)
         self.stato = QLabel("")
         self.stato.setWordWrap(True)
@@ -365,6 +374,12 @@ class SchedaRegistra(QWidget):
             avviso = (" ⚠️ Audio del computer non disponibile: registro solo il microfono, le voci degli altri "
                       f"partecipanti alla call non saranno incluse. ({self.mixer.avviso_sistema})")
         self.l_sorgenti.setText("Sorgenti: " + sorgenti + avviso)
+        if modo == "live" and cervello.attivo():
+            azienda_id, funzioni_id = con_chi if con_chi is not None else ("", [])
+            self.dal_vivo.avvia(azienda_id, funzioni_id, titolo if titolo != "Riunione" else "")
+            self.dal_vivo.show()
+        else:
+            self.dal_vivo.hide()
         if con_chi is not None:
             rif = self.sessione.dir if modo == "live" else self.file_archivio
             self._id_cervello = cervello.salva_interlocutori(rif, titolo, "live" if modo == "live" else "archivio",
@@ -399,6 +414,7 @@ class SchedaRegistra(QWidget):
         if not self.registrando:
             return
         self.registrando = False
+        self.dal_vivo.ferma()
         self._salva_sorgenti()
         self.mixer.ferma()
         self.b_avvia.setText(tr('● Avvia'))
@@ -590,6 +606,8 @@ class SchedaRegistra(QWidget):
         if not self.testo.toPlainText():
             tema.imposta_filigrana(self.testo, False)
         self.testo.appendPlainText(f"[{live.mmss(seg['start'])}] {nome}: {seg['text']}")
+        if self.dal_vivo.isVisible():
+            self.dal_vivo.aggiungi(seg["text"])
 
     def _aggiorna(self):
         if self.registrando and self.mixer:

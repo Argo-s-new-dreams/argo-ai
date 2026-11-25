@@ -6,14 +6,15 @@ from lingua import tr
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
 from PySide6.QtWidgets import (
-    QAbstractItemView, QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QFrame, QHBoxLayout, QHeaderView, QLabel,
+    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QFrame, QHBoxLayout, QHeaderView, QLabel,
     QLineEdit, QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton, QSplitter, QTableWidget,
     QTableWidgetItem, QTabWidget, QTextBrowser, QVBoxLayout, QWidget,
 )
 
 import cervello_base as base
+import cervello_dal_vivo as vivo
 import cervello_suggerimenti as sug
 import secondo_cervello as sc
 import veglia
@@ -29,7 +30,9 @@ SPIEGAZIONE = (
     "questioni personali o giudizi sulle persone.<br>"
     "<b>Esprimi</b>: prima di un incontro, nella scheda <b>Prepara</b> (o con «💡 Suggerimenti» quando scegli con chi "
     "parli), Argo propone domande e temi presi dagli incontri simili della Base.<br>"
-    "Tutto resta <b>su questo computer</b>. I suggerimenti durante la trascrizione Live arrivano nella prossima versione.")
+    "<b>Dal vivo</b>: durante la trascrizione Live, accanto al testo, la scaletta segna i temi già toccati e, a "
+    "richiesta, il modello locale propone le domande da fare adesso.<br>"
+    "Tutto resta <b>su questo computer</b>.")
 
 
 class _Lavoro(QObject):
@@ -326,6 +329,142 @@ class PannelloSuggerimenti(QWidget):
         self._fine()
         self.l_stato.setText("")
         QMessageBox.warning(self, tr('Suggerimenti'), testo)
+
+
+class PannelloDalVivo(QFrame):
+    """Accanto alla trascrizione Live: la scaletta dalla Base, con i temi già toccati, e le domande da fare adesso."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.scaletta = None
+        self._lavoro = None
+        self._carico = None
+        self.setMinimumWidth(260)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(8, 0, 0, 0)
+        testa = QLabel(tr('<b>💡 Dal vivo</b>'))
+        lay.addWidget(testa)
+        self.l_contesto = QLabel("")
+        self.l_contesto.setProperty("ruolo", "tenue")
+        self.l_contesto.setWordWrap(True)
+        lay.addWidget(self.l_contesto)
+        self.v_ora = QTextBrowser()
+        self.v_ora.setMaximumHeight(150)
+        self.v_ora.hide()
+        lay.addWidget(self.v_ora)
+        riga = QHBoxLayout()
+        self.b_ora = QPushButton(tr('✨ Cosa chiedere ora'))
+        self.b_ora.setToolTip(tr('Il modello locale legge gli ultimi minuti, anonimi, e propone le domande da fare '
+                                 'adesso. Niente esce dal computer.'))
+        self.b_ora.clicked.connect(self.domande_ora)
+        riga.addWidget(self.b_ora)
+        self.c_auto = QCheckBox(tr('ogni {n} minuti', n=vivo.MINUTI_AUTOMATICI))
+        if not vivo.automatico_consentito():
+            self.c_auto.setEnabled(False)
+            self.c_auto.setToolTip(tr('Non disponibile con il profilo Leggero (Impostazioni › Uso del computer): '
+                                      'il modello rallenterebbe la trascrizione.'))
+        self.c_auto.toggled.connect(self._auto)
+        riga.addWidget(self.c_auto)
+        riga.addStretch(1)
+        lay.addLayout(riga)
+        self.lista = QListWidget()
+        self.lista.setWordWrap(True)
+        self.lista.setSelectionMode(QAbstractItemView.NoSelection)
+        lay.addWidget(self.lista, 1)
+        self.l_stato = QLabel("")
+        self.l_stato.setProperty("ruolo", "tenue")
+        self.l_stato.setWordWrap(True)
+        lay.addWidget(self.l_stato)
+        self.timer = QTimer(self)
+        self.timer.setInterval(vivo.MINUTI_AUTOMATICI * 60 * 1000)
+        self.timer.timeout.connect(self.domande_ora)
+
+    def avvia(self, azienda_id="", funzioni_id=(), argomento=""):
+        """Nuovo incontro: prepara la scaletta in un thread (la ricerca per argomento può usare il modello)."""
+        self.ferma()
+        self.scaletta = None
+        self.lista.clear()
+        self.v_ora.hide()
+        self.b_ora.setEnabled(False)
+        self.l_contesto.setText(tr('Contesto: {contesto}', contesto=sug.descrivi_contesto(azienda_id, funzioni_id)
+                                   or tr('non indicato')))
+        self.l_stato.setText(tr('Cerco nella Base gli incontri simili…'))
+        self._carico = _Lavoro(lambda _stato: vivo.Scaletta(azienda_id, funzioni_id, argomento), self)
+        self._carico.sig_fine.connect(self._pronta)
+        self._carico.sig_errore.connect(lambda t: self.l_stato.setText(t))
+        self._carico.start()
+
+    def _pronta(self, scaletta):
+        testo, self.scaletta = (self.scaletta.trascrizione if self.scaletta else ""), scaletta
+        if testo:
+            scaletta.aggiungi(testo)
+        self.b_ora.setEnabled(True)
+        if scaletta.vuota():
+            self.l_stato.setText(tr('Nella Base non ci sono incontri simili: la scaletta è vuota, ma «Cosa chiedere '
+                                    'ora» funziona lo stesso sulla trascrizione.'))
+        else:
+            self.l_stato.setText(tr('Dagli incontri simili della Base ({n}). I temi toccati si spuntano da soli.',
+                                    n=len(scaletta.trovati)))
+        self._disegna()
+        if self.c_auto.isChecked():
+            self.timer.start()
+
+    def aggiungi(self, testo):
+        if self.scaletta is None:
+            return
+        if self.scaletta.aggiungi(testo):
+            self._disegna()
+
+    def _disegna(self):
+        self.lista.clear()
+        if self.scaletta is None:
+            return
+        voci = self.scaletta.da_fare() + [v for v in self.scaletta.voci if v["toccato"]]
+        for v in voci:
+            segno = "✓ " if v["toccato"] else ("🔹 " if v["tipo"] == "tema" else "❓ ")
+            it = QListWidgetItem(segno + v["testo"])
+            if v["toccato"]:
+                it.setForeground(self.palette().placeholderText())
+            self.lista.addItem(it)
+        for x in self.scaletta.emerso[:4]:
+            it = QListWidgetItem("💬 " + tr('Da verificare: {x}', x=x))
+            self.lista.addItem(it)
+
+    def _auto(self, acceso):
+        if acceso and self.scaletta is not None:
+            self.timer.start()
+        else:
+            self.timer.stop()
+
+    def domande_ora(self):
+        if self._lavoro or self.scaletta is None:
+            return
+        self.b_ora.setEnabled(False)
+        self.l_stato.setText(tr('Il modello locale legge gli ultimi minuti…'))
+        scaletta = self.scaletta
+        self._lavoro = _Lavoro(lambda _stato: scaletta.domande_ora(), self)
+        self._lavoro.sig_fine.connect(self._mostra_ora)
+        self._lavoro.sig_errore.connect(self._errore_ora)
+        self._lavoro.start()
+
+    def _mostra_ora(self, domande):
+        self._lavoro = None
+        self.b_ora.setEnabled(True)
+        if domande:
+            self.v_ora.setMarkdown(tr('**Adesso potresti chiedere:**') + "\n\n" + "\n".join(f"- {d}" for d in domande))
+            self.v_ora.show()
+            self.l_stato.setText(tr('Domande dal modello locale: niente è uscito da questo computer.'))
+        else:
+            self.l_stato.setText(tr('Il modello non ha proposto domande: riprova tra qualche minuto.'))
+
+    def _errore_ora(self, testo):
+        self._lavoro = None
+        self.b_ora.setEnabled(True)
+        self.l_stato.setText(testo)
+
+    def ferma(self):
+        """Fine della registrazione: niente più domande automatiche; la scaletta resta in vista."""
+        self.timer.stop()
 
 
 class DialogoSuggerimenti(QDialog):

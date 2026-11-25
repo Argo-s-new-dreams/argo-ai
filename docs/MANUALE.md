@@ -480,6 +480,17 @@ Sotto trovi da quali voci della Base arrivano (solo mese e contesto anonimo). **
 
 Come si decide che un incontro è simile: stesso **settore** (conta di più), stessa dimensione, tipo di attività e area; stessa **area di funzione** e stesso **livello** delle persone. Con un argomento e il modello per i Documenti (bge-m3), conta anche quanto il testo della voce è vicino all'argomento. Se non trova nulla, prova con meno criteri. **Niente esce da questo computer.**
 
+### Dal vivo, durante la Live
+
+Con il Secondo cervello attivo, quando registri in modalità **Live** accanto alla trascrizione compare il pannello **💡 Dal vivo**:
+
+- la **scaletta** presa dalla Base per l'azienda e le funzioni scelte in *Con chi stai parlando?* (e per il titolo della registrazione, se lo hai scritto): 🔹 temi da toccare, ❓ domande da fare, 💬 cose emerse in casi simili da verificare;
+- a ogni blocco trascritto Argo **spunta da solo** (✓) i temi e le domande di cui si è già parlato, confrontando le parole importanti con la trascrizione, senza modello. In cima restano quelli ancora da fare;
+- **✨ Cosa chiedere ora** chiede al **modello su questo computer** le due o tre domande da fare adesso: legge gli ultimi minuti di trascrizione già anonimizzati («Persona 1», «[azienda]»), la scaletta non ancora toccata e gli appunti dei casi simili. Funziona anche se la Base non ha casi simili;
+- **ogni 5 minuti** fa la stessa cosa da sola. È spenta di base e non c'è con il profilo *Leggero* (*Impostazioni › Uso del computer*), perché il modello rallenterebbe la trascrizione.
+
+Il pannello si allarga o si stringe trascinando il bordo. Quando premi **■ Ferma** le domande automatiche si fermano e la scaletta resta in vista fino alla registrazione successiva. **Niente esce da questo computer.**
+
 ### Regole
 
 - Tutto resta **su questo computer**, in `whisperx-env/secondo_cervello/` (§12).

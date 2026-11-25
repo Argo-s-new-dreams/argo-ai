@@ -1020,5 +1020,19 @@
  "Non riesco a creare la relazione unica: {e}": "I can't create the single report: {e}",
  "Forma:": "Form:",
  "Capitoli e contenuti del documento, uno per riga. Per esempio:\n## 1. Executive summary: …\n## 2. Il processo attuale: …\nLe foto vanno da sole dentro i capitoli dove aiutano a spiegare.": "Chapters and content of the document, one per line. For example:\n## 1. Executive summary: …\n## 2. The current process: …\nPhotos go inside the chapters where they help explain.",
- "Struttura del documento:": "Document structure:"
+ "Struttura del documento:": "Document structure:",
+ "<b>💡 Dal vivo</b>": "<b>💡 Live suggestions</b>",
+ "✨ Cosa chiedere ora": "✨ What to ask now",
+ "Il modello locale legge gli ultimi minuti, anonimi, e propone le domande da fare adesso. Niente esce dal computer.": "The local model reads the last few minutes, anonymised, and suggests the questions to ask now. Nothing leaves the computer.",
+ "ogni {n} minuti": "every {n} minutes",
+ "Contesto: {contesto}": "Context: {contesto}",
+ "Cerco nella Base gli incontri simili…": "Looking for similar meetings in the Base…",
+ "Il modello locale legge gli ultimi minuti…": "The local model is reading the last few minutes…",
+ "Non disponibile con il profilo Leggero (Impostazioni › Uso del computer): il modello rallenterebbe la trascrizione.": "Not available with the Light profile (Settings › Computer usage): the model would slow down the transcription.",
+ "Nella Base non ci sono incontri simili: la scaletta è vuota, ma «Cosa chiedere ora» funziona lo stesso sulla trascrizione.": "There are no similar meetings in the Base: the outline is empty, but «What to ask now» still works on the transcript.",
+ "Dagli incontri simili della Base ({n}). I temi toccati si spuntano da soli.": "From similar meetings in the Base ({n}). Topics already covered are ticked off automatically.",
+ "Domande dal modello locale: niente è uscito da questo computer.": "Questions from the local model: nothing has left this computer.",
+ "Il modello non ha proposto domande: riprova tra qualche minuto.": "The model did not suggest any questions: try again in a few minutes.",
+ "Da verificare: {x}": "To check: {x}",
+ "**Adesso potresti chiedere:**": "**You could ask now:**"
 }

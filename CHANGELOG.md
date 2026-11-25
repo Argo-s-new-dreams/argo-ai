@@ -2,6 +2,11 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261125.2048: Secondo cervello dal vivo, accanto alla trascrizione Live
+- Con il Secondo cervello attivo, nella pagina **Registra** in modalità **Live** compare il pannello **💡 Dal vivo**: la scaletta dagli incontri simili della Base (temi, domande, cose emerse da verificare) per l'azienda e le funzioni scelte in *Con chi stai parlando?*.
+- A ogni blocco trascritto i temi e le domande di cui si è già parlato si **spuntano da soli** (✓), senza modello: in cima restano quelli ancora da fare.
+- **✨ Cosa chiedere ora**: il modello locale legge gli ultimi minuti, già anonimizzati, e propone le due o tre domande da fare adesso. A scelta **ogni 5 minuti** (spento di base, non disponibile con il profilo *Leggero*). Niente esce dal computer.
+
 ## 20261125.2039: foto al loro posto anche nelle relazioni a schede
 - Nelle relazioni a schede (Fiera, Visita cliente, Intervista…) le foto che il modello non collega a nessuna voce non finiscono più tutte in fondo: Argo le mette sotto il **contatto** o l'**azienda** di cui mostrano l'email, il cognome o il nome, altrimenti nel **tema** di cui si stava parlando quando sono state scattate (il modello ora segna il minuto in cui inizia ogni tema).
 - In fondo, in *Foto dell'incontro*, restano solo le foto senza un posto chiaro. Per le relazioni già scritte premi di nuovo **✨ Scrivi relazione**.

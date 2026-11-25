@@ -1020,5 +1020,19 @@
  "Non riesco a creare la relazione unica: {e}": "No puedo crear el informe único: {e}",
  "Forma:": "Forma:",
  "Capitoli e contenuti del documento, uno per riga. Per esempio:\n## 1. Executive summary: …\n## 2. Il processo attuale: …\nLe foto vanno da sole dentro i capitoli dove aiutano a spiegare.": "Capítulos y contenidos del documento, uno por línea. Por ejemplo:\n## 1. Resumen ejecutivo: …\n## 2. El proceso actual: …\nLas fotos van dentro de los capítulos donde ayudan a explicar.",
- "Struttura del documento:": "Estructura del documento:"
+ "Struttura del documento:": "Estructura del documento:",
+ "<b>💡 Dal vivo</b>": "<b>💡 En directo</b>",
+ "✨ Cosa chiedere ora": "✨ Qué preguntar ahora",
+ "Il modello locale legge gli ultimi minuti, anonimi, e propone le domande da fare adesso. Niente esce dal computer.": "El modelo local lee los últimos minutos, anonimizados, y propone las preguntas que hacer ahora. Nada sale del ordenador.",
+ "ogni {n} minuti": "cada {n} minutos",
+ "Contesto: {contesto}": "Contexto: {contesto}",
+ "Cerco nella Base gli incontri simili…": "Busco reuniones similares en la Base…",
+ "Il modello locale legge gli ultimi minuti…": "El modelo local está leyendo los últimos minutos…",
+ "Non disponibile con il profilo Leggero (Impostazioni › Uso del computer): il modello rallenterebbe la trascrizione.": "No disponible con el perfil Ligero (Ajustes › Uso del ordenador): el modelo ralentizaría la transcripción.",
+ "Nella Base non ci sono incontri simili: la scaletta è vuota, ma «Cosa chiedere ora» funziona lo stesso sulla trascrizione.": "No hay reuniones similares en la Base: el guion está vacío, pero «Qué preguntar ahora» funciona igualmente con la transcripción.",
+ "Dagli incontri simili della Base ({n}). I temi toccati si spuntano da soli.": "De reuniones similares de la Base ({n}). Los temas ya tratados se marcan solos.",
+ "Domande dal modello locale: niente è uscito da questo computer.": "Preguntas del modelo local: nada ha salido de este ordenador.",
+ "Il modello non ha proposto domande: riprova tra qualche minuto.": "El modelo no ha propuesto preguntas: vuelve a intentarlo dentro de unos minutos.",
+ "Da verificare: {x}": "Por verificar: {x}",
+ "**Adesso potresti chiedere:**": "**Ahora podrías preguntar:**"
 }
