@@ -2,6 +2,12 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261125.1224: l'iPhone ritrova il computer anche su un'altra rete
+- Il **Ponte** si annuncia in rete locale con **Bonjour** (servizio `_argoponte._tcp`, con l'id del computer): Argo per iPhone dalla 1.1.1 lo ritrova anche quando cambiano rete, indirizzo IP o porta, senza rifare l'abbinamento. Sul Mac usa `dns-sd` di sistema; su Windows serve Bonjour installato (`dns-sd.exe`), altrimenti restano indirizzi e nome `.local`.
+- **Nome .local corretto**: prima poteva contenere il dominio dato dal router (per esempio `Air-di-Luca.fritz.box.local`), che cambia da una rete all'altra e non risponde. Ora sul Mac è il nome locale di sistema (`scutil --get LocalHostName`), altrove la prima parte del nome del computer.
+- Il QR porta anche l'id del computer; `/v1/stato` restituisce indirizzi e porta di adesso, così l'iPhone li aggiorna a ogni sincronizzazione.
+- La sicurezza non cambia: l'iPhone riconosce il computer dall'impronta del certificato e si autentica con il segreto. Non si usa il MAC, che l'iPhone non può leggere e che cambia da una rete all'altra.
+
 ## 20261125.1219: incontri rinominabili anche sul computer
 - **✏️ Rinomina…** negli Incontri (tasto destro sulla riga, doppio clic sul titolo o **F2**): il titolo dell'incontro si cambia anche dall'app per Mac e Windows, non solo dal telefono.
 - Il titolo nuovo vale ovunque: tabella, dettaglio, relazione (anche quelle riscritte dopo), Word, trascrizione scaricata, pagina Clienti e note per Dynamics. Resta anche se il telefono rimanda lo stesso incontro.

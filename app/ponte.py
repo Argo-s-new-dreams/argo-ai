@@ -4,7 +4,12 @@ Come funziona
 - Argo desktop apre un piccolo server HTTPS sulla rete locale (solo mentre Argo è aperto).
 - Il certificato è autofirmato e generato sul computer; l'iPhone lo riconosce per impronta (pinning),
   che riceve dal QR code mostrato durante l'abbinamento: niente terze parti, niente cloud.
-- Abbinamento: il QR contiene indirizzi, porta, impronta del certificato e un codice monouso (5 minuti).
+- Abbinamento: il QR contiene indirizzi, porta, impronta del certificato, id del computer e un codice monouso
+  (5 minuti).
+- Ritrovarsi su un'altra rete: gli indirizzi IP cambiano da una rete all'altra, l'identità no. Argo si annuncia
+  in rete locale con Bonjour (servizio «_argoponte._tcp», con l'id del computer nel record TXT); l'iPhone lo cerca
+  per id quando gli indirizzi salvati non rispondono, e /v1/stato gli dà gli indirizzi aggiornati. La sicurezza
+  resta quella di prima: impronta del certificato e segreto, non l'indirizzo né il MAC.
   L'iPhone lo scambia con un segreto suo; sul computer resta solo l'hash del segreto.
 - Ogni richiesta successiva porta il segreto (Authorization: Bearer). Un iPhone si scollega dal computer.
 
@@ -26,6 +31,8 @@ import secrets
 import shutil
 import socket
 import ssl
+import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -58,7 +65,7 @@ def identita():
     if not s.get("ponte_id"):
         s["ponte_id"] = str(uuid.uuid4())
         core.salva_impostazioni(s)
-    nome = socket.gethostname().replace(".local", "")
+    nome = socket.gethostname().split(".")[0]
     return s["ponte_id"], nome
 
 
@@ -93,8 +100,26 @@ def assicura_certificato():
     return hashlib.sha256(der).hexdigest()
 
 
+SERVIZIO_BONJOUR = "_argoponte._tcp"
+
+
+def nome_mdns():
+    """Il nome .local con cui il computer risponde in rete locale (mDNS), senza il dominio della rete.
+    socket.gethostname() può contenere il dominio dato dal router («Air-di-Luca.fritz.box»), che cambia da una rete
+    all'altra: sul Mac si usa il LocalHostName di sistema, altrove la prima parte del nome."""
+    if sys.platform == "darwin":
+        try:
+            nome = subprocess.run(["scutil", "--get", "LocalHostName"], capture_output=True, text=True,
+                                  timeout=3).stdout.strip()
+            if nome:
+                return nome + ".local"
+        except (OSError, subprocess.SubprocessError):
+            pass
+    return socket.gethostname().split(".")[0] + ".local"
+
+
 def indirizzi_locali():
-    """Indirizzi IPv4 privati di questo computer + nome .local (in ordine di preferenza)."""
+    """Indirizzi IPv4 privati di questo computer (al massimo 3) + nome .local, in ordine di preferenza."""
     trovati = []
     try:
         # Indirizzo usato per uscire in rete (non invia nulla: UDP senza pacchetti)
@@ -115,10 +140,7 @@ def indirizzi_locali():
                 privati.append(ip)
         except ValueError:
             pass
-    nome = socket.gethostname()
-    if not nome.endswith(".local"):
-        nome += ".local"
-    return privati + [nome]
+    return privati[:3] + [nome_mdns()]
 
 
 # ---------------------------------------------------------------- dispositivi abbinati
@@ -278,7 +300,8 @@ class _Gestore(BaseHTTPRequestHandler):
         if self.path == "/v1/stato":
             id_desktop, nome = identita()
             return self._json(200, {"id": id_desktop, "nome": nome, "versione": ponte.versione_app,
-                                    "protocollo": VERSIONE_PROTOCOLLO, "servizi": ["anagrafe", "incontri"]})
+                                    "protocollo": VERSIONE_PROTOCOLLO, "servizi": ["anagrafe", "incontri"],
+                                    "h": indirizzi_locali(), "p": ponte.porta})
         if self.path == "/v1/anagrafe":
             if not core.riconoscimento_attivo():
                 # L'iPhone (dalla 0.6.4) a questa risposta elimina l'anagrafe che aveva scaricato
@@ -354,6 +377,7 @@ class Ponte:
         self._scadenza = 0
         self._blocco = threading.Lock()
         self.porta = None
+        self._bonjour = None
 
     @property
     def attivo(self):
@@ -374,9 +398,37 @@ class Ponte:
         self.porta = self._server.server_address[1]
         self._thread = threading.Thread(target=self._server.serve_forever, name="argo-ponte", daemon=True)
         self._thread.start()
+        self._annuncia()
         return self.porta
 
+    def _annuncia(self):
+        """Annuncio Bonjour del Ponte, perché l'iPhone ritrovi il computer su un'altra rete o con un'altra porta.
+        Mac: dns-sd di sistema. Windows: dns-sd.exe di Bonjour, se c'è; altrimenti restano indirizzi e nome .local."""
+        comando = None
+        if sys.platform == "darwin":
+            comando = "/usr/bin/dns-sd"
+        elif sys.platform.startswith("win"):
+            comando = shutil.which("dns-sd") or next(
+                (str(p) for p in (Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "Bonjour" / "dns-sd.exe",)
+                 if p.exists()), None)
+        if not comando or not Path(comando).exists() and not shutil.which(comando):
+            return
+        id_desktop, nome = identita()
+        try:
+            self._bonjour = subprocess.Popen(
+                [comando, "-R", f"Argo {nome}"[:60], SERVIZIO_BONJOUR, "local", str(self.porta), f"id={id_desktop}"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        except OSError:
+            self._bonjour = None
+
     def ferma(self):
+        if self._bonjour:
+            try:
+                self._bonjour.terminate()
+            except OSError:
+                pass
+            self._bonjour = None
         if self._server:
             self._server.shutdown()
             self._server.server_close()
@@ -407,6 +459,6 @@ class Ponte:
         impronta = base64.urlsafe_b64encode(bytes.fromhex(assicura_certificato())).decode("ascii").rstrip("=")
         dati = {
             "v": VERSIONE_PROTOCOLLO, "n": nome[:40], "p": self.porta,
-            "h": indirizzi_locali()[:4], "f": impronta, "c": self.nuovo_codice(),
+            "h": indirizzi_locali(), "f": impronta, "c": self.nuovo_codice(), "i": _id,
         }
         return "argo-ponte:" + json.dumps(dati, separators=(",", ":"), ensure_ascii=False)

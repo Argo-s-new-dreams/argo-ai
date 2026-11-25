@@ -577,8 +577,9 @@ La pagina **Incontri** raccoglie ciò che registri con **Argo per iPhone** in fi
 1. Premi **📱 Collega iPhone…**: compare un QR valido 5 minuti.
 2. Sull'iPhone: **Argo › Impostazioni › Argo sul computer › Collega** e inquadra il QR.
 3. Da quel momento, quando l'iPhone è sulla stessa rete e Argo è aperto, gli incontri trascritti arrivano da soli; puoi anche tirare giù l'elenco sull'iPhone per sincronizzare o usare **Invia ad Argo** in un incontro.
-4. **iPhone collegati ▾** mostra i dispositivi e l'ultimo contatto; da lì li scolleghi.
-5. **Importa pacchetto…** accetta anche i `.zip` arrivati per AirDrop o mail.
+4. **Su un'altra rete** (ufficio, hotel, hotspot) non serve ricollegare: quando gli indirizzi salvati non rispondono, l'iPhone (dalla 1.1.1) cerca il computer in rete locale con Bonjour, per il suo id, e a ogni sincronizzazione riceve indirizzi e porta aggiornati. Servono Mac e iPhone sulla **stessa rete** e Argo aperto. Su Windows la ricerca Bonjour funziona se è installato Bonjour di Apple; altrimenti l'iPhone prova gli indirizzi e il nome `.local` del computer. Se proprio non si trovano (per esempio una rete ospiti che isola i dispositivi), rifai **📱 Collega iPhone…**: il nuovo QR sostituisce il vecchio abbinamento.
+5. **iPhone collegati ▾** mostra i dispositivi e l'ultimo contatto; da lì li scolleghi.
+6. **Importa pacchetto…** accetta anche i `.zip` arrivati per AirDrop o mail.
 
 Come è protetto il canale: [docs/PONTE.md](PONTE.md).
 
