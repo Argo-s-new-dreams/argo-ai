@@ -2,6 +2,10 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261125.2039: foto al loro posto anche nelle relazioni a schede
+- Nelle relazioni a schede (Fiera, Visita cliente, Intervista…) le foto che il modello non collega a nessuna voce non finiscono più tutte in fondo: Argo le mette sotto il **contatto** o l'**azienda** di cui mostrano l'email, il cognome o il nome, altrimenti nel **tema** di cui si stava parlando quando sono state scattate (il modello ora segna il minuto in cui inizia ogni tema).
+- In fondo, in *Foto dell'incontro*, restano solo le foto senza un posto chiaro. Per le relazioni già scritte premi di nuovo **✨ Scrivi relazione**.
+
 ## 20261125.2023: relazioni come documento di lavoro, con le foto dentro il testo · template «Envision · Frontier Firm»
 - Nuova **forma** dei template: oltre a *Schede (sezioni)*, **Documento con figure**. Il modello scrive un documento di lavoro libero, secondo la **struttura** del template: capitoli numerati, paragrafi pieni, tabelle (schede degli agenti, architettura, roadmap, KPI) e **le foto dentro il testo**, nel punto in cui aiutano a spiegare il contesto, ognuna con la sua didascalia «Figura - …». Le foto non utili non entrano; quelle inesistenti vengono scartate.
 - Nuovo template standard **Envision · Frontier Firm**: copertina, executive summary con North Star e aree prioritarie, processo attuale fase per fase, un capitolo per ogni area critica con la scheda dell'agente AI proposto, architettura concettuale, roadmap a wave con PoC, KPI per il business case, messaggio conclusivo e nota sulla fonte. Le proposte sono scritte come proposte da validare; le cifre solo come dette.

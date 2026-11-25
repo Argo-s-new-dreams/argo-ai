@@ -203,6 +203,7 @@ Le foto sono numerate («FOTO 1», «FOTO 2»…) e verranno inserite nella rela
 nel campo «foto» i numeri delle foto che riguardano proprio quella voce (il biglietto da visita di quel contatto,
 lo stand o il prodotto di quell'azienda, la lavagna o il documento di quel tema). In «foto_didascalie» scrivi, per
 ogni foto, una didascalia breve che dica cosa mostra e a quale momento del discorso si collega.
+In ogni tema metti in «minuto» il minuto («mm:ss») della prima riga del testo in cui se ne parla.
 Le righe «📎 ALLEGATO» sono documenti aggiunti all'incontro (offerte, listini, presentazioni): usali come fonte
 di dati e cita il documento quando ne riprendi cifre o nomi.
 Chi registra è la persona indicata come «Io» (o con il nome dell'utente): non è un contatto.
@@ -238,7 +239,7 @@ SCHEMA = {
         "esigenze": {"type": "array", "items": {"type": "string"}},
         "temi": {"type": "array", "items": {"type": "object", "properties": {
             "tema": {"type": "string"}, "sintesi": {"type": "string"}, "citazione": {"type": "string"},
-            "foto": {"type": "array", "items": {"type": "integer"}}},
+            "minuto": {"type": "string"}, "foto": {"type": "array", "items": {"type": "integer"}}},
             "required": ["tema", "sintesi"]}},
         "decisioni": {"type": "array", "items": {"type": "string"}},
         "punti_aperti": {"type": "array", "items": {"type": "string"}},
@@ -457,6 +458,63 @@ def senza_immagini(md):
     return re.sub(r"\n{3,}", "\n\n", RE_IMMAGINE.sub("", md or ""))
 
 
+def _secondi(minuto):
+    """«mm:ss» o «h:mm:ss» (anche tra parentesi quadre) in secondi; None se non si legge."""
+    m = re.search(r"(\d+):(\d{1,2})(?::(\d{1,2}))?", str(minuto or ""))
+    if not m:
+        return None
+    a, b, c = (int(x) if x else None for x in m.groups())
+    return a * 3600 + b * 60 + c if c is not None else a * 60 + b
+
+
+def _parole(testo):
+    return set(re.findall(r"[\w@.\-]{3,}", (testo or "").lower()))
+
+
+def colloca_foto(r, sessione, sezioni, descrizioni=None):
+    """Aggiunge a contatti, aziende e temi le foto che il modello non ha collegato a nessuna voce.
+    Prima per contenuto (la foto mostra l'email, il cognome o il nome dell'azienda di quella voce), poi per
+    momento (la foto va nel tema di cui si stava parlando quando è stata scattata). Le altre restano in fondo."""
+    descrizioni = descrizioni or {}
+    usate = set()
+    for k in ("contatti", "aziende", "temi"):
+        for v in r.get(k) or []:
+            for n in v.get("foto") or []:
+                try:
+                    usate.add(int(n))
+                except (TypeError, ValueError):
+                    pass
+    didascalie = {}
+    for x in r.get("foto_didascalie") or []:
+        try:
+            didascalie[int(x.get("foto"))] = x.get("didascalia") or ""
+        except (TypeError, ValueError):
+            pass
+    temi = [] if "temi" not in sezioni else sorted(
+        ((_secondi(t.get("minuto")), t) for t in r.get("temi") or [] if _secondi(t.get("minuto")) is not None),
+        key=lambda x: x[0])
+    for n, f in enumerate(sessione.get("foto", []), 1):
+        if n in usate or not f.get("file"):
+            continue
+        parole = _parole(" ".join((f.get("testo") or "", descrizioni.get(f["file"]) or "", didascalie.get(n, ""))))
+        voce = None
+        if "contatti" in sezioni:
+            trovati = [c for c in r.get("contatti") or []
+                       if (c.get("email") and c["email"].lower() in parole)
+                       or (c.get("cognome") and len(c["cognome"]) >= 3 and c["cognome"].lower() in parole)]
+            voce = trovati[0] if len(trovati) == 1 else None
+        if voce is None and "aziende" in sezioni:
+            trovate = [a for a in r.get("aziende") or []
+                       if a.get("nome") and _parole(a["nome"]) and _parole(a["nome"]) <= parole]
+            voce = trovate[0] if len(trovate) == 1 else None
+        if voce is None and temi:
+            quando = float(f.get("secondo") or 0)
+            prima = [t for s, t in temi if s <= quando]
+            voce = prima[-1] if prima else None
+        if voce is not None:
+            voce.setdefault("foto", []).append(n)
+
+
 class _Foto:
     """Le foto dell'incontro per la relazione: ogni foto si inserisce una volta sola, accanto alla voce che la
     riguarda; quelle non collegate a nessuna voce finiscono in fondo, in ordine di scatto."""
@@ -568,6 +626,9 @@ def in_markdown(r, sessione, meta=None):
     out = [f"# {r.get('titolo') or sessione.get('titolo', 'Incontro')}", ""]
     quando = (sessione.get("creata") or "")[:16].replace("T", " ")
     out += [f"*{_riga(r.get('tipo', '').capitalize(), quando, 'durata ' + _durata(sessione.get('durata')))}*", ""]
+    descrizioni = {k: (v or {}).get("descrizione", "") for k, v in (meta.get("foto") or {}).items()}
+    r = json.loads(json.dumps(r))  # copia: le foto collocate qui non cambiano i dati salvati
+    colloca_foto(r, sessione, sezioni, descrizioni)
     foto = _Foto(r, sessione)
     for k in sezioni:
         corpo = SCRITTORI[k](r, foto)
