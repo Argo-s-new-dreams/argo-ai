@@ -1017,5 +1017,8 @@
  "Fa parte del gruppo: la relazione è sul primo incontro": "Part of the group: the report is on the first meeting",
  "Porto queste {n} trascrizioni negli Incontri, le unisco in un gruppo e scrivo una sola relazione sulla loro somma:\n\n{elenco}\n\nLa relazione va sulla più vecchia, che diventa il capogruppo. Le trascrizioni qui restano come sono.": "I'll bring these {n} transcripts into Meetings, put them in a group and write one report on all of them together:\n\n{elenco}\n\nThe report goes on the earliest, which becomes the group lead. The transcripts here stay as they are.",
  "🧩 Relazione unica di {n} trascrizioni…": "🧩 Single report for {n} transcripts…",
- "Non riesco a creare la relazione unica: {e}": "I can't create the single report: {e}"
+ "Non riesco a creare la relazione unica: {e}": "I can't create the single report: {e}",
+ "Forma:": "Form:",
+ "Capitoli e contenuti del documento, uno per riga. Per esempio:\n## 1. Executive summary: …\n## 2. Il processo attuale: …\nLe foto vanno da sole dentro i capitoli dove aiutano a spiegare.": "Chapters and content of the document, one per line. For example:\n## 1. Executive summary: …\n## 2. The current process: …\nPhotos go inside the chapters where they help explain.",
+ "Struttura del documento:": "Document structure:"
 }

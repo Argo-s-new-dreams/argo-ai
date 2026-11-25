@@ -240,6 +240,16 @@ class EditorTemplate(QWidget):
         for k, (nome, _guida) in tpl.LUNGHEZZE.items():
             self.c_lunghezza.addItem(nome, k)
         f.addRow(tr('Lunghezza:'), self.c_lunghezza)
+        self.c_forma = QComboBox()
+        for k, (nome, aiuto) in tpl.FORME.items():
+            self.c_forma.addItem(nome, k)
+            self.c_forma.setItemData(self.c_forma.count() - 1, aiuto, Qt.ToolTipRole)
+        self.c_forma.currentIndexChanged.connect(self._forma_cambiata)
+        f.addRow(tr('Forma:'), self.c_forma)
+        self.e_struttura = QPlainTextEdit()
+        self.e_struttura.setPlaceholderText(tr("Capitoli e contenuti del documento, uno per riga. Per esempio:\n## 1. Executive summary: …\n## 2. Il processo attuale: …\nLe foto vanno da sole dentro i capitoli dove aiutano a spiegare."))
+        self.e_struttura.setMinimumHeight(160)
+        f.addRow(tr('Struttura del documento:'), self.e_struttura)
         self.l_sezioni = QListWidget()
         self.l_sezioni.setDragDropMode(QAbstractItemView.InternalMove)
         self.l_sezioni.setToolTip(tr("Spunta le sezioni da mostrare e trascinale per cambiare l'ordine"))
@@ -309,8 +319,13 @@ class EditorTemplate(QWidget):
             it.setCheckState(Qt.Checked if k in t["sezioni"] else Qt.Unchecked)
             self.l_sezioni.addItem(it)
         self.e_istruzioni.setPlainText(t.get("istruzioni", ""))
-        for w in (self.e_nome, self.e_descrizione, self.e_istruzioni):
+        self.c_forma.blockSignals(True)
+        self.c_forma.setCurrentIndex(max(0, self.c_forma.findData(t.get("forma", "schede"))))
+        self.c_forma.blockSignals(False)
+        self.e_struttura.setPlainText(t.get("struttura", ""))
+        for w in (self.e_nome, self.e_descrizione, self.e_istruzioni, self.e_struttura):
             w.setReadOnly(standard)
+        self.c_forma.setEnabled(not standard)
         self.c_lunghezza.setEnabled(not standard)
         self.l_sezioni.setEnabled(True)
         self.l_sezioni.setDragDropMode(QAbstractItemView.NoDragDrop if standard else QAbstractItemView.InternalMove)
@@ -324,17 +339,24 @@ class EditorTemplate(QWidget):
         self.l_nota.setText(tr('🔒 Template standard di Argo: per cambiarlo premi «Duplica» e modifica la copia.')
                             if standard else tr('✎ Template tuo: modificalo e premi «Salva template».'))
         self.l_esito.setText("")
+        self._forma_cambiata()
+
+    def _forma_cambiata(self, _i=None):
+        documento = self.c_forma.currentData() == "documento"
+        self.e_struttura.setEnabled(documento)
+        self.l_sezioni.setEnabled(not documento)
 
     def _dal_modulo(self):
         sezioni = [self.l_sezioni.item(i).data(Qt.UserRole) for i in range(self.l_sezioni.count())
                    if self.l_sezioni.item(i).checkState() == Qt.Checked]
         return {"id": self._id_corrente(), "nome": self.e_nome.text(), "descrizione": self.e_descrizione.text(),
                 "lunghezza": self.c_lunghezza.currentData(), "sezioni": sezioni,
-                "istruzioni": self.e_istruzioni.toPlainText()}
+                "istruzioni": self.e_istruzioni.toPlainText(), "forma": self.c_forma.currentData(),
+                "struttura": self.e_struttura.toPlainText()}
 
     def salva(self):
         dati = self._dal_modulo()
-        if not dati["sezioni"]:
+        if not dati["sezioni"] and dati["forma"] != "documento":
             QMessageBox.information(self, tr('Nessuna sezione'), tr('Spunta almeno una sezione.'))
             return
         t = tpl.salva(dati)

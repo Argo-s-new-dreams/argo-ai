@@ -263,6 +263,62 @@ def _blocchi(testo, massimo):
     return blocchi
 
 
+ISTRUZIONI_DOCUMENTO = """Sei il consulente che scrive un documento di lavoro a partire dalla trascrizione di uno o più
+incontri (fiera, visita, intervista, analisi dei processi). Scrivi in italiano, in Markdown.
+
+TIPO DI DOCUMENTO: {nome}. {descrizione}
+
+STRUTTURA RICHIESTA (seguila, adattando i capitoli a ciò che è emerso davvero):
+{struttura}
+
+FORMA:
+- Titoli Markdown: «# » solo per il titolo in copertina, «## » per i capitoli numerati, «### » per i sottocapitoli.
+- Paragrafi pieni e concreti, elenchi puntati dove servono, tabelle Markdown (con la riga | --- |) per confronti,
+  schede degli agenti, architettura, roadmap e KPI. {lunghezza}
+- FOTO: nel testo ci sono righe «📷 FOTO n» con il momento in cui la foto è stata scattata e cosa mostra. Inserisci
+  le foto DENTRO il testo, nel punto in cui aiutano a spiegare il contesto (la schermata del gestionale nel capitolo
+  sul caricamento, il documento cartaceo nel capitolo sui documenti…), ognuna su una riga a sé con questa forma
+  esatta: [[FOTO n | didascalia]] — la didascalia dice in poche parole cosa si vede («Ordine di trasporto ricevuto in
+  formato PDF»). Ogni foto al massimo una volta; scegli quelle utili, non serve usarle tutte; mai numeri di foto che
+  non esistono; non descrivere dettagli che la descrizione della foto non riporta.
+
+FEDELTÀ:
+- Solo fatti presenti nella trascrizione e nelle descrizioni delle foto: niente nomi, cifre, strumenti o fatti inventati.
+- Cifre e tempi come sono stati detti; ciò che è una tua proposta (agenti, architettura, roadmap, target dei KPI)
+  scrivilo come proposta da validare.
+- I parlanti senza nome («Parlante 2») restano così oppure si indicano per ruolo se il ruolo è chiaro.
+{regole}
+{indicazioni}
+Rispondi SOLO con il documento in Markdown, senza premesse e senza blocchi di codice."""
+
+APPUNTI_DOCUMENTO = ("Scrivi appunti fedeli e DETTAGLIATI di questa parte, che serviranno a un documento di lavoro: "
+                     "fasi del processo nell'ordine in cui sono state spiegate, strumenti e sistemi usati, passaggi "
+                     "manuali, tempi, volumi e cifre come detti, problemi e attriti, esempi concreti, decisioni e idee "
+                     "di miglioramento. Per ogni riga FOTO conserva numero, momento e cosa mostra (per esempio «FOTO 7, "
+                     "12:40: schermata del gestionale con l'elenco delle spedizioni») e accanto il passaggio del "
+                     "discorso a cui si riferisce.")
+
+RE_SEGNAPOSTO_FOTO = re.compile(r"\[\[\s*FOTO\s+(\d+)\s*(?:\|\s*([^\]]*?))?\s*\]\]", re.I)
+
+
+def inserisci_foto(md, sessione):
+    """[[FOTO n | didascalia]] → immagine con «Figura - didascalia» sotto. Foto inesistenti o già usate: tolte."""
+    foto = {n: f for n, f in enumerate(sessione.get("foto", []), 1) if f.get("file")}
+    usate = set()
+
+    def sostituisci(m):
+        n = int(m.group(1))
+        if n not in foto or n in usate:
+            return ""
+        usate.add(n)
+        didascalia = (m.group(2) or "").strip().strip("«»\"") or f"Foto {n}"
+        alt = f"Figura - {didascalia}".replace("[", "(").replace("]", ")")
+        return f"\n\n![{alt}](<{foto[n]['file']}>)\n\n"
+
+    testo = RE_SEGNAPOSTO_FOTO.sub(sostituisci, md)
+    return re.sub(r"\n{3,}", "\n\n", testo).strip() + "\n", sorted(usate)
+
+
 def modelli_previsti(modello_testo, modello_vision=None, attrezzo="incontri"):
     """I modelli che userà scrivi_relazione con le Impostazioni di adesso: (testo, foto), come etichette."""
     m_testo = cloud.motore(attrezzo)
@@ -299,7 +355,7 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
     da_guardare = len(foto_da_descrivere(cartella, sessione, modello_vision)) if modello_vision else 0
     testo_stimato = cronologia(cartella, sessione)
     stima_blocchi = len(_blocchi(testo_stimato, CARATTERI_PER_BLOCCO)) if len(testo_stimato) > CARATTERI_PER_BLOCCO else 0
-    totale = da_guardare + stima_blocchi + 3
+    totale = da_guardare + stima_blocchi + 3 + (2 if tpl.e_documento(template) else 0)
     fatto = {"n": 0}
 
     def passo(unita=1):
@@ -323,9 +379,11 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
             stato(f"Prendo appunti · parte {i} di {len(blocchi)}…")
             appunti.append(_chiama(url, modello_testo, [
                 {"role": "system", "content": istruzioni},
-                {"role": "user", "content": "Scrivi appunti fedeli e sintetici di questa parte (chi è chi, aziende, "
-                                            "prodotti, richieste, cifre, decisioni, azioni). Conserva il numero, i nomi e "
-                                            "i recapiti delle righe FOTO (per esempio «FOTO 2: biglietto di …»).\n\n" + b}], stop=stop, motore=m_testo))
+                {"role": "user", "content": (APPUNTI_DOCUMENTO if tpl.e_documento(template) else
+                                             "Scrivi appunti fedeli e sintetici di questa parte (chi è chi, aziende, "
+                                             "prodotti, richieste, cifre, decisioni, azioni). Conserva il numero, i nomi e "
+                                             "i recapiti delle righe FOTO (per esempio «FOTO 2: biglietto di …»).") + "\n\n" + b}],
+                                     stop=stop, motore=m_testo))
             passo()
         testo = "\n\n".join(appunti)
         giro += 1
@@ -337,6 +395,22 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
                     + (f"Relazione unica di {len(sessione['gruppo'])} incontri, separati dalle righe «=== Incontro k di n ===»: "
                        "scrivi una sola relazione che li tiene insieme, senza ripetere, e indica quando un'informazione "
                        "riguarda un incontro preciso.\n" if sessione.get("gruppo") else "") + "\n")
+    documento, foto_usate = None, []
+    if tpl.e_documento(template):
+        sistema = ISTRUZIONI_DOCUMENTO.format(
+            nome=template["nome"], descrizione=template.get("descrizione", ""),
+            struttura=template.get("struttura") or "Capitoli numerati secondo i temi emersi, nell'ordine del discorso.",
+            lunghezza=tpl.LUNGHEZZE[template.get("lunghezza", "dettagliata")][1], regole=etica.REGOLE,
+            indicazioni=("INDICAZIONI DELL'UTENTE (hanno la precedenza sullo stile, mai sulla fedeltà):\n"
+                         + template["istruzioni"]) if template.get("istruzioni") else "")
+        risposta_doc = _chiama(url, modello_testo, [
+            {"role": "system", "content": sistema},
+            {"role": "user", "content": intestazione + testo}], contesto=32768, stop=stop, motore=m_testo)
+        risposta_doc = re.sub(r"^```(?:markdown|md)?\s*|\s*```$", "", risposta_doc.strip())
+        documento, foto_usate = inserisci_foto(etica.pulisci(risposta_doc), sessione)
+        passo()
+        stato(f"Estraggo contatti, aziende e azioni per CRM e Clienti con {modello_testo}…")
+        istruzioni = ISTRUZIONI + "\n\n" + tpl.guida(dict(template, sezioni=["riassunto", "azioni"], lunghezza="breve"))
     risposta = _chiama(url, modello_testo, [
         {"role": "system", "content": istruzioni},
         {"role": "user", "content": intestazione + testo}], formato=SCHEMA, stop=stop, motore=m_testo)
@@ -354,10 +428,18 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
         "modello_testo": modello_testo,
         "modello_vision": modello_vision or None,
         "generata": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "template": {"id": template["id"], "nome": template["nome"], "sezioni": template["sezioni"]},
+        "template": {"id": template["id"], "nome": template["nome"], "sezioni": template["sezioni"],
+                     "forma": template.get("forma", "schede")},
     })
+    if documento is not None:
+        dati["foto_nel_documento"] = foto_usate
     _salva(cartella, dati)
-    md = in_markdown(relazione, sessione, dati)
+    if documento is not None:
+        md = documento
+        if dati.get("titolo_utente") and not md.lstrip().startswith("# ") and "\n# " not in md:
+            md = f"# {dati['titolo_utente']}\n\n" + md
+    else:
+        md = in_markdown(relazione, sessione, dati)
     (cartella / FILE_TESTO).write_text(md, encoding="utf-8")
     avanzamento(100)
     return relazione, md

@@ -1,7 +1,9 @@
 """template_relazione.py - come deve essere fatta la relazione di un incontro.
 
 Un template dice:
-    - quali sezioni mostrare e in che ordine (scelte dal catalogo SEZIONI);
+    - la forma: «schede» (sezioni fisse dal catalogo SEZIONI) oppure «documento» (un documento di lavoro libero,
+      con capitoli, tabelle e le foto dentro il testo dove aiutano a spiegare, secondo la «struttura» del template);
+    - quali sezioni mostrare e in che ordine (scelte dal catalogo SEZIONI, forma «schede»);
     - quanto lunga (breve, media, dettagliata);
     - le indicazioni libere dell'utente («come la voglio»: taglio, tono, a chi è rivolta, cosa evidenziare).
 
@@ -33,6 +35,21 @@ SEZIONI = {
     "azioni": ("Azioni", "cose da fare, con responsabile e scadenza se dette"),
 }
 SEMPRE_ESTRATTE = ("contatti", "aziende", "azioni")  # per CRM e Clienti, anche se non mostrate
+FORME = {
+    "schede": ("Schede (sezioni)", "Relazione a sezioni fisse: riassunto, temi, esigenze, azioni…"),
+    "documento": ("Documento con figure", "Documento di lavoro libero, con capitoli, tabelle e le foto dentro il testo"),
+}
+
+STRUTTURA_ENVISION = """Copertina: una riga in maiuscolo «ENVISION FRONTIER FIRM»; poi «# <nome del cliente>»; una riga di sottotitolo che sintetizza la trasformazione («Da … a …»); la foto più rappresentativa; la riga «Riepilogo strategico basato sugli incontri del <date>»; la riga «Documento di lavoro per workshop Envision».
+## 1. Executive summary: perché non basta automatizzare un singolo passaggio; la North Star in grassetto (una frase); 3-5 direzioni principali in elenco puntato; poi «### Le aree prioritarie» con una tabella Area | Problema osservato | Direzione Frontier Firm.
+## 2. Il processo attuale: la catena end-to-end in una riga con le frecce (FASE → FASE → …); poi un sottocapitolo per ogni fase osservata (### 2.1, ### 2.2…) con cosa succede oggi, strumenti usati, passaggi manuali e punti di attrito, e le foto che lo mostrano.
+## Dal 3 in poi: un capitolo per ogni area critica emersa, nell'ordine del processo: cosa succede, le foto che lo spiegano, perché conta (tempi, errori, costi, volumi citati) e la scheda dell'agente proposto come tabella a due colonne con intestazione «Agent N - Nome dell'agente» e righe Cosa fa | Input | Output | Human in the loop | Beneficio atteso. Dove aiuta, un «### Esempio di trasformazione» in tabella (Prima | Dopo).
+## Architettura concettuale Frontier Firm: tabella Livello | Componenti candidate | Funzione (persone, agenti, dati e documenti, sistemi esistenti, canali); una nota sui vincoli da verificare; «### Principi di progettazione» in elenco.
+## Roadmap proposta: tabella Wave | Ambito | Output | Orizzonte indicativo | KPI principale; poi «### PoC consigliato» con il caso, cosa serve e come si decide go/no-go.
+## KPI per il business case: tabella KPI | Baseline da misurare | Target iniziale indicativo; poi «### Criteri di successo» in elenco.
+## Messaggio conclusivo: due frasi da citare, tra virgolette; il prossimo passo consigliato.
+### Nota sulla fonte: documento elaborato dalla trascrizione automatica degli incontri del <date>, fatta con Argo in locale; nomi dei parlanti e testo possono contenere errori; le immagini sono foto scattate durante gli incontri, collegate al momento del discorso."""
+
 LUNGHEZZE = {
     "breve": ("Breve", "Sii molto sintetico: riassunto di 3-5 righe, elenchi di poche voci, solo l'essenziale."),
     "media": ("Media", "Lunghezza media: riassunto di un paragrafo, elenchi completi ma senza ripetizioni."),
@@ -81,6 +98,18 @@ STANDARD = [
         "lunghezza": "breve",
         "istruzioni": "Scrivi come una nota da incollare nel CRM: frasi brevi, niente premesse.",
     },
+    {
+        "id": "envision", "nome": "Envision · Frontier Firm", "standard": True, "forma": "documento",
+        "descrizione": "Documento di lavoro per un workshop Envision: processo attuale, aree critiche, agenti AI proposti, "
+                       "architettura, roadmap e KPI, con le foto dentro il testo.",
+        "sezioni": ["riassunto", "temi", "esigenze", "azioni"],
+        "lunghezza": "dettagliata",
+        "struttura": STRUTTURA_ENVISION,
+        "istruzioni": "Scrivi per il management del cliente e per il team che progetterà la soluzione: tono da "
+                      "consulente, concreto, senza enfasi. Parti sempre da ciò che è stato visto e detto negli "
+                      "incontri; le proposte (agenti, architettura, roadmap, KPI) presentale come proposte da "
+                      "validare nel workshop. Le cifre solo come sono state dette; i target sono indicativi.",
+    },
 ]
 PREDEFINITO = "fiera"
 
@@ -118,6 +147,8 @@ def _pulisci(t):
         "sezioni": list(dict.fromkeys(sezioni)),
         "lunghezza": t.get("lunghezza") if t.get("lunghezza") in LUNGHEZZE else "media",
         "istruzioni": (t.get("istruzioni") or "").strip()[:3000],
+        "forma": t.get("forma") if t.get("forma") in FORME else "schede",
+        "struttura": (t.get("struttura") or "").strip()[:6000],
     }
 
 
@@ -151,6 +182,10 @@ def elimina(id_template):
 
 
 # ---------------------------------------------------------------- per il modello
+def e_documento(template):
+    return (template or {}).get("forma") == "documento"
+
+
 def guida(template):
     """Indicazioni da aggiungere alle istruzioni del modello."""
     t = template or trova(PREDEFINITO)

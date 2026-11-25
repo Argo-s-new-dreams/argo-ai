@@ -1017,5 +1017,8 @@
  "Fa parte del gruppo: la relazione è sul primo incontro": "Teil der Gruppe: der Bericht ist beim ersten Termin",
  "Porto queste {n} trascrizioni negli Incontri, le unisco in un gruppo e scrivo una sola relazione sulla loro somma:\n\n{elenco}\n\nLa relazione va sulla più vecchia, che diventa il capogruppo. Le trascrizioni qui restano come sono.": "Ich übernehme diese {n} Transkripte in Termine, fasse sie zu einer Gruppe zusammen und schreibe einen einzigen Bericht über alle zusammen:\n\n{elenco}\n\nDer Bericht kommt zum frühesten, der zum Gruppenleiter wird. Die Transkripte hier bleiben unverändert.",
  "🧩 Relazione unica di {n} trascrizioni…": "🧩 Gemeinsamer Bericht für {n} Transkripte…",
- "Non riesco a creare la relazione unica: {e}": "Der gemeinsame Bericht lässt sich nicht erstellen: {e}"
+ "Non riesco a creare la relazione unica: {e}": "Der gemeinsame Bericht lässt sich nicht erstellen: {e}",
+ "Forma:": "Form:",
+ "Capitoli e contenuti del documento, uno per riga. Per esempio:\n## 1. Executive summary: …\n## 2. Il processo attuale: …\nLe foto vanno da sole dentro i capitoli dove aiutano a spiegare.": "Kapitel und Inhalte des Dokuments, eines pro Zeile. Zum Beispiel:\n## 1. Executive Summary: …\n## 2. Der aktuelle Prozess: …\nFotos kommen in die Kapitel, wo sie beim Erklären helfen.",
+ "Struttura del documento:": "Aufbau des Dokuments:"
 }

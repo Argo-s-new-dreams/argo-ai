@@ -618,6 +618,18 @@ Tasto destro sulla riga › **✏️ Rinomina…** (oppure doppio clic sul titol
 4. Correggi il testo se serve e premi **Salva modifiche** (le righe `![…](…)` sono le foto: puoi spostarle o toglierle); **Salva ▾** la esporta in Word, con le foto ridotte a 12 × 10 cm al massimo, o in Markdown, con il percorso completo delle foto. Nelle note per Dynamics, nella pagina Clienti e nel Secondo cervello la relazione va senza foto.
 5. La scheda **Trascrizione e foto** mostra la cronologia completa, con la bozza fatta sull'iPhone. **⬇️ Scarica trascrizione** in Word inserisce ogni foto **nel punto esatto in cui è stata scattata**: se la foto è stata fatta a metà di una frase, la frase viene divisa lì e riprende dopo la foto con l'orario. Sotto la foto: numero, orario e testo letto. Nel WebVTT, che non può contenere immagini, ogni foto è una nota (`NOTE Foto 2 scattata a 00:12:34`) nello stesso punto.
 
+**Relazione come documento di lavoro (template «Envision · Frontier Firm»)**
+
+Per un workshop o un assessment serve spesso un **documento di lavoro**, non una scheda: capitoli, tabelle e le foto dentro il testo. Scegli il template **Envision · Frontier Firm** (o un template tuo con forma *Documento con figure*) e premi **✨ Scrivi relazione**:
+
+- il documento segue la struttura del template: copertina, executive summary con North Star e aree prioritarie, processo attuale fase per fase, un capitolo per ogni area critica con la scheda dell'agente AI proposto, architettura, roadmap con PoC, KPI, messaggio conclusivo e nota sulla fonte;
+- **le foto entrano nel testo** nel punto in cui spiegano il contesto (la schermata del gestionale nel capitolo sul caricamento, il documento cartaceo in quello sui documenti), con la didascalia «Figura - …». Le foto che non servono restano fuori;
+- per farlo bene il modello deve sapere cosa mostra ogni foto: scegli un **modello per le foto** (in alto, «Foto:»);
+- le proposte sono scritte come proposte da validare, le cifre solo come dette. Rileggilo comunque prima di consegnarlo;
+- con la **relazione unica** (vedi sotto) il documento tiene insieme più incontri, come due giornate di assessment dallo stesso cliente.
+
+In *Impostazioni › Relazioni* la **Forma** di un template può essere *Schede (sezioni)* o *Documento con figure*; per i documenti la **Struttura del documento** dice i capitoli e cosa mettere in ciascuno. Duplica il template Envision per farne versioni tue.
+
 **Relazione unica di più incontri**
 
 Quando un discorso è diviso in più incontri (due giorni di fiera con lo stesso cliente, una visita in più tappe, una serie di interviste), puoi averne **una sola relazione**:

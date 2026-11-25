@@ -1017,5 +1017,8 @@
  "Fa parte del gruppo: la relazione è sul primo incontro": "Forma parte del grupo: el informe está en la primera reunión",
  "Porto queste {n} trascrizioni negli Incontri, le unisco in un gruppo e scrivo una sola relazione sulla loro somma:\n\n{elenco}\n\nLa relazione va sulla più vecchia, che diventa il capogruppo. Le trascrizioni qui restano come sono.": "Llevo estas {n} transcripciones a Reuniones, las uno en un grupo y escribo un solo informe sobre su suma:\n\n{elenco}\n\nEl informe va en la más antigua, que pasa a encabezar el grupo. Las transcripciones de aquí quedan como están.",
  "🧩 Relazione unica di {n} trascrizioni…": "🧩 Informe único de {n} transcripciones…",
- "Non riesco a creare la relazione unica: {e}": "No puedo crear el informe único: {e}"
+ "Non riesco a creare la relazione unica: {e}": "No puedo crear el informe único: {e}",
+ "Forma:": "Forma:",
+ "Capitoli e contenuti del documento, uno per riga. Per esempio:\n## 1. Executive summary: …\n## 2. Il processo attuale: …\nLe foto vanno da sole dentro i capitoli dove aiutano a spiegare.": "Capítulos y contenidos del documento, uno por línea. Por ejemplo:\n## 1. Resumen ejecutivo: …\n## 2. El proceso actual: …\nLas fotos van dentro de los capítulos donde ayudan a explicar.",
+ "Struttura del documento:": "Estructura del documento:"
 }
