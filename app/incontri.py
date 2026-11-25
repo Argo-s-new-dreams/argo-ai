@@ -430,8 +430,9 @@ class DialogoAbbina(QDialog):
 
 
 class SchedaIncontri(QWidget):
-    COLONNE = ["Incontro", "Data", "Durata", "Foto", "Persone", "CRM", "Modello", "Stato", "Avanzamento"]
-    COL_TITOLO, COL_DATA, COL_DURATA, COL_FOTO, COL_PERSONE, COL_CRM, COL_MODELLO, COL_STATO, COL_AVANZ = range(9)
+    COLONNE = ["Incontro", "Data", "Durata", "Foto", "Persone", "CRM", "Template", "Modello", "Stato", "Avanzamento"]
+    (COL_TITOLO, COL_DATA, COL_DURATA, COL_FOTO, COL_PERSONE, COL_CRM, COL_TEMPLATE, COL_MODELLO, COL_STATO,
+     COL_AVANZ) = range(10)
 
     def __init__(self, finestra, versione):
         super().__init__()
@@ -511,6 +512,7 @@ class SchedaIncontri(QWidget):
         self.c_template.setSizeAdjustPolicy(QComboBox.AdjustToContents)
         self.c_template.setToolTip(tr('Come scrivere la relazione: sezioni, lunghezza e indicazioni. Si creano e si modificano in Impostazioni › Relazioni.'))
         comandi.addWidget(self.c_template)
+        self.c_template.currentIndexChanged.connect(lambda _i: [self._aggiorna_riga(r) for r in range(len(getattr(self, '_incontri', [])))])
         self.carica_template()
         comandi.addSpacing(12)
         self.l_foto = QLabel(tr('Foto:'))
@@ -530,7 +532,7 @@ class SchedaIncontri(QWidget):
         h = self.tabella.horizontalHeader()
         h.setSectionResizeMode(self.COL_TITOLO, QHeaderView.Stretch)
         for col, larghezza in ((self.COL_DATA, 130), (self.COL_DURATA, 70), (self.COL_FOTO, 50),
-                               (self.COL_PERSONE, 70), (self.COL_CRM, 50), (self.COL_MODELLO, 150),
+                               (self.COL_PERSONE, 70), (self.COL_CRM, 50), (self.COL_TEMPLATE, 150), (self.COL_MODELLO, 150),
                                (self.COL_STATO, 190), (self.COL_AVANZ, 110)):
             self.tabella.setColumnWidth(col, larghezza)
         self.tabella.verticalHeader().setVisible(False)
@@ -939,12 +941,32 @@ class SchedaIncontri(QWidget):
         it.setForeground(QColor({"Pronta": c["ok"], "In corso": c["accento"], "Errore": c["err"],
                                  "Interrotta": c["warn"]}.get(st["stato"], c["tenue"])))
         self.tabella.setItem(r, self.COL_STATO, it)
+        self.tabella.setItem(r, self.COL_TEMPLATE, self._cella_template(cartella, st))
         self.tabella.setItem(r, self.COL_MODELLO, self._cella_modello(cartella, st))
         box = self.tabella.cellWidget(r, self.COL_AVANZ)
         pb = getattr(box, "pb", None)
         if pb:
             pb.setValue(int(st.get("progresso", 0)))
             pb.setVisible(st["stato"] == "In corso")
+
+    def _cella_template(self, cartella, st):
+        """Con quale template è stata scritta la relazione; per quelle in coda o in corso, quello scelto."""
+        c = tema.colori()
+        if st["stato"] in ("In coda", "In corso"):
+            t = tpl.trova(st.get("template") or self.c_template.currentData()) or {}
+            nome = t.get("nome", "")
+            it = QTableWidgetItem(("→ " if st["stato"] == "In coda" else "") + (nome or "predefinito"))
+            it.setToolTip(("Template che verrà usato" if st["stato"] == "In coda" else "Template in uso") + f": {nome or 'il predefinito'}")
+            it.setForeground(QColor(c["accento"] if st["stato"] == "In corso" else c["tenue"]))
+            return it
+        meta = rel.carica(cartella) if (cartella / rel.FILE_TESTO).exists() else {}
+        nome = (meta.get("template") or {}).get("nome", "") if isinstance(meta.get("template"), dict) else ""
+        it = QTableWidgetItem(nome or "–")
+        if nome:
+            it.setToolTip(f"Relazione scritta con il template «{nome}»")
+        else:
+            it.setTextAlignment(Qt.AlignCenter)
+        return it
 
     def _cella_modello(self, cartella, st):
         """Con quale modello è stata scritta la relazione; per quelle in coda, quello che verrà usato adesso."""

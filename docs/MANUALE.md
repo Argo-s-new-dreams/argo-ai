@@ -604,7 +604,7 @@ Seleziona l'incontro e premi **📎 Aggiungi file…** (anche dal menu con il ta
 
 Foto e documenti vengono legati alla fine dell'incontro. Dopo aver aggiunto file, premi di nuovo **✨ Scrivi relazione** per aggiornarla.
 
-**La colonna Modello** dice con quale modello è stata scritta ogni relazione (passando il mouse: anche il modello per le foto e la data). Per le relazioni in coda mostra, con «→», il modello che verrà usato con le Impostazioni di adesso; per quella in corso, il modello al lavoro.
+**Le colonne Template e Modello** dicono con quale template e con quale modello è stata scritta ogni relazione (passando il mouse: anche il modello per le foto e la data). Per le relazioni in coda mostrano, con «→», il template e il modello che verranno usati con le scelte di adesso; per quella in corso, quelli al lavoro.
 
 **Rinominare un incontro**
 

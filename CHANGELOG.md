@@ -2,6 +2,9 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261125.1512: colonna «Template» negli Incontri
+- Nuova colonna **Template** accanto a *Modello*: il template con cui è stata scritta la relazione; per quelle in coda, con «→», quello che verrà usato; per quella in corso, quello al lavoro. Si aggiorna se cambi il template scelto in alto.
+
 ## 20261125.1506: colonna «Modello» negli Incontri
 - Nuova colonna **Modello** nella tabella degli Incontri: il modello con cui è stata scritta la relazione (passando il mouse: anche il modello per le foto e la data).
 - Per le relazioni **in coda** mostra, con «→», il modello che verrà usato con le Impostazioni di adesso (anche un modello cloud, se l'hai scelto per gli Incontri); per quella **in corso**, il modello al lavoro.
