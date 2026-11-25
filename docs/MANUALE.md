@@ -603,6 +603,10 @@ Seleziona l'incontro e premi **📎 Aggiungi file…** (anche dal menu con il ta
 
 Foto e documenti vengono legati alla fine dell'incontro. Dopo aver aggiunto file, premi di nuovo **✨ Scrivi relazione** per aggiornarla.
 
+**Rinominare un incontro**
+
+Tasto destro sulla riga › **✏️ Rinomina…** (oppure doppio clic sul titolo, o **F2**). Il titolo nuovo vale per la tabella, la relazione (anche quelle scritte dopo), il Word, la trascrizione scaricata e le note per Dynamics. Resta anche se il telefono rimanda lo stesso incontro. Sul telefono invece resta il titolo che aveva: il Ponte porta gli incontri dal telefono al computer, non al contrario.
+
 **Relazione dell'incontro**
 
 1. Seleziona uno o più incontri nella tabella (con ⌘ o ⇧ per sceglierne più d'uno), il **Template:** della relazione (vedi [§11.4ter](#114ter-relazioni--template)) e, in **Foto:**, un modello vision di Ollama (es. `gemma3:12b`, `qwen2.5vl:7b`) oppure «Solo testo letto dall'iPhone». Ogni incontro in coda tiene il template scelto quando l'hai messo in coda.

@@ -998,5 +998,10 @@
  "Scegli prima l'azienda o almeno una funzione.": "Elige primero la empresa o al menos una función.",
  "**Dagli incontri simili della Base ({n})**": "**De reuniones similares de la Base ({n})**",
  "non indicato": "no indicado",
- "contesto non indicato": "contexto no indicado"
+ "contesto non indicato": "contexto no indicado",
+ "Rinomina incontro": "Cambiar nombre de la reunión",
+ "Titolo dell'incontro:": "Título de la reunión:",
+ "Incontro rinominato in «{nuovo}».": "Reunión renombrada como «{nuovo}».",
+ "✏️ Rinomina…": "✏️ Cambiar nombre…",
+ "Non riesco a rinominare: {e}": "No puedo cambiar el nombre: {e}"
 }

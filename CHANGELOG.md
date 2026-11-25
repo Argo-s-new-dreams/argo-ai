@@ -2,6 +2,11 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261125.1219: incontri rinominabili anche sul computer
+- **✏️ Rinomina…** negli Incontri (tasto destro sulla riga, doppio clic sul titolo o **F2**): il titolo dell'incontro si cambia anche dall'app per Mac e Windows, non solo dal telefono.
+- Il titolo nuovo vale ovunque: tabella, dettaglio, relazione (anche quelle riscritte dopo), Word, trascrizione scaricata, pagina Clienti e note per Dynamics. Resta anche se il telefono rimanda lo stesso incontro.
+- Sul telefono resta il titolo di prima: il Ponte porta gli incontri dal telefono al computer, non al contrario.
+
 ## 20261125.1205: le foto dell'incontro nella trascrizione e nella relazione
 - **⬇️ Scarica trascrizione** degli Incontri (Word): ogni foto è inserita **nel punto esatto in cui è stata scattata**. Se la foto è stata fatta a metà di una frase, la frase viene divisa lì e riprende dopo la foto con l'orario. Sotto la foto: numero, orario e testo letto. Prima il Word conteneva solo il testo.
 - **WebVTT**: le foto diventano note (`NOTE Foto 2 scattata a 00:12:34`) nello stesso punto, perché i sottotitoli non possono contenere immagini.

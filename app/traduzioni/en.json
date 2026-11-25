@@ -998,5 +998,10 @@
  "Scegli prima l'azienda o almeno una funzione.": "Choose the company or at least one role first.",
  "**Dagli incontri simili della Base ({n})**": "**From similar meetings in the Base ({n})**",
  "non indicato": "not specified",
- "contesto non indicato": "context not specified"
+ "contesto non indicato": "context not specified",
+ "Rinomina incontro": "Rename meeting",
+ "Titolo dell'incontro:": "Meeting title:",
+ "Incontro rinominato in «{nuovo}».": "Meeting renamed to “{nuovo}”.",
+ "✏️ Rinomina…": "✏️ Rename…",
+ "Non riesco a rinominare: {e}": "I can't rename it: {e}"
 }

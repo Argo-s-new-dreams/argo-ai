@@ -553,7 +553,7 @@ class SchedaClienti(QWidget):
         self.c_call.blockSignals(True)
         self.c_call.clear()
         for cartella, d in self._call:
-            titolo = rel.carica(cartella).get("relazione", {}).get("titolo") or d.get("titolo", cartella.name)
+            titolo = rel.titolo(cartella, d, cartella.name)
             fonte = "💻" if d.get("origine_file") else "📱"
             self.c_call.addItem(f"{fonte} {(d.get('creata') or '')[:10]} · {titolo}", cartella.name)
         self.c_call.blockSignals(False)
@@ -820,7 +820,7 @@ class SchedaClienti(QWidget):
             return
         testo_file = Path(cartella) / rel.FILE_TESTO
         testo = rel.senza_immagini(testo_file.read_text(encoding="utf-8")) if testo_file.exists() else ""
-        titolo = (rel.carica(cartella).get("relazione") or {}).get("titolo") or _d.get("titolo", "Call")
+        titolo = rel.titolo(cartella, _d, "Call")
         nuovi = [p for p in righe if p["scelta"][0] == "account" and p["crea_contatto"] and p["nome"]]
         domanda = (f"Su Dynamics:\n• {len(nuovi)} contatti nuovi\n"
                    + (f"• relazione come nota su: {', '.join(a['name'] for a in account)}" if testo else "• (nessuna relazione da allegare)")

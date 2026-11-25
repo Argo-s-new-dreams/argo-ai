@@ -998,5 +998,10 @@
  "Scegli prima l'azienda o almeno una funzione.": "Wähle zuerst das Unternehmen oder mindestens eine Funktion.",
  "**Dagli incontri simili della Base ({n})**": "**Aus ähnlichen Terminen der Basis ({n})**",
  "non indicato": "nicht angegeben",
- "contesto non indicato": "Kontext nicht angegeben"
+ "contesto non indicato": "Kontext nicht angegeben",
+ "Rinomina incontro": "Termin umbenennen",
+ "Titolo dell'incontro:": "Titel des Termins:",
+ "Incontro rinominato in «{nuovo}».": "Termin umbenannt in „{nuovo}“.",
+ "✏️ Rinomina…": "✏️ Umbenennen…",
+ "Non riesco a rinominare: {e}": "Umbenennen nicht möglich: {e}"
 }

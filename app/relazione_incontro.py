@@ -96,6 +96,38 @@ def _salva(cartella, dati):
     (Path(cartella) / FILE_DATI).write_text(json.dumps(dati, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def titolo(cartella, sessione=None, predefinito=""):
+    """Il titolo da mostrare: quello dato sul computer, poi quello della relazione, poi quello del telefono."""
+    dati = carica(cartella)
+    return (dati.get("titolo_utente") or (dati.get("relazione") or {}).get("titolo")
+            or (sessione or {}).get("titolo") or predefinito)
+
+
+def rinomina(cartella, nuovo):
+    """Rinomina l'incontro sul computer. Il titolo resta anche se il telefono rimanda lo stesso incontro
+    (argo-relazione.json si conserva al reinvio) e vale anche per le relazioni scritte dopo."""
+    cartella = Path(cartella)
+    nuovo = " ".join((nuovo or "").split())[:120]
+    if not nuovo:
+        raise ValueError("Il titolo non può essere vuoto.")
+    dati = carica(cartella)
+    dati["titolo_utente"] = nuovo
+    if dati.get("relazione"):
+        dati["relazione"]["titolo"] = nuovo
+    _salva(cartella, dati)
+    md = cartella / FILE_TESTO
+    if md.exists():
+        testo = md.read_text(encoding="utf-8")
+        if testo.startswith("# "):
+            md.write_text(f"# {nuovo}" + testo[testo.find("\n"):] if "\n" in testo else f"# {nuovo}", encoding="utf-8")
+    f = cartella / "sessione.json"
+    if f.exists():
+        sessione = json.loads(f.read_text(encoding="utf-8"))
+        sessione["titolo"] = nuovo
+        f.write_text(json.dumps(sessione, ensure_ascii=False, indent=2), encoding="utf-8")
+    return nuovo
+
+
 def cronologia(cartella, sessione, descrizioni=None):
     """Testo dell'incontro: parole con chi parla, foto con testo letto e descrizione, in ordine di tempo."""
     descrizioni = descrizioni or {}
@@ -303,6 +335,8 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
 
     relazione = etica.pulisci_dati(relazione)  # rete di sicurezza del filtro etico
     dati = carica(cartella)
+    if dati.get("titolo_utente"):  # rinominato sul computer: il titolo scelto vale anche per la relazione nuova
+        relazione["titolo"] = dati["titolo_utente"]
     dati.update({
         "relazione": relazione,
         "modello_testo": modello_testo,

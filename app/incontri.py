@@ -15,7 +15,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QImageReader, QKeySequence, QPixmap, QShortcut, QTextDocument
 from PySide6.QtWidgets import (
-    QAbstractItemView, QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit,
+    QAbstractItemView, QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout, QHeaderView, QInputDialog, QLabel, QLineEdit,
     QListWidget, QListWidgetItem, QMenu, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QScrollArea,
     QSplitter, QStackedWidget, QTableWidget, QTableWidgetItem, QTabWidget, QTextBrowser, QToolButton, QVBoxLayout,
     QWidget,
@@ -289,7 +289,7 @@ class EditorTemplate(QWidget):
     def con_chi(self):
         cartella, d = self._corrente()
         if cartella:
-            titolo = rel.carica(cartella).get("relazione", {}).get("titolo") or (d or {}).get("titolo", "")
+            titolo = rel.titolo(cartella, d)
             cervello_ui.collega(self, cartella, titolo, "incontro")
 
     def _mostra(self, _riga):
@@ -546,6 +546,8 @@ class SchedaIncontri(QWidget):
         self.tabella.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tabella.customContextMenuRequested.connect(self._menu)
         QShortcut(QKeySequence.Delete, self.tabella, activated=self.togli_dalla_coda)
+        QShortcut(QKeySequence(Qt.Key_F2), self.tabella, activated=self.rinomina)
+        self.tabella.cellDoubleClicked.connect(lambda _r, c: self.rinomina() if c == self.COL_TITOLO else None)
         div.addWidget(self.tabella)
 
         destra = QWidget()
@@ -848,7 +850,7 @@ class SchedaIncontri(QWidget):
         t.blockSignals(True)
         t.setRowCount(len(self._incontri))
         for r, (cartella, d) in enumerate(self._incontri):
-            titolo = rel.carica(cartella).get("relazione", {}).get("titolo") or d.get("titolo", cartella.name)
+            titolo = rel.titolo(cartella, d, cartella.name)
             it = QTableWidgetItem(titolo)
             it.setToolTip(titolo)
             t.setItem(r, self.COL_TITOLO, it)
@@ -985,6 +987,8 @@ class SchedaIncontri(QWidget):
         m = QMenu(self)
         m.addAction(tr('✨ Scrivi relazione'), self.scrivi_relazione)
         m.addAction(tr('📎 Aggiungi file…'), self.aggiungi_file)
+        if len(self._selezionati()) == 1:
+            m.addAction(tr('✏️ Rinomina…'), self.rinomina)
         m.addMenu(esporta_trascrizione.menu(self, self._sorgente_trascrizione)).setText(tr('⬇️ Scarica trascrizione'))
         if cervello.attivo():
             m.addAction(tr('🧠 Con chi stai parlando?…'), self.con_chi)
@@ -1003,7 +1007,7 @@ class SchedaIncontri(QWidget):
                 w.deleteLater()
         if not cartella:
             return
-        self.l_titolo.setText(rel.carica(cartella).get("relazione", {}).get("titolo") or d.get("titolo", ""))
+        self.l_titolo.setText(rel.titolo(cartella, d))
         nomi = ", ".join(p.get("nome", p.get("id", "")) for p in d.get("partecipanti", []))
         ricevuto = {}
         try:
@@ -1268,7 +1272,7 @@ class SchedaIncontri(QWidget):
         if not cartella or not testo:
             QMessageBox.information(self, tr('Niente da salvare'), tr('Scrivi prima la relazione.'))
             return
-        nome = "".join(c if c.isalnum() or c in " -_" else "_" for c in d.get("titolo", "Incontro"))[:60].strip()
+        nome = "".join(c if c.isalnum() or c in " -_" else "_" for c in rel.titolo(cartella, d, "Incontro"))[:60].strip()
         estensione = ".docx" if formato == "docx" else ".md"
         f, _ = QFileDialog.getSaveFileName(self, tr('Salva la relazione'), str(Path.home() / "Documents" / (nome + estensione)),
                                            "Word (*.docx)" if formato == "docx" else "Markdown (*.md)")
@@ -1288,8 +1292,26 @@ class SchedaIncontri(QWidget):
         cartella, d = self._corrente()
         if not cartella:
             return None
-        titolo = (d or {}).get("titolo") or "Incontro"
+        titolo = rel.titolo(cartella, d, "Incontro")
         return esporta_trascrizione.da_incontro(cartella), titolo, Path.home() / "Documents", f"Trascrizione: {titolo}"
+
+    def rinomina(self):
+        cartella, d = self._corrente()
+        if not cartella or cartella.name == self.in_corso:
+            return
+        attuale = rel.titolo(cartella, d)
+        nuovo, ok = QInputDialog.getText(self, tr('Rinomina incontro'), tr('Titolo dell\'incontro:'), text=attuale)
+        nuovo = " ".join((nuovo or "").split())
+        if not ok or not nuovo or nuovo == attuale:
+            return
+        try:
+            rel.rinomina(cartella, nuovo)
+        except (OSError, ValueError) as e:
+            QMessageBox.warning(self, tr('Rinomina incontro'), tr('Non riesco a rinominare: {e}', e=e))
+            return
+        self.aggiorna()
+        self._mostra(None)
+        self.finestra.statusBar().showMessage(tr('Incontro rinominato in «{nuovo}».', nuovo=nuovo), 5000)
 
     def apri_cartella(self):
         cartella, _d = self._corrente()
