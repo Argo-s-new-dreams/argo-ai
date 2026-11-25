@@ -2,6 +2,9 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261125.1320: «Con chi stai parlando?» dagli Incontri non dà più errore
+- Con il Secondo cervello attivo, il tasto destro su un incontro dava «AttributeError: 'SchedaIncontri' object has no attribute 'con_chi'» e il menu non si apriva. La funzione era finita per errore nell'editor dei template (dalla 20261120.1206). Ora **🧠 Con chi stai parlando?…** funziona anche negli Incontri.
+
 ## 20261125.1235: relazione unica di più incontri o trascrizioni
 - **🧩 Relazione unica**: seleziona due o più incontri (⌘ o ⇧ + clic) e, dal tasto destro, **🧩 Relazione unica di N incontri…**. Argo li unisce in un **gruppo** e scrive **una sola relazione** sulla somma delle trascrizioni, in ordine di tempo, con le foto di tutti gli incontri al loro posto.
 - **Uno a molti**: il primo incontro in ordine di tempo diventa il **capogruppo** e porta la relazione; gli altri restano incontri a sé, collegati sotto. Nell'elenco il gruppo è una riga sola, **▸ Titolo · N incontri**: clic su ▸ (o tasto destro › *Mostra gli incontri del gruppo*) per vederli rientrati sotto.

@@ -287,12 +287,6 @@ class EditorTemplate(QWidget):
         it = self.elenco.currentItem()
         return it.data(Qt.UserRole) if it else None
 
-    def con_chi(self):
-        cartella, d = self._corrente()
-        if cartella:
-            titolo = rel.titolo(cartella, d)
-            cervello_ui.collega(self, cartella, titolo, "incontro")
-
     def _mostra(self, _riga):
         t = tpl.trova(self._id_corrente())
         if not t:
@@ -1414,6 +1408,12 @@ class SchedaIncontri(QWidget):
         gruppi.separa(cartella)
         self._aperti.discard(cartella.name)
         self.aggiorna()
+
+    def con_chi(self):
+        cartella, d = self._corrente()
+        if cartella:
+            titolo = rel.titolo(cartella, d)
+            cervello_ui.collega(self, cartella, titolo, "incontro")
 
     def rinomina(self):
         cartella, d = self._corrente()
