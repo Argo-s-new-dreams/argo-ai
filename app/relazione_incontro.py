@@ -263,6 +263,15 @@ def _blocchi(testo, massimo):
     return blocchi
 
 
+def modelli_previsti(modello_testo, modello_vision=None, attrezzo="incontri"):
+    """I modelli che userà scrivi_relazione con le Impostazioni di adesso: (testo, foto), come etichette."""
+    m_testo = cloud.motore(attrezzo)
+    m_foto = cloud.motore(attrezzo + "_foto") if attrezzo == "incontri" else m_testo
+    testo = cloud.etichetta(*m_testo) if m_testo[0] != cloud.LOCALE else (modello_testo or "")
+    foto = cloud.etichetta(*m_foto) if m_foto[0] != cloud.LOCALE else (modello_vision or "")
+    return testo, foto
+
+
 def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None, stato=lambda _t: None, stop=None,
                      avanzamento=lambda _p: None, attrezzo="incontri", template=None):
     """Genera la relazione e la salva nell'incontro. Ritorna (dati_relazione, markdown).

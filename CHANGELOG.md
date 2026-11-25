@@ -2,6 +2,10 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261125.1506: colonna «Modello» negli Incontri
+- Nuova colonna **Modello** nella tabella degli Incontri: il modello con cui è stata scritta la relazione (passando il mouse: anche il modello per le foto e la data).
+- Per le relazioni **in coda** mostra, con «→», il modello che verrà usato con le Impostazioni di adesso (anche un modello cloud, se l'hai scelto per gli Incontri); per quella **in corso**, il modello al lavoro.
+
 ## 20261125.1320: «Con chi stai parlando?» dagli Incontri non dà più errore
 - Con il Secondo cervello attivo, il tasto destro su un incontro dava «AttributeError: 'SchedaIncontri' object has no attribute 'con_chi'» e il menu non si apriva. La funzione era finita per errore nell'editor dei template (dalla 20261120.1206). Ora **🧠 Con chi stai parlando?…** funziona anche negli Incontri.
 

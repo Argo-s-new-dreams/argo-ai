@@ -430,8 +430,8 @@ class DialogoAbbina(QDialog):
 
 
 class SchedaIncontri(QWidget):
-    COLONNE = ["Incontro", "Data", "Durata", "Foto", "Persone", "CRM", "Stato", "Avanzamento"]
-    COL_TITOLO, COL_DATA, COL_DURATA, COL_FOTO, COL_PERSONE, COL_CRM, COL_STATO, COL_AVANZ = range(8)
+    COLONNE = ["Incontro", "Data", "Durata", "Foto", "Persone", "CRM", "Modello", "Stato", "Avanzamento"]
+    COL_TITOLO, COL_DATA, COL_DURATA, COL_FOTO, COL_PERSONE, COL_CRM, COL_MODELLO, COL_STATO, COL_AVANZ = range(9)
 
     def __init__(self, finestra, versione):
         super().__init__()
@@ -520,6 +520,7 @@ class SchedaIncontri(QWidget):
         self.c_vision.setToolTip(tr("Un modello vision di Ollama guarda anche le foto (prodotti, stand, schemi); senza, si usa il testo letto dall'iPhone"))
         self.c_vision.currentIndexChanged.connect(lambda _i: self._salva_vision(self._vision_scelto()))
         comandi.addWidget(self.c_vision)
+        self.c_vision.currentIndexChanged.connect(lambda _i: [self._aggiorna_riga(r) for r in range(len(getattr(self, '_incontri', [])))])
         comandi.addStretch()
         lay.addLayout(comandi)
 
@@ -529,7 +530,8 @@ class SchedaIncontri(QWidget):
         h = self.tabella.horizontalHeader()
         h.setSectionResizeMode(self.COL_TITOLO, QHeaderView.Stretch)
         for col, larghezza in ((self.COL_DATA, 130), (self.COL_DURATA, 70), (self.COL_FOTO, 50),
-                               (self.COL_PERSONE, 70), (self.COL_CRM, 50), (self.COL_STATO, 190), (self.COL_AVANZ, 110)):
+                               (self.COL_PERSONE, 70), (self.COL_CRM, 50), (self.COL_MODELLO, 150),
+                               (self.COL_STATO, 190), (self.COL_AVANZ, 110)):
             self.tabella.setColumnWidth(col, larghezza)
         self.tabella.verticalHeader().setVisible(False)
         self.tabella.verticalHeader().setDefaultSectionSize(36)
@@ -937,11 +939,36 @@ class SchedaIncontri(QWidget):
         it.setForeground(QColor({"Pronta": c["ok"], "In corso": c["accento"], "Errore": c["err"],
                                  "Interrotta": c["warn"]}.get(st["stato"], c["tenue"])))
         self.tabella.setItem(r, self.COL_STATO, it)
+        self.tabella.setItem(r, self.COL_MODELLO, self._cella_modello(cartella, st))
         box = self.tabella.cellWidget(r, self.COL_AVANZ)
         pb = getattr(box, "pb", None)
         if pb:
             pb.setValue(int(st.get("progresso", 0)))
             pb.setVisible(st["stato"] == "In corso")
+
+    def _cella_modello(self, cartella, st):
+        """Con quale modello è stata scritta la relazione; per quelle in coda, quello che verrà usato adesso."""
+        c = tema.colori()
+        if st["stato"] in ("In coda", "In corso"):
+            if st.get("modello"):
+                testo, foto = st["modello"], st.get("modello_foto", "")
+            else:
+                testo, foto = rel.modelli_previsti(core.carica_impostazioni().get("modello_chat"),
+                                                   self._vision_scelto() or None)
+            it = QTableWidgetItem(("→ " if st["stato"] == "In coda" else "") + (testo or "nessun modello"))
+            it.setToolTip(("Modello che verrà usato" if st["stato"] == "In coda" else "Modello in uso")
+                          + f": {testo or 'scegline uno in Impostazioni › Modelli AI'}" + (f" · foto: {foto}" if foto else ""))
+            it.setForeground(QColor(c["accento"] if st["stato"] == "In corso" else c["tenue"]))
+            return it
+        meta = rel.carica(cartella) if (cartella / rel.FILE_TESTO).exists() else {}
+        testo = meta.get("modello_testo") or ""
+        it = QTableWidgetItem(testo or "–")
+        if testo:
+            it.setToolTip(f"Relazione scritta con {testo}" + (f" · foto: {meta['modello_vision']}" if meta.get("modello_vision") else "")
+                          + (f" · {meta.get('generata', '')}" if meta.get("generata") else ""))
+        else:
+            it.setTextAlignment(Qt.AlignCenter)
+        return it
 
     def _riga_di(self, id_incontro):
         return next((r for r, (c, _d) in enumerate(self._incontri) if c.name == id_incontro), -1)
@@ -1193,7 +1220,9 @@ class SchedaIncontri(QWidget):
         vision = self._vision_scelto()
         self.in_corso = id_incontro
         template = (self.stati.get(id_incontro) or {}).get("template") or self.c_template.currentData()
-        self.stati[id_incontro] = {"stato": "In corso", "progresso": 3, "nota": "preparo", "template": template}
+        m_testo, m_foto = rel.modelli_previsti(s.get("modello_chat"), vision or None)
+        self.stati[id_incontro] = {"stato": "In corso", "progresso": 3, "nota": "preparo", "template": template,
+                                   "modello": m_testo, "modello_foto": m_foto}
         self._aggiorna_riga(r)
         self.lavoro = LavoroRelazione(cartella, d, s.get("ollama_url", llm.DEFAULT_URL), s.get("modello_chat"),
                                       vision or None, self, template=template)

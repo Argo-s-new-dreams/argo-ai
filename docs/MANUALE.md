@@ -604,6 +604,8 @@ Seleziona l'incontro e premi **📎 Aggiungi file…** (anche dal menu con il ta
 
 Foto e documenti vengono legati alla fine dell'incontro. Dopo aver aggiunto file, premi di nuovo **✨ Scrivi relazione** per aggiornarla.
 
+**La colonna Modello** dice con quale modello è stata scritta ogni relazione (passando il mouse: anche il modello per le foto e la data). Per le relazioni in coda mostra, con «→», il modello che verrà usato con le Impostazioni di adesso; per quella in corso, il modello al lavoro.
+
 **Rinominare un incontro**
 
 Tasto destro sulla riga › **✏️ Rinomina…** (oppure doppio clic sul titolo, o **F2**). Il titolo nuovo vale per la tabella, la relazione (anche quelle scritte dopo), il Word, la trascrizione scaricata e le note per Dynamics. Resta anche se il telefono rimanda lo stesso incontro. Sul telefono invece resta il titolo che aveva: il Ponte porta gli incontri dal telefono al computer, non al contrario.
