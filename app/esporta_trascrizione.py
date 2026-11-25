@@ -124,9 +124,11 @@ def con_foto(segmenti, foto):
     return out
 
 
-def da_incontro(cartella, con_le_foto=True):
-    """Segmenti dell'incontro con chi parla; con le foto inserite nel momento in cui sono state scattate."""
-    sessione = json.loads((Path(cartella) / "sessione.json").read_text(encoding="utf-8"))
+def da_incontro(cartella, con_le_foto=True, sessione=None):
+    """Segmenti dell'incontro con chi parla; con le foto inserite nel momento in cui sono state scattate.
+    `sessione`: già letta (per un gruppo, la sessione unita di gruppi_incontri)."""
+    if sessione is None:
+        sessione = json.loads((Path(cartella) / "sessione.json").read_text(encoding="utf-8"))
     nomi = {p["id"]: p.get("nome") or p["id"] for p in sessione.get("partecipanti", [])}
     out = [{"inizio": float(s.get("inizio") or 0), "fine": float(s.get("fine") or 0),
             "chi": nomi.get(s.get("parlante"), s.get("parlante") or ""), "testo": " ".join((s.get("testo") or "").split())}

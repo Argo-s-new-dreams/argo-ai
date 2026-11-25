@@ -1003,5 +1003,19 @@
  "Titolo dell'incontro:": "Título de la reunión:",
  "Incontro rinominato in «{nuovo}».": "Reunión renombrada como «{nuovo}».",
  "✏️ Rinomina…": "✏️ Cambiar nombre…",
- "Non riesco a rinominare: {e}": "No puedo cambiar el nombre: {e}"
+ "Non riesco a rinominare: {e}": "No puedo cambiar el nombre: {e}",
+ "Relazione unica di {n} incontri: clic su ▸ per vedere gli incontri del gruppo": "Informe único de {n} reuniones: haz clic en ▸ para ver las reuniones del grupo",
+ "🧩 Relazione unica di {n} incontri…": "🧩 Informe único de {n} reuniones…",
+ "Separa il gruppo…": "Separar el grupo…",
+ "Relazione unica": "Informe único",
+ "Uno degli incontri scelti è in coda o in lavorazione: aspetta che finisca.": "Una de las reuniones elegidas está en cola o en curso: espera a que termine.",
+ "Unisco questi {n} incontri in un gruppo e scrivo una sola relazione sulla somma delle trascrizioni:\n\n{elenco}\n\nLa relazione va sul primo in ordine di tempo («{primo}»), che diventa il capogruppo; gli altri restano collegati sotto. Se il primo ha già una relazione, viene sostituita.": "Uno estas {n} reuniones en un grupo y escribo un solo informe sobre la suma de las transcripciones:\n\n{elenco}\n\nEl informe va en la primera por orden de tiempo («{primo}»), que pasa a encabezar el grupo; las demás quedan vinculadas debajo. Si la primera ya tiene un informe, se sustituye.",
+ "Separa il gruppo": "Separar el grupo",
+ "Gli incontri del gruppo tornano indipendenti. La relazione unica resta su «{titolo}».": "Las reuniones del grupo vuelven a ser independientes. El informe único se queda en «{titolo}».",
+ "▾ Nascondi gli incontri del gruppo": "▾ Ocultar las reuniones del grupo",
+ "▸ Mostra gli incontri del gruppo": "▸ Mostrar las reuniones del grupo",
+ "Fa parte del gruppo: la relazione è sul primo incontro": "Forma parte del grupo: el informe está en la primera reunión",
+ "Porto queste {n} trascrizioni negli Incontri, le unisco in un gruppo e scrivo una sola relazione sulla loro somma:\n\n{elenco}\n\nLa relazione va sulla più vecchia, che diventa il capogruppo. Le trascrizioni qui restano come sono.": "Llevo estas {n} transcripciones a Reuniones, las uno en un grupo y escribo un solo informe sobre su suma:\n\n{elenco}\n\nEl informe va en la más antigua, que pasa a encabezar el grupo. Las transcripciones de aquí quedan como están.",
+ "🧩 Relazione unica di {n} trascrizioni…": "🧩 Informe único de {n} transcripciones…",
+ "Non riesco a creare la relazione unica: {e}": "No puedo crear el informe único: {e}"
 }

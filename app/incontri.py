@@ -29,6 +29,7 @@ import llm_locale as llm
 import diagnostica
 import ponte as pt
 import esporta_trascrizione
+import gruppi_incontri as gruppi
 import relazione_incontro as rel
 import secondo_cervello as cervello
 import secondo_cervello_ui as cervello_ui
@@ -548,6 +549,8 @@ class SchedaIncontri(QWidget):
         QShortcut(QKeySequence.Delete, self.tabella, activated=self.togli_dalla_coda)
         QShortcut(QKeySequence(Qt.Key_F2), self.tabella, activated=self.rinomina)
         self.tabella.cellDoubleClicked.connect(lambda _r, c: self.rinomina() if c == self.COL_TITOLO else None)
+        self.tabella.cellClicked.connect(self._clic_titolo)
+        self._aperti, self._livello = set(), {}
         div.addWidget(self.tabella)
 
         destra = QWidget()
@@ -845,14 +848,39 @@ class SchedaIncontri(QWidget):
 
     def aggiorna(self):
         scelto = self._corrente()[0]
-        self._incontri = pt.elenco_incontri()
+        tutti = pt.elenco_incontri()
+        per_id = {c.name: (c, d) for c, d in tutti}
+        # Gruppi (uno a molti): i figli stanno sotto il capogruppo, visibili quando il gruppo è aperto
+        self._incontri, self._livello = [], {}
+        for c, d in tutti:
+            if gruppi.capogruppo_di(c):
+                continue
+            self._incontri.append((c, d))
+            figli = [f for f in gruppi.figli(c) if f.name in per_id]
+            self._livello[c.name] = ("capo", len(figli)) if figli else ("solo", 0)
+            if figli and c.name in self._aperti:
+                for f in figli:
+                    self._incontri.append(per_id[f.name])
+                    self._livello[f.name] = ("figlio", 0)
         t = self.tabella
         t.blockSignals(True)
         t.setRowCount(len(self._incontri))
         for r, (cartella, d) in enumerate(self._incontri):
             titolo = rel.titolo(cartella, d, cartella.name)
-            it = QTableWidgetItem(titolo)
-            it.setToolTip(titolo)
+            tipo, n = self._livello.get(cartella.name, ("solo", 0))
+            if tipo == "capo":
+                testo = ("▾ " if cartella.name in self._aperti else "▸ ") + titolo + f"  ·  {n + 1} incontri"
+                suggerimento = tr('Relazione unica di {n} incontri: clic su ▸ per vedere gli incontri del gruppo', n=n + 1)
+            elif tipo == "figlio":
+                testo, suggerimento = "      ↳ " + titolo, tr('Fa parte del gruppo: la relazione è sul primo incontro')
+            else:
+                testo, suggerimento = titolo, titolo
+            it = QTableWidgetItem(testo)
+            it.setToolTip(suggerimento)
+            if tipo == "capo":
+                f = it.font()
+                f.setBold(True)
+                it.setFont(f)
             t.setItem(r, self.COL_TITOLO, it)
             t.setItem(r, self.COL_DATA, QTableWidgetItem((d.get("creata") or "")[:16].replace("T", " ")))
             for col, valore in ((self.COL_DURATA, _durata(d.get("durata"))),
@@ -989,6 +1017,14 @@ class SchedaIncontri(QWidget):
         m.addAction(tr('📎 Aggiungi file…'), self.aggiungi_file)
         if len(self._selezionati()) == 1:
             m.addAction(tr('✏️ Rinomina…'), self.rinomina)
+        scelti = self._selezionati()
+        if len(scelti) >= 2:
+            m.addAction(tr('🧩 Relazione unica di {n} incontri…', n=len(scelti)), self.relazione_unica)
+        if len(scelti) == 1 and self._livello.get(scelti[0][0].name, ("",))[0] == "capo":
+            aperto = scelti[0][0].name in self._aperti
+            m.addAction(tr('▾ Nascondi gli incontri del gruppo') if aperto else tr('▸ Mostra gli incontri del gruppo'),
+                        lambda c=scelti[0][0]: self._apri_chiudi(c))
+            m.addAction(tr('Separa il gruppo…'), self.separa_gruppo)
         m.addMenu(esporta_trascrizione.menu(self, self._sorgente_trascrizione)).setText(tr('⬇️ Scarica trascrizione'))
         if cervello.attivo():
             m.addAction(tr('🧠 Con chi stai parlando?…'), self.con_chi)
@@ -1008,6 +1044,13 @@ class SchedaIncontri(QWidget):
         if not cartella:
             return
         self.l_titolo.setText(rel.titolo(cartella, d))
+        nota_gruppo = ""
+        if gruppi.e_capogruppo(cartella):
+            d = gruppi.sessione_unita(cartella)  # relazione, foto e trascrizione: la somma del gruppo
+            nota_gruppo = f" · relazione unica di {len(d.get('gruppo', []))} incontri"
+        elif gruppi.capogruppo_di(cartella):
+            capo = pt.INCONTRI / gruppi.capogruppo_di(cartella)
+            nota_gruppo = f" · nel gruppo di «{rel.titolo(capo, None, capo.name)}», che ha la relazione unica"
         nomi = ", ".join(p.get("nome", p.get("id", "")) for p in d.get("partecipanti", []))
         ricevuto = {}
         try:
@@ -1018,7 +1061,7 @@ class SchedaIncontri(QWidget):
                             + (f" · partecipanti: {nomi}" if nomi else "")
                             + (f" · ricevuto {ricevuto.get('ricevuto', '')} da {ricevuto.get('origine', '')}" if ricevuto else "")
                             + (" · allegati: " + ", ".join(a.get("nome", "") for a in d.get("allegati", []))
-                               if d.get("allegati") else ""))
+                               if d.get("allegati") else "") + nota_gruppo)
         for f in d.get("foto", []):
             pix = QPixmap(str(cartella / f.get("file", "")))
             if pix.isNull():
@@ -1148,9 +1191,10 @@ class SchedaIncontri(QWidget):
             return
         id_incontro = self.coda.pop(0)
         r = self._riga_di(id_incontro)
-        if r < 0:
+        cartella = pt.INCONTRI / id_incontro
+        if not (cartella / "sessione.json").exists():
             return self._prossima()
-        cartella, d = self._incontri[r]
+        d = gruppi.sessione_unita(cartella)  # per un capogruppo: la somma degli incontri del gruppo
         s = core.carica_impostazioni()
         vision = self._vision_scelto()
         self.in_corso = id_incontro
@@ -1293,7 +1337,83 @@ class SchedaIncontri(QWidget):
         if not cartella:
             return None
         titolo = rel.titolo(cartella, d, "Incontro")
-        return esporta_trascrizione.da_incontro(cartella), titolo, Path.home() / "Documents", f"Trascrizione: {titolo}"
+        return (esporta_trascrizione.da_incontro(cartella, sessione=gruppi.sessione_unita(cartella)), titolo,
+                Path.home() / "Documents", f"Trascrizione: {titolo}")
+
+    def _apri_chiudi(self, cartella):
+        self._aperti.symmetric_difference_update({cartella.name})
+        self.aggiorna()
+
+    def _clic_titolo(self, r, colonna):
+        """Clic sul ▸/▾ di un capogruppo: apre o chiude il gruppo."""
+        if colonna != self.COL_TITOLO or not 0 <= r < len(self._incontri):
+            return
+        cartella = self._incontri[r][0]
+        if self._livello.get(cartella.name, ("",))[0] != "capo":
+            return
+        from PySide6.QtGui import QCursor
+        x = self.tabella.viewport().mapFromGlobal(QCursor.pos()).x() - self.tabella.visualItemRect(self.tabella.item(r, colonna)).x()
+        if x < 26:
+            self._apri_chiudi(cartella)
+
+    def relazione_unica(self):
+        scelti = [c for c, _d in self._selezionati()]
+        if len(scelti) < 2:
+            return
+        if any(c.name == self.in_corso or c.name in self.coda for c in scelti):
+            QMessageBox.information(self, tr('Relazione unica'), tr('Uno degli incontri scelti è in coda o in lavorazione: aspetta che finisca.'))
+            return
+        tutti = []
+        for c in scelti:
+            for m in gruppi.membri(c):
+                if m not in tutti:
+                    tutti.append(m)
+        tutti.sort(key=lambda c: (json.loads((c / "sessione.json").read_text(encoding="utf-8")).get("creata") or ""))
+        elenco = "\n".join(f"• {rel.titolo(c, None, c.name)}" for c in tutti)
+        if QMessageBox.question(
+                self, tr('Relazione unica'),
+                tr("Unisco questi {n} incontri in un gruppo e scrivo una sola relazione sulla somma delle trascrizioni:\n\n"
+                   "{elenco}\n\nLa relazione va sul primo in ordine di tempo («{primo}»), che diventa il capogruppo; "
+                   "gli altri restano collegati sotto. Se il primo ha già una relazione, viene sostituita.",
+                   n=len(tutti), elenco=elenco, primo=rel.titolo(tutti[0], None, tutti[0].name))) != QMessageBox.Yes:
+            return
+        try:
+            capo = gruppi.crea(tutti)
+        except (OSError, ValueError) as e:
+            QMessageBox.warning(self, tr('Relazione unica'), str(e))
+            return
+        self._aperti.add(capo.name)
+        self.metti_in_coda([capo])
+
+    def metti_in_coda(self, cartelle):
+        """Relazione per queste cartelle, in coda come «✨ Scrivi relazione» (senza chiedere conferma)."""
+        self.aggiorna()
+        for cartella in cartelle:
+            if cartella.name in self.coda or cartella.name == self.in_corso:
+                continue
+            self.coda.append(cartella.name)
+            self.stati[cartella.name] = {"stato": "In coda", "progresso": 0, "nota": "",
+                                         "template": self.c_template.currentData()}
+            r = self._riga_di(cartella.name)
+            self._aggiorna_riga(r)
+            if r >= 0:
+                self.tabella.selectRow(r)
+        self.in_pausa = False
+        self._salva_coda()
+        self._aggiorna_comandi()
+        self._prossima()
+
+    def separa_gruppo(self):
+        cartella, _d = self._corrente()
+        if not cartella or not gruppi.e_capogruppo(cartella):
+            return
+        if QMessageBox.question(self, tr('Separa il gruppo'),
+                                tr('Gli incontri del gruppo tornano indipendenti. La relazione unica resta su «{titolo}».',
+                                   titolo=rel.titolo(cartella, None, cartella.name))) != QMessageBox.Yes:
+            return
+        gruppi.separa(cartella)
+        self._aperti.discard(cartella.name)
+        self.aggiorna()
 
     def rinomina(self):
         cartella, d = self._corrente()

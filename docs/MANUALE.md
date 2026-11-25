@@ -616,6 +616,17 @@ Tasto destro sulla riga › **✏️ Rinomina…** (oppure doppio clic sul titol
 4. Correggi il testo se serve e premi **Salva modifiche** (le righe `![…](…)` sono le foto: puoi spostarle o toglierle); **Salva ▾** la esporta in Word, con le foto ridotte a 12 × 10 cm al massimo, o in Markdown, con il percorso completo delle foto. Nelle note per Dynamics, nella pagina Clienti e nel Secondo cervello la relazione va senza foto.
 5. La scheda **Trascrizione e foto** mostra la cronologia completa, con la bozza fatta sull'iPhone. **⬇️ Scarica trascrizione** in Word inserisce ogni foto **nel punto esatto in cui è stata scattata**: se la foto è stata fatta a metà di una frase, la frase viene divisa lì e riprende dopo la foto con l'orario. Sotto la foto: numero, orario e testo letto. Nel WebVTT, che non può contenere immagini, ogni foto è una nota (`NOTE Foto 2 scattata a 00:12:34`) nello stesso punto.
 
+**Relazione unica di più incontri**
+
+Quando un discorso è diviso in più incontri (due giorni di fiera con lo stesso cliente, una visita in più tappe, una serie di interviste), puoi averne **una sola relazione**:
+
+1. Seleziona due o più incontri (⌘ o ⇧ + clic) › tasto destro › **🧩 Relazione unica di N incontri…** e conferma.
+2. Argo li unisce in un **gruppo**: il primo in ordine di tempo è il **capogruppo** e porta la relazione, gli altri restano collegati sotto (uno a molti). Nell'elenco il gruppo è una riga sola, **▸ Titolo · N incontri**: clic su ▸ per vedere gli incontri rientrati sotto, ▾ per richiuderli.
+3. La relazione parte da sola: è scritta sulla **somma delle trascrizioni**, in ordine di tempo, con le foto di tutti gli incontri al loro posto. Se il capogruppo aveva già una relazione, viene sostituita.
+4. Il dettaglio del capogruppo mostra partecipanti, foto e trascrizione di tutto il gruppo, con un titoletto «=== Incontro k di n ===» all'inizio di ciascuno; **⬇️ Scarica trascrizione** scarica la somma.
+5. Anche dalla pagina **Trascrivi**: seleziona due o più trascrizioni completate › tasto destro › **🧩 Relazione unica di N trascrizioni…**. Diventano incontri (senza trascrivere di nuovo, con i nomi dei parlanti che hai dato), si raggruppano e Argo apre gli Incontri con la relazione in coda.
+6. **Separa il gruppo…** (tasto destro sul capogruppo): gli incontri tornano indipendenti, la relazione unica resta al capogruppo. Il gruppo resta anche se il telefono rimanda un incontro; un incontro eliminato esce dal gruppo da solo.
+
 **Invio a Dynamics 365 Sales**
 
 1. Una volta sola: Impostazioni › **Dynamics 365 Sales**, indirizzo dell'ambiente e **Collega** (prima va aggiunto il permesso nell'app Entra: [docs/DYNAMICS.md](DYNAMICS.md)).

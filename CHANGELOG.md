@@ -2,6 +2,14 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261125.1235: relazione unica di più incontri o trascrizioni
+- **🧩 Relazione unica**: seleziona due o più incontri (⌘ o ⇧ + clic) e, dal tasto destro, **🧩 Relazione unica di N incontri…**. Argo li unisce in un **gruppo** e scrive **una sola relazione** sulla somma delle trascrizioni, in ordine di tempo, con le foto di tutti gli incontri al loro posto.
+- **Uno a molti**: il primo incontro in ordine di tempo diventa il **capogruppo** e porta la relazione; gli altri restano incontri a sé, collegati sotto. Nell'elenco il gruppo è una riga sola, **▸ Titolo · N incontri**: clic su ▸ (o tasto destro › *Mostra gli incontri del gruppo*) per vederli rientrati sotto.
+- Il dettaglio del capogruppo mostra partecipanti, foto e trascrizione di tutto il gruppo; **⬇️ Scarica trascrizione** scarica la somma, con un titoletto «=== Incontro k di n ===» all'inizio di ciascuno.
+- **Anche dalla pagina Trascrivi**: seleziona due o più trascrizioni completate › tasto destro › **🧩 Relazione unica di N trascrizioni…**. Diventano incontri (senza trascrivere di nuovo, con i nomi dei parlanti già dati), si raggruppano e la relazione parte negli Incontri.
+- **Separa il gruppo…** (tasto destro sul capogruppo): gli incontri tornano indipendenti e la relazione unica resta al capogruppo. Il gruppo resta anche se il telefono rimanda un incontro; un incontro eliminato esce dal gruppo da solo.
+- Manuale (§ Incontri) aggiornato; testi nuovi tradotti in inglese, spagnolo e tedesco.
+
 ## 20261125.1224: l'iPhone ritrova il computer anche su un'altra rete
 - Il **Ponte** si annuncia in rete locale con **Bonjour** (servizio `_argoponte._tcp`, con l'id del computer): Argo per iPhone dalla 1.1.1 lo ritrova anche quando cambiano rete, indirizzo IP o porta, senza rifare l'abbinamento. Sul Mac usa `dns-sd` di sistema; su Windows serve Bonjour installato (`dns-sd.exe`), altrimenti restano indirizzi e nome `.local`.
 - **Nome .local corretto**: prima poteva contenere il dominio dato dal router (per esempio `Air-di-Luca.fritz.box.local`), che cambia da una rete all'altra e non risponde. Ora sul Mac è il nome locale di sistema (`scutil --get LocalHostName`), altrove la prima parte del nome del computer.

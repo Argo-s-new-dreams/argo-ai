@@ -1003,5 +1003,19 @@
  "Titolo dell'incontro:": "Titel des Termins:",
  "Incontro rinominato in «{nuovo}».": "Termin umbenannt in „{nuovo}“.",
  "✏️ Rinomina…": "✏️ Umbenennen…",
- "Non riesco a rinominare: {e}": "Umbenennen nicht möglich: {e}"
+ "Non riesco a rinominare: {e}": "Umbenennen nicht möglich: {e}",
+ "Relazione unica di {n} incontri: clic su ▸ per vedere gli incontri del gruppo": "Gemeinsamer Bericht für {n} Termine: Klick auf ▸ zeigt die Termine der Gruppe",
+ "🧩 Relazione unica di {n} incontri…": "🧩 Gemeinsamer Bericht für {n} Termine…",
+ "Separa il gruppo…": "Gruppe auflösen…",
+ "Relazione unica": "Gemeinsamer Bericht",
+ "Uno degli incontri scelti è in coda o in lavorazione: aspetta che finisca.": "Einer der gewählten Termine ist in der Warteschlange oder in Arbeit: warte, bis er fertig ist.",
+ "Unisco questi {n} incontri in un gruppo e scrivo una sola relazione sulla somma delle trascrizioni:\n\n{elenco}\n\nLa relazione va sul primo in ordine di tempo («{primo}»), che diventa il capogruppo; gli altri restano collegati sotto. Se il primo ha già una relazione, viene sostituita.": "Ich fasse diese {n} Termine zu einer Gruppe zusammen und schreibe einen einzigen Bericht über alle Transkripte zusammen:\n\n{elenco}\n\nDer Bericht kommt zum frühesten („{primo}“), der zum Gruppenleiter wird; die anderen bleiben darunter verknüpft. Hat der früheste schon einen Bericht, wird er ersetzt.",
+ "Separa il gruppo": "Gruppe auflösen",
+ "Gli incontri del gruppo tornano indipendenti. La relazione unica resta su «{titolo}».": "Die Termine der Gruppe werden wieder unabhängig. Der gemeinsame Bericht bleibt bei „{titolo}“.",
+ "▾ Nascondi gli incontri del gruppo": "▾ Termine der Gruppe ausblenden",
+ "▸ Mostra gli incontri del gruppo": "▸ Termine der Gruppe anzeigen",
+ "Fa parte del gruppo: la relazione è sul primo incontro": "Teil der Gruppe: der Bericht ist beim ersten Termin",
+ "Porto queste {n} trascrizioni negli Incontri, le unisco in un gruppo e scrivo una sola relazione sulla loro somma:\n\n{elenco}\n\nLa relazione va sulla più vecchia, che diventa il capogruppo. Le trascrizioni qui restano come sono.": "Ich übernehme diese {n} Transkripte in Termine, fasse sie zu einer Gruppe zusammen und schreibe einen einzigen Bericht über alle zusammen:\n\n{elenco}\n\nDer Bericht kommt zum frühesten, der zum Gruppenleiter wird. Die Transkripte hier bleiben unverändert.",
+ "🧩 Relazione unica di {n} trascrizioni…": "🧩 Gemeinsamer Bericht für {n} Transkripte…",
+ "Non riesco a creare la relazione unica: {e}": "Der gemeinsame Bericht lässt sich nicht erstellen: {e}"
 }

@@ -1003,5 +1003,19 @@
  "Titolo dell'incontro:": "Meeting title:",
  "Incontro rinominato in «{nuovo}».": "Meeting renamed to “{nuovo}”.",
  "✏️ Rinomina…": "✏️ Rename…",
- "Non riesco a rinominare: {e}": "I can't rename it: {e}"
+ "Non riesco a rinominare: {e}": "I can't rename it: {e}",
+ "Relazione unica di {n} incontri: clic su ▸ per vedere gli incontri del gruppo": "Single report for {n} meetings: click ▸ to see the meetings in the group",
+ "🧩 Relazione unica di {n} incontri…": "🧩 Single report for {n} meetings…",
+ "Separa il gruppo…": "Split the group…",
+ "Relazione unica": "Single report",
+ "Uno degli incontri scelti è in coda o in lavorazione: aspetta che finisca.": "One of the selected meetings is queued or in progress: wait until it finishes.",
+ "Unisco questi {n} incontri in un gruppo e scrivo una sola relazione sulla somma delle trascrizioni:\n\n{elenco}\n\nLa relazione va sul primo in ordine di tempo («{primo}»), che diventa il capogruppo; gli altri restano collegati sotto. Se il primo ha già una relazione, viene sostituita.": "I'll put these {n} meetings in a group and write one report on all their transcripts together:\n\n{elenco}\n\nThe report goes on the earliest one (“{primo}”), which becomes the group lead; the others stay linked underneath. If the earliest already has a report, it will be replaced.",
+ "Separa il gruppo": "Split the group",
+ "Gli incontri del gruppo tornano indipendenti. La relazione unica resta su «{titolo}».": "The meetings in the group become independent again. The single report stays on “{titolo}”.",
+ "▾ Nascondi gli incontri del gruppo": "▾ Hide the meetings in the group",
+ "▸ Mostra gli incontri del gruppo": "▸ Show the meetings in the group",
+ "Fa parte del gruppo: la relazione è sul primo incontro": "Part of the group: the report is on the first meeting",
+ "Porto queste {n} trascrizioni negli Incontri, le unisco in un gruppo e scrivo una sola relazione sulla loro somma:\n\n{elenco}\n\nLa relazione va sulla più vecchia, che diventa il capogruppo. Le trascrizioni qui restano come sono.": "I'll bring these {n} transcripts into Meetings, put them in a group and write one report on all of them together:\n\n{elenco}\n\nThe report goes on the earliest, which becomes the group lead. The transcripts here stay as they are.",
+ "🧩 Relazione unica di {n} trascrizioni…": "🧩 Single report for {n} transcripts…",
+ "Non riesco a creare la relazione unica: {e}": "I can't create the single report: {e}"
 }

@@ -189,6 +189,42 @@ def crea_da_media(sorgente, versione="", stato=lambda _t, _p=None: None, stop=la
     return cartella, sessione
 
 
+def crea_da_trascrizione(percorso, versione="", titolo=None):
+    """Nuovo incontro da una trascrizione già fatta nella pagina Trascrivi (.json di WhisperX o _nomi.txt),
+    senza trascrivere di nuovo: parlanti con i nomi dati, data del file. Ritorna (cartella, sessione)."""
+    import esporta_trascrizione as et
+    percorso = Path(percorso)
+    righe = et.da_file(percorso)
+    if not righe:
+        raise ErroreIncontro(f"La trascrizione «{percorso.name}» è vuota o non è ancora pronta.")
+    ids, partecipanti = {}, []
+    for r in righe:
+        chi = r.get("chi") or "Parlante"
+        if chi not in ids:
+            ids[chi] = f"p{len(ids) + 1}"
+            partecipanti.append({"id": ids[chi], "nome": chi})
+    segmenti = [{"inizio": r["inizio"], "fine": r["fine"], "parlante": ids[r.get("chi") or "Parlante"],
+                 "testo": r["testo"]} for r in righe]
+    id_incontro = str(uuid.uuid4())
+    quando = datetime.fromtimestamp(percorso.stat().st_mtime).astimezone()
+    sessione = {
+        "formato": "argo.sessione", "versioneFormato": 1,
+        "app": f"Argo desktop {versione} · da Trascrivi".strip(),
+        "id": id_incontro, "creata": quando.isoformat(timespec="seconds"),
+        "titolo": titolo or percorso.stem.replace("_nomi", ""),
+        "lingua": core.carica_impostazioni().get("language") or "",
+        "durata": max((x["fine"] for x in segmenti), default=0.0),
+        "partecipanti": partecipanti, "segmenti": segmenti, "foto": [], "allegati": [],
+    }
+    cartella = pt.INCONTRI / id_incontro
+    (cartella / "foto").mkdir(parents=True, exist_ok=True)
+    _salva_sessione(cartella, sessione)
+    (cartella / "ricevuto.json").write_text(json.dumps({
+        "ricevuto": datetime.now().strftime("%Y-%m-%d %H:%M"), "origine": f"Trascrivi «{percorso.name}»",
+    }, ensure_ascii=False), encoding="utf-8")
+    return cartella, sessione
+
+
 # ---------------------------------------------------------------- file aggiunti a un incontro
 def _nome_libero(cartella, base, ext):
     i = 1

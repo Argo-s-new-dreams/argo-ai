@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-VERSIONE = "20261125.1224"
+VERSIONE = "20261125.1235"
 import diagnostica  # noqa: E402  per primo: così finiscono nel registro anche gli errori negli import qui sotto
 if __name__ == "__main__":
     diagnostica.inizia(VERSIONE)
@@ -686,6 +686,9 @@ class Finestra(QMainWindow):
             m.addAction(tr('✏️ Nomi dei parlanti…'), self.rivedi_parlanti)
             m.addMenu(self._menu_scarica()).setText(tr('⬇️ Scarica trascrizione'))
             m.addAction(tr('Crea verbale →'), self.crea_verbale)
+            pronte = self._trascrizioni_pronte()
+            if len(pronte) >= 2:
+                m.addAction(tr('🧩 Relazione unica di {n} trascrizioni…', n=len(pronte)), self.relazione_unica)
             m.addSeparator()
         m.addAction(tr('🎧 Marca voci…'), lambda: self.marca_voci(j["file"]))
         if cervello.attivo():
@@ -696,6 +699,46 @@ class Finestra(QMainWindow):
         m.addSeparator()
         m.addAction(tr('Rimuovi dalla coda'), self.rimuovi_job)
         m.exec(self.tab_coda.viewport().mapToGlobal(pos))
+
+    def _trascrizioni_pronte(self):
+        return [j for j in self._selezionati()
+                if j["stato"] == "Completata" and j.get("txt") and Path(j["txt"]).exists()]
+
+    def relazione_unica(self):
+        """Più trascrizioni → un incontro ciascuna (senza trascrivere di nuovo) → gruppo → una relazione unica,
+        scritta negli Incontri sul primo in ordine di tempo."""
+        import gruppi_incontri as gruppi
+        import incontri_file as inf
+        import ponte as pt
+        pronte = self._trascrizioni_pronte()
+        if len(pronte) < 2:
+            return
+        elenco = "\n".join(f"• {Path(j['txt']).stem.replace('_nomi', '')}" for j in pronte)
+        if QMessageBox.question(
+                self, tr('Relazione unica'),
+                tr("Porto queste {n} trascrizioni negli Incontri, le unisco in un gruppo e scrivo una sola relazione "
+                   "sulla loro somma:\n\n{elenco}\n\nLa relazione va sulla più vecchia, che diventa il capogruppo. "
+                   "Le trascrizioni qui restano come sono.", n=len(pronte), elenco=elenco)) != QMessageBox.Yes:
+            return
+        cartelle = []
+        try:
+            for j in pronte:
+                esistente = pt.INCONTRI / j["incontro"] if j.get("incontro") else None
+                if esistente and (esistente / "sessione.json").exists():
+                    cartelle.append(esistente)  # già portata negli Incontri: si riusa
+                    continue
+                cartella, _s = inf.crea_da_trascrizione(j.get("json") if j.get("json") and Path(j["json"]).exists()
+                                                         else j["txt"], VERSIONE)
+                j["incontro"] = cartella.name
+                cartelle.append(cartella)
+            self._salva_coda()
+            capo = gruppi.crea(cartelle)
+        except (OSError, ValueError, inf.ErroreIncontro) as e:
+            QMessageBox.warning(self, tr('Relazione unica'), tr('Non riesco a creare la relazione unica: {e}', e=e))
+            return
+        self.tab_incontri._aperti.add(capo.name)
+        self.tab_incontri.metti_in_coda([capo])
+        self.vai_a(self.tab_incontri)
 
     def _in_lavorazione(self, j):
         return j is self.job_corrente and self.worker is not None and self.worker.isRunning()

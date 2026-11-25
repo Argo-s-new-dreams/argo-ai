@@ -239,8 +239,8 @@ def importa_pacchetto(percorso_zip, origine="file"):
             }, ensure_ascii=False), encoding="utf-8")
             INCONTRI.mkdir(parents=True, exist_ok=True)
             if destinazione.exists():
-                # Reinvio dello stesso incontro: si tengono i lavori fatti sul computer (relazione, CRM)
-                for extra in ("argo-relazione.json", "argo-crm.json"):
+                # Reinvio dello stesso incontro: si tengono i lavori fatti sul computer (relazione, CRM, gruppo)
+                for extra in ("argo-relazione.json", "argo-crm.json", "argo-gruppo.json"):
                     if (destinazione / extra).exists():
                         shutil.copy2(destinazione / extra, temporanea / extra)
                 shutil.rmtree(destinazione)

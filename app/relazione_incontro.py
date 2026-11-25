@@ -324,7 +324,10 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
     stato(f"Scrivo la relazione «{template['nome']}» con {modello_testo}…")
     intestazione = (f"Titolo provvisorio: {sessione.get('titolo', '')}\n"
                     f"Data: {(sessione.get('creata') or '')[:16].replace('T', ' ')} · durata {_durata(sessione.get('durata'))}\n"
-                    f"Partecipanti: {', '.join(p.get('nome', p['id']) for p in sessione.get('partecipanti', [])) or 'non indicati'}\n\n")
+                    f"Partecipanti: {', '.join(p.get('nome', p['id']) for p in sessione.get('partecipanti', [])) or 'non indicati'}\n"
+                    + (f"Relazione unica di {len(sessione['gruppo'])} incontri, separati dalle righe «=== Incontro k di n ===»: "
+                       "scrivi una sola relazione che li tiene insieme, senza ripetere, e indica quando un'informazione "
+                       "riguarda un incontro preciso.\n" if sessione.get("gruppo") else "") + "\n")
     risposta = _chiama(url, modello_testo, [
         {"role": "system", "content": istruzioni},
         {"role": "user", "content": intestazione + testo}], formato=SCHEMA, stop=stop, motore=m_testo)
