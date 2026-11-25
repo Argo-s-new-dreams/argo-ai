@@ -607,8 +607,9 @@ Foto e documenti vengono legati alla fine dell'incontro. Dopo aver aggiunto file
 
 1. Seleziona uno o più incontri nella tabella (con ⌘ o ⇧ per sceglierne più d'uno), il **Template:** della relazione (vedi [§11.4ter](#114ter-relazioni--template)) e, in **Foto:**, un modello vision di Ollama (es. `gemma3:12b`, `qwen2.5vl:7b`) oppure «Solo testo letto dall'iPhone». Ogni incontro in coda tiene il template scelto quando l'hai messo in coda.
 2. Premi **✨ Scrivi relazione**: gli incontri vanno in **coda** e vengono elaborati uno alla volta, ognuno con la sua barra di avanzamento (**■ Ferma coda** per interrompere). Per ciascuno Argo descrive le foto, incrocia parole e immagini e scrive titolo, riassunto, contatti, aziende, opportunità, punti chiave e azioni.
-3. Correggi il testo se serve e premi **Salva modifiche**; **Salva ▾** la esporta in Word o Markdown.
-4. La scheda **Trascrizione e foto** mostra la cronologia completa, con la bozza fatta sull'iPhone.
+3. **Le foto sono dentro la relazione**, accanto alla voce che riguardano: il biglietto da visita sotto quel contatto, lo stand o il prodotto sotto quell'azienda, la lavagna o il documento sotto quel tema, con una didascalia e il momento dell'incontro in cui sono state scattate. Le foto che non riguardano una voce precisa finiscono in fondo, in **Foto dell'incontro**, in ordine di scatto. Vale per le relazioni scritte dalla versione 20261125.1205: per quelle di prima premi di nuovo **✨ Scrivi relazione**.
+4. Correggi il testo se serve e premi **Salva modifiche** (le righe `![…](…)` sono le foto: puoi spostarle o toglierle); **Salva ▾** la esporta in Word, con le foto ridotte a 12 × 10 cm al massimo, o in Markdown, con il percorso completo delle foto. Nelle note per Dynamics, nella pagina Clienti e nel Secondo cervello la relazione va senza foto.
+5. La scheda **Trascrizione e foto** mostra la cronologia completa, con la bozza fatta sull'iPhone. **⬇️ Scarica trascrizione** in Word inserisce ogni foto **nel punto esatto in cui è stata scattata**: se la foto è stata fatta a metà di una frase, la frase viene divisa lì e riprende dopo la foto con l'orario. Sotto la foto: numero, orario e testo letto. Nel WebVTT, che non può contenere immagini, ogni foto è una nota (`NOTE Foto 2 scattata a 00:12:34`) nello stesso punto.
 
 **Invio a Dynamics 365 Sales**
 

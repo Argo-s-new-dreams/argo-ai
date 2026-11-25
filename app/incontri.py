@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, QTimer, QUrl, Signal
-from PySide6.QtGui import QColor, QDesktopServices, QKeySequence, QPixmap, QShortcut
+from PySide6.QtGui import QColor, QDesktopServices, QImageReader, QKeySequence, QPixmap, QShortcut, QTextDocument
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit,
     QListWidget, QListWidgetItem, QMenu, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QScrollArea,
@@ -46,6 +46,34 @@ def _durata(secondi):
     s = int(secondi or 0)
     return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}" if s >= 3600 else f"{s // 60:02d}:{s % 60:02d}"
 
+
+
+class VistaRelazione(QTextBrowser):
+    """Relazione impaginata con le foto dell'incontro: i percorsi relativi partono dalla cartella dell'incontro,
+    le foto sono ruotate come le ha scattate il telefono e ridotte alla larghezza della vista."""
+
+    LARGHEZZA_MAX = 460
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.cartella = None
+
+    def loadResource(self, tipo, url):
+        immagine = QTextDocument.ResourceType.ImageResource
+        if tipo in (immagine, getattr(immagine, "value", 2)):
+            percorso = Path(url.toLocalFile() or url.path())
+            if not percorso.is_absolute() and self.cartella:
+                percorso = Path(self.cartella) / percorso
+            if percorso.is_file():
+                lettore = QImageReader(str(percorso))
+                lettore.setAutoTransform(True)
+                img = lettore.read()
+                if not img.isNull():
+                    larghezza = min(self.LARGHEZZA_MAX, max(200, self.viewport().width() - 40))
+                    if img.width() > larghezza:
+                        img = img.scaledToWidth(larghezza, Qt.SmoothTransformation)
+                    return img
+        return super().loadResource(tipo, url)
 
 class LavoroRelazione(QObject):
     """Scrive la relazione di un incontro fuori dall'interfaccia, con stato e avanzamento.
@@ -581,7 +609,7 @@ class SchedaIncontri(QWidget):
 
         self.schede = QTabWidget()
         # Relazione: vista impaginata (Markdown) e, con «Modifica», il testo da correggere
-        self.vista = QTextBrowser()
+        self.vista = VistaRelazione()
         self.vista.setOpenExternalLinks(True)
         self.testo = QPlainTextEdit()
         self.testo.setPlaceholderText(tr('Nessuna relazione ancora: premi «✨ Scrivi relazione».'))
@@ -1195,6 +1223,7 @@ class SchedaIncontri(QWidget):
 
     def _aggiorna_vista(self):
         md = self.testo.toPlainText().strip()
+        self.vista.cartella, _d = self._corrente()
         if md:
             # Qt mostra _testo_ come sottolineato: le righe in corsivo delle prime relazioni diventano *testo*
             self.vista.setMarkdown(re.sub(r"(?m)^_(.+)_$", r"*\1*", md))
@@ -1246,10 +1275,13 @@ class SchedaIncontri(QWidget):
         if not f:
             return
         if formato == "docx":
-            percorso = esporta_word.salva_docx(testo, f)
-        else:
+            percorso = esporta_word.salva_docx(testo, f, cartella_immagini=cartella)
+        else:  # le foto restano nell'incontro: nel .md il percorso completo, così si vedono anche da un'altra cartella
             percorso = Path(f)
-            percorso.write_text(testo, encoding="utf-8")
+            percorso.write_text(re.sub(r"(!\[[^\]]*\]\()<?([^)>]+)>?\)",
+                                       lambda m: m.group(1) + "<" + (m.group(2) if Path(m.group(2)).is_absolute()
+                                                                     else str(cartella / m.group(2))) + ">)", testo),
+                                encoding="utf-8")
         self.finestra.statusBar().showMessage(tr('Salvata in {percorso}', percorso=percorso), 6000)
 
     def _sorgente_trascrizione(self):

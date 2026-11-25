@@ -197,7 +197,7 @@ class DialogoCRM(QDialog):
         if not scelte:
             QMessageBox.information(self, tr('Niente da inviare'), tr('Tutti i contatti sono impostati su «Salta».'))
             return
-        testo = (self.cartella / rel.FILE_TESTO).read_text(encoding="utf-8") if (self.cartella / rel.FILE_TESTO).exists() else ""
+        testo = rel.senza_immagini((self.cartella / rel.FILE_TESTO).read_text(encoding="utf-8")) if (self.cartella / rel.FILE_TESTO).exists() else ""
         titolo = self.relazione.get("titolo") or self.sessione.get("titolo", "Incontro")
         tipo_incontro = self.relazione.get("tipo", "")
         azioni = (self.relazione.get("azioni") or []) if self.cb_azioni.isChecked() else []

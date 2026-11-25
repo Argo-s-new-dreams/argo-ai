@@ -167,6 +167,10 @@ def descrivi_foto(cartella, sessione, url, modello, stato=lambda _t: None, stop=
 ISTRUZIONI = """Sei l'assistente che scrive la relazione di un incontro di lavoro (fiera, visita a un cliente, riunione, intervista).
 Il testo ha righe «[minuto] Nome: frase». Le righe «📷 FOTO» sono foto scattate in quel momento, con il testo letto
 e una descrizione: usale per identificare persone, aziende, recapiti e prodotti, e collegale a ciò che si dice.
+Le foto sono numerate («FOTO 1», «FOTO 2»…) e verranno inserite nella relazione: in contatti, aziende e temi metti
+nel campo «foto» i numeri delle foto che riguardano proprio quella voce (il biglietto da visita di quel contatto,
+lo stand o il prodotto di quell'azienda, la lavagna o il documento di quel tema). In «foto_didascalie» scrivi, per
+ogni foto, una didascalia breve che dica cosa mostra e a quale momento del discorso si collega.
 Le righe «📎 ALLEGATO» sono documenti aggiunti all'incontro (offerte, listini, presentazioni): usali come fonte
 di dati e cita il documento quando ne riprendi cifre o nomi.
 Chi registra è la persona indicata come «Io» (o con il nome dell'utente): non è un contatto.
@@ -182,11 +186,13 @@ SCHEMA = {
         "contatti": {"type": "array", "items": {"type": "object", "properties": {
             "nome": {"type": "string"}, "cognome": {"type": "string"}, "ruolo": {"type": "string"},
             "azienda": {"type": "string"}, "email": {"type": "string"}, "telefono": {"type": "string"},
-            "cellulare": {"type": "string"}, "sito": {"type": "string"}, "note": {"type": "string"}},
+            "cellulare": {"type": "string"}, "sito": {"type": "string"}, "note": {"type": "string"},
+            "foto": {"type": "array", "items": {"type": "integer"}}},
             "required": ["nome"]}},
         "aziende": {"type": "array", "items": {"type": "object", "properties": {
             "nome": {"type": "string"}, "settore": {"type": "string"}, "sito": {"type": "string"},
-            "citta": {"type": "string"}, "note": {"type": "string"}}, "required": ["nome"]}},
+            "citta": {"type": "string"}, "note": {"type": "string"},
+            "foto": {"type": "array", "items": {"type": "integer"}}}, "required": ["nome"]}},
         "interessi": {"type": "array", "items": {"type": "string"}},
         "opportunita": {"type": "object", "properties": {
             "descrizione": {"type": "string"}, "prodotti": {"type": "array", "items": {"type": "string"}},
@@ -199,14 +205,17 @@ SCHEMA = {
         # sezioni usate dai template (vedi template_relazione.py)
         "esigenze": {"type": "array", "items": {"type": "string"}},
         "temi": {"type": "array", "items": {"type": "object", "properties": {
-            "tema": {"type": "string"}, "sintesi": {"type": "string"}, "citazione": {"type": "string"}},
+            "tema": {"type": "string"}, "sintesi": {"type": "string"}, "citazione": {"type": "string"},
+            "foto": {"type": "array", "items": {"type": "integer"}}},
             "required": ["tema", "sintesi"]}},
         "decisioni": {"type": "array", "items": {"type": "string"}},
         "punti_aperti": {"type": "array", "items": {"type": "string"}},
         "rischi": {"type": "array", "items": {"type": "string"}},
+        "foto_didascalie": {"type": "array", "items": {"type": "object", "properties": {
+            "foto": {"type": "integer"}, "didascalia": {"type": "string"}}, "required": ["foto", "didascalia"]}},
     },
     "required": ["titolo", "tipo", "riassunto", "contatti", "aziende", "interessi", "opportunita",
-                 "punti_chiave", "azioni", "esigenze", "temi", "decisioni", "punti_aperti", "rischi"],
+                 "punti_chiave", "azioni", "esigenze", "temi", "decisioni", "punti_aperti", "rischi", "foto_didascalie"],
 }
 
 
@@ -274,8 +283,8 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
             appunti.append(_chiama(url, modello_testo, [
                 {"role": "system", "content": istruzioni},
                 {"role": "user", "content": "Scrivi appunti fedeli e sintetici di questa parte (chi è chi, aziende, "
-                                            "prodotti, richieste, cifre, decisioni, azioni). Conserva nomi e recapiti "
-                                            "delle righe FOTO.\n\n" + b}], stop=stop, motore=m_testo))
+                                            "prodotti, richieste, cifre, decisioni, azioni). Conserva il numero, i nomi e "
+                                            "i recapiti delle righe FOTO (per esempio «FOTO 2: biglietto di …»).\n\n" + b}], stop=stop, motore=m_testo))
             passo()
         testo = "\n\n".join(appunti)
         giro += 1
@@ -312,7 +321,51 @@ def _riga(*parti):
     return " · ".join(p for p in parti if p)
 
 
-def _contatti(r):
+RE_IMMAGINE = re.compile(r"^\s*!\[[^\]]*\]\([^)]*\)\s*$", re.M)
+
+
+def senza_immagini(md):
+    """La relazione senza le righe delle foto (per le note del CRM, la Base e gli altri testi)."""
+    return re.sub(r"\n{3,}", "\n\n", RE_IMMAGINE.sub("", md or ""))
+
+
+class _Foto:
+    """Le foto dell'incontro per la relazione: ogni foto si inserisce una volta sola, accanto alla voce che la
+    riguarda; quelle non collegate a nessuna voce finiscono in fondo, in ordine di scatto."""
+
+    def __init__(self, r, sessione):
+        didascalie = {}
+        for x in r.get("foto_didascalie") or []:
+            try:
+                didascalie[int(x.get("foto"))] = (x.get("didascalia") or "").strip()
+            except (TypeError, ValueError):
+                pass
+        self.foto = {n: (f, didascalie.get(n, "")) for n, f in enumerate(sessione.get("foto", []), 1) if f.get("file")}
+        self.usate = set()
+
+    def righe(self, numeri):
+        out = []
+        for n in numeri or []:
+            try:
+                n = int(n)
+            except (TypeError, ValueError):
+                continue
+            if n in self.foto and n not in self.usate:
+                self.usate.add(n)
+                f, d = self.foto[n]
+                alt = _riga(f"📷 Foto {n}", _durata(f.get("secondo")), d).replace("[", "(").replace("]", ")")
+                out += ["", f"![{alt}](<{f['file']}>)", ""]
+        return out
+
+    def restanti(self):
+        resto = sorted((n for n in self.foto if n not in self.usate), key=lambda n: float(self.foto[n][0].get("secondo") or 0))
+        out = []
+        for n in resto:
+            out += self.righe([n])
+        return out
+
+
+def _contatti(r, foto):
     out = []
     for c in r.get("contatti") or []:
         nome = _riga(" ".join(x for x in (c.get("nome"), c.get("cognome")) if x))
@@ -320,10 +373,19 @@ def _contatti(r):
                                                c.get("telefono"), c.get("cellulare"), c.get("sito")))
         if c.get("note"):
             out.append(f"    - {c['note']}")
+        out += foto.righe(c.get("foto"))
     return out
 
 
-def _opportunita(r):
+def _aziende(r, foto):
+    out = []
+    for a in r.get("aziende") or []:
+        out.append(f"- **{a.get('nome')}** — " + _riga(a.get("settore"), a.get("citta"), a.get("sito"), a.get("note")))
+        out += foto.righe(a.get("foto"))
+    return out
+
+
+def _opportunita(r, _foto=None):
     o = r.get("opportunita") or {}
     if not any(o.get(k) for k in ("descrizione", "prodotti", "budget", "tempistica", "prossimo_passo")):
         return []
@@ -337,25 +399,25 @@ def _opportunita(r):
     return out
 
 
-def _temi(r):
+def _temi(r, foto):
     out = []
     for x in r.get("temi") or []:
         out += [f"### {x.get('tema', '')}", "", x.get("sintesi", "")]
         if x.get("citazione"):
             out += ["", f"> «{x['citazione']}»"]
+        out += foto.righe(x.get("foto"))
         out.append("")
     return out[:-1] if out else out
 
 
 def _elenco(chiave):
-    return lambda r: [f"- {v}" for v in r.get(chiave) or [] if v]
+    return lambda r, _foto=None: [f"- {v}" for v in r.get(chiave) or [] if v]
 
 
 SCRITTORI = {
-    "riassunto": lambda r: [r["riassunto"]] if r.get("riassunto") else [],
+    "riassunto": lambda r, _foto=None: [r["riassunto"]] if r.get("riassunto") else [],
     "contatti": _contatti,
-    "aziende": lambda r: [f"- **{a.get('nome')}** — " + _riga(a.get("settore"), a.get("citta"), a.get("sito"), a.get("note"))
-                          for a in r.get("aziende") or []],
+    "aziende": _aziende,
     "esigenze": _elenco("esigenze"),
     "interessi": _elenco("interessi"),
     "opportunita": _opportunita,
@@ -364,7 +426,7 @@ SCRITTORI = {
     "decisioni": _elenco("decisioni"),
     "punti_aperti": _elenco("punti_aperti"),
     "rischi": _elenco("rischi"),
-    "azioni": lambda r: [f"- [ ] {_riga(a.get('descrizione'), a.get('responsabile'), ('entro ' + a['scadenza']) if a.get('scadenza') else '')}"
+    "azioni": lambda r, _foto=None: [f"- [ ] {_riga(a.get('descrizione'), a.get('responsabile'), ('entro ' + a['scadenza']) if a.get('scadenza') else '')}"
                          for a in r.get("azioni") or []],
 }
 ORDINE_CLASSICO = ["riassunto", "contatti", "aziende", "opportunita", "interessi", "punti_chiave", "azioni"]
@@ -378,10 +440,14 @@ def in_markdown(r, sessione, meta=None):
     out = [f"# {r.get('titolo') or sessione.get('titolo', 'Incontro')}", ""]
     quando = (sessione.get("creata") or "")[:16].replace("T", " ")
     out += [f"*{_riga(r.get('tipo', '').capitalize(), quando, 'durata ' + _durata(sessione.get('durata')))}*", ""]
+    foto = _Foto(r, sessione)
     for k in sezioni:
-        corpo = SCRITTORI[k](r)
+        corpo = SCRITTORI[k](r, foto)
         if corpo:
             out += [f"## {tpl.SEZIONI[k][0]}", ""] + corpo + [""]
+    resto = foto.restanti()
+    if resto:
+        out += ["## Foto dell'incontro", "", "*In ordine di scatto, con il momento dell'incontro in cui sono state fatte.*"] + resto + [""]
     modelli = _riga(meta.get("modello_testo"), ("foto: " + meta["modello_vision"]) if meta.get("modello_vision") else "")
     dove = "modello cloud" if "☁️" in modelli else "AI locale"
     quale = f" · template «{usato['nome']}»" if usato.get("nome") else ""

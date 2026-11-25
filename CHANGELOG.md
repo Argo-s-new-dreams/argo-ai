@@ -2,6 +2,12 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261125.1205: le foto dell'incontro nella trascrizione e nella relazione
+- **⬇️ Scarica trascrizione** degli Incontri (Word): ogni foto è inserita **nel punto esatto in cui è stata scattata**. Se la foto è stata fatta a metà di una frase, la frase viene divisa lì e riprende dopo la foto con l'orario. Sotto la foto: numero, orario e testo letto. Prima il Word conteneva solo il testo.
+- **WebVTT**: le foto diventano note (`NOTE Foto 2 scattata a 00:12:34`) nello stesso punto, perché i sottotitoli non possono contenere immagini.
+- **Relazione**: le foto sono dentro il testo, accanto alla voce che riguardano. Il modello indica per ogni contatto, azienda e tema le foto collegate (il biglietto da visita sotto quel contatto, il prodotto sotto quell'azienda, la lavagna sotto quel tema) e scrive una didascalia per ogni foto. Quelle senza una voce precisa vanno in fondo, in *Foto dell'incontro*, in ordine di scatto. Vale per le relazioni scritte da questa versione: per le altre basta riscriverle.
+- La relazione mostra le foto anche nella vista di Argo (ruotate come le ha scattate il telefono e ridotte alla larghezza della finestra), nel **Word** (al massimo 12 × 10 cm, con didascalia) e nel **Markdown** (con il percorso completo delle foto). Nelle note per Dynamics, nella pagina Clienti e nel Secondo cervello la relazione va senza le righe delle foto.
+
 ## 20261123.1250: Secondo cervello, prepara l'incontro con la Base
 - **💡 Prepara** (nuova scheda della pagina *Secondo cervello*): scegli il tipo di azienda, le funzioni delle persone e, se vuoi, l'argomento previsto. **💡 Suggerisci** propone **domande da fare**, **temi da toccare** e **cosa è emerso in casi simili**, presi dagli incontri simili della Base. Subito e senza modello.
 - **✨ Scaletta su misura**: il modello su questo computer riordina i suggerimenti in una scaletta per quell'incontro, nella lingua dell'interfaccia. Usa solo le voci della Base, già anonime, e passa dal filtro etico.

@@ -617,7 +617,7 @@ class SchedaClienti(QWidget):
                     self._aggiungi_riga({"nome": nome, "scelta": (INTERNO, None), "crea_contatto": False}
                                         if _sono_io(nome) else {"nome": nome})
         testo = (Path(cartella) / rel.FILE_TESTO)
-        self.v_rel.setMarkdown(testo.read_text(encoding="utf-8") if testo.exists() else
+        self.v_rel.setMarkdown(rel.senza_immagini(testo.read_text(encoding="utf-8")) if testo.exists() else
                                "*Nessuna relazione: premi «✨ Relazione».*")
 
     def _aggiungi_riga(self, p):
@@ -819,7 +819,7 @@ class SchedaClienti(QWidget):
             QMessageBox.information(self, tr('Dynamics'), tr("Scegli prima l'azienda di almeno un partecipante."))
             return
         testo_file = Path(cartella) / rel.FILE_TESTO
-        testo = testo_file.read_text(encoding="utf-8") if testo_file.exists() else ""
+        testo = rel.senza_immagini(testo_file.read_text(encoding="utf-8")) if testo_file.exists() else ""
         titolo = (rel.carica(cartella).get("relazione") or {}).get("titolo") or _d.get("titolo", "Call")
         nuovi = [p for p in righe if p["scelta"][0] == "account" and p["crea_contatto"] and p["nome"]]
         domanda = (f"Su Dynamics:\n• {len(nuovi)} contatti nuovi\n"

@@ -174,7 +174,7 @@ def testo_incontro(scheda):
         nomi.update(p.get("nome", "") for p in sessione.get("partecipanti", []))
         relazione = rif / rel.FILE_TESTO
         if relazione.exists():
-            parti.append("RELAZIONE DELL'INCONTRO\n" + relazione.read_text(encoding="utf-8"))
+            parti.append("RELAZIONE DELL'INCONTRO\n" + rel.senza_immagini(relazione.read_text(encoding="utf-8")))
         parti.append("TRASCRIZIONE\n" + rel.cronologia(rif, sessione))
     else:
         candidati = [rif] if rif.suffix.lower() in (".txt", ".md") else []

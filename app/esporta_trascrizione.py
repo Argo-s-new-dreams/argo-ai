@@ -3,9 +3,11 @@
 Le sorgenti:
     - Trascrivi e Registra (Live): il .json di WhisperX accanto al file _nomi.txt (tempi di inizio e fine di ogni
       frase, nomi dei parlanti come nel _nomi.txt); senza .json, il _nomi.txt (fine = inizio della frase dopo);
-    - Incontri (iPhone e file): i segmenti di sessione.json, con i nomi dei partecipanti.
+    - Incontri (iPhone e file): i segmenti di sessione.json, con i nomi dei partecipanti, e le foto scattate durante
+      l'incontro, inserite nel punto esatto in cui sono state scattate (una frase in corso viene divisa lì).
 WebVTT (W3C): una «cue» per frase, con il parlante nel tag di voce <v Nome>, così i lettori video e Teams/Stream
 mostrano chi parla. Frasi molto lunghe divise in più cue (al massimo ~7 secondi o ~120 caratteri ciascuna).
+Le foto: in Word come immagini con didascalia; in WebVTT, che non può contenere immagini, come blocchi NOTE.
 """
 from lingua import tr
 import json
@@ -77,15 +79,60 @@ def da_file(percorso):
     return da_testo(nomi.read_text(encoding="utf-8", errors="replace")) if nomi.is_file() else []
 
 
-def da_incontro(cartella):
+def foto_incontro(cartella, sessione=None):
+    """Le foto dell'incontro in ordine di scatto: [{"foto": n, "inizio": secondo, "file": percorso, "testo": OCR}]."""
+    cartella = Path(cartella)
+    if sessione is None:
+        sessione = json.loads((cartella / "sessione.json").read_text(encoding="utf-8"))
+    out = []
+    for n, f in enumerate(sessione.get("foto", []), 1):  # stessa numerazione della relazione («FOTO n»)
+        if f.get("file"):
+            out.append({"foto": n, "inizio": float(f.get("secondo") or 0), "file": str(cartella / f["file"]),
+                        "testo": " · ".join(x.strip() for x in (f.get("testo") or "").splitlines() if x.strip())})
+    return sorted(out, key=lambda x: x["inizio"])
+
+
+def _dividi_a(seg, t):
+    """Divide una frase al secondo t, in proporzione al tempo; (prima, dopo) oppure (seg, None)."""
+    durata = seg["fine"] - seg["inizio"]
+    parole = seg["testo"].split()
+    if durata <= 0 or len(parole) < 2 or not seg["inizio"] < t < seg["fine"]:
+        return seg, None
+    k = round(len(parole) * (t - seg["inizio"]) / durata)
+    if k <= 0 or k >= len(parole):
+        return seg, None
+    return (dict(seg, fine=t, testo=" ".join(parole[:k])), dict(seg, inizio=t, testo=" ".join(parole[k:])))
+
+
+def con_foto(segmenti, foto):
+    """Frasi e foto in ordine di tempo. Una foto scattata a metà di una frase la divide in quel punto."""
+    out, foto = [], sorted(foto, key=lambda f: f["inizio"])
+    j = 0
+    for seg in segmenti:
+        while j < len(foto) and foto[j]["inizio"] < seg["fine"]:
+            if foto[j]["inizio"] <= seg["inizio"]:
+                out.append(foto[j])
+            else:
+                prima, dopo = _dividi_a(seg, foto[j]["inizio"])
+                if dopo is None:
+                    break  # frase troppo corta per dividerla: la foto va subito dopo
+                out += [prima, foto[j]]
+                seg = dopo
+            j += 1
+        out.append(seg)
+    out += foto[j:]
+    return out
+
+
+def da_incontro(cartella, con_le_foto=True):
+    """Segmenti dell'incontro con chi parla; con le foto inserite nel momento in cui sono state scattate."""
     sessione = json.loads((Path(cartella) / "sessione.json").read_text(encoding="utf-8"))
     nomi = {p["id"]: p.get("nome") or p["id"] for p in sessione.get("partecipanti", [])}
     out = [{"inizio": float(s.get("inizio") or 0), "fine": float(s.get("fine") or 0),
             "chi": nomi.get(s.get("parlante"), s.get("parlante") or ""), "testo": " ".join((s.get("testo") or "").split())}
            for s in sessione.get("segmenti", []) if (s.get("testo") or "").strip()]
-    if not out and sessione.get("trascrizioneLegacy"):
-        return da_testo(sessione["trascrizioneLegacy"])
-    return _chiudi(out)
+    out = _chiudi(out) if out else (da_testo(sessione["trascrizioneLegacy"]) if sessione.get("trascrizioneLegacy") else [])
+    return con_foto(out, foto_incontro(cartella, sessione)) if con_le_foto else out
 
 
 # ---------------------------------------------------------------- scrittura
@@ -135,6 +182,10 @@ def vtt(segmenti, titolo=""):
              "Può contenere errori: rileggila prima di usarla.", ""]
     n = 0
     for seg in segmenti:
+        if seg.get("foto"):
+            nota = f"Foto {seg['foto']} scattata a {_hms(seg['inizio'])}: {Path(seg['file']).name}"
+            righe += [f"NOTE {nota}" + (f"\nTesto letto: {seg['testo']}" if seg.get("testo") else "").replace("-->", "->"), ""]
+            continue
         for c in _dividi(seg):
             n += 1
             testo = _voce(c["testo"])
@@ -143,10 +194,22 @@ def vtt(segmenti, titolo=""):
     return "\n".join(righe)
 
 
+def didascalia(f, massimo=160):
+    testo_letto = f.get("testo") or ""
+    if len(testo_letto) > massimo:
+        testo_letto = testo_letto[:massimo].rsplit(" ", 1)[0] + "…"
+    return f"📷 Foto {f['foto']} · {_hms(f['inizio'])}" + (f" · testo letto: {testo_letto}" if testo_letto else "")
+
+
 def testo(segmenti):
-    """Testo leggibile per Word: un paragrafo per intervento, come nel _nomi.txt."""
+    """Testo leggibile per Word: un paragrafo per intervento, come nel _nomi.txt; le foto come «![didascalia](file)»."""
     righe, ultimo = [], None
     for s in segmenti:
+        if s.get("foto"):
+            alt = didascalia(s).replace("[", "(").replace("]", ")")
+            righe.append(f"![{alt}](<{s['file']}>)")
+            ultimo = None  # dopo la foto il discorso riprende con l'orario
+            continue
         if righe and s["chi"] == ultimo:
             righe[-1] += " " + s["testo"]
         else:

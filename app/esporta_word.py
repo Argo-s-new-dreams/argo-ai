@@ -12,7 +12,7 @@ from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Pt, RGBColor
+from docx.shared import Cm, Pt, RGBColor
 
 BLU = RGBColor(0x1F, 0x4E, 0x79)
 GRIGIO = RGBColor(0x80, 0x80, 0x80)
@@ -40,6 +40,9 @@ RE_NUM = re.compile(r"^\s*(\d+)[.)]\s+(.*)$")
 RE_PUNTO = re.compile(r"^(\s*)[-*•]\s+(.*)$")
 RE_TITOLO = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 RE_SEPARATORE = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$")
+RE_IMMAGINE = re.compile(r"^\s*!\[([^\]]*)\]\(<?([^)>]+)>?\)\s*$")
+LARGHEZZA_FOTO_CM = 12.0
+ALTEZZA_FOTO_CM = 10.0
 
 
 def _testo_formattato(par, testo, grassetto=False):
@@ -116,7 +119,57 @@ def _stili(doc):
         st.font.color.rgb = BLU
 
 
-def markdown_in_docx(doc, testo):
+def _percorso_immagine(indirizzo, cartella):
+    from urllib.parse import unquote, urlparse
+    from urllib.request import url2pathname
+    if indirizzo.startswith("file:"):
+        return Path(url2pathname(urlparse(indirizzo).path))
+    p = Path(unquote(indirizzo))
+    return p if p.is_absolute() or cartella is None else Path(cartella) / p
+
+
+def aggiungi_immagine(doc, percorso, didascalia=""):
+    """Immagine centrata (al massimo 12 × 10 cm, proporzioni rispettate) con la didascalia in grigio sotto.
+    Se il file manca o il formato non è supportato da Word, scrive solo la didascalia con una nota."""
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    percorso = Path(percorso)
+    par = doc.add_paragraph()
+    par.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    inserita = False
+    if percorso.is_file():
+        try:
+            larghezza, altezza = LARGHEZZA_FOTO_CM, None
+            try:
+                from PIL import Image, ImageOps
+                with Image.open(percorso) as im:
+                    w, h = ImageOps.exif_transpose(im).size
+                if w and h and h / w > ALTEZZA_FOTO_CM / LARGHEZZA_FOTO_CM:
+                    larghezza, altezza = None, ALTEZZA_FOTO_CM
+            except Exception:
+                pass
+            run = par.add_run()
+            if altezza:
+                run.add_picture(str(percorso), height=Cm(altezza))
+            else:
+                run.add_picture(str(percorso), width=Cm(larghezza))
+            inserita = True
+        except Exception:
+            inserita = False
+    if not inserita:
+        r = par.add_run(f"[immagine non inseribile: {percorso.name}]")
+        r.italic = True
+        r.font.color.rgb = GRIGIO
+    if didascalia:
+        cap = doc.add_paragraph()
+        cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = cap.add_run(didascalia)
+        r.italic = True
+        r.font.size = Pt(9)
+        r.font.color.rgb = GRIGIO
+    return inserita
+
+
+def markdown_in_docx(doc, testo, cartella_immagini=None):
     """Scrive nel documento il testo, interpretando il Markdown semplice prodotto dagli attrezzi."""
     righe = testo.replace("\r\n", "\n").split("\n")
     i = 0
@@ -131,6 +184,11 @@ def markdown_in_docx(doc, testo):
                 blocco.append(righe[i])
                 i += 1
             _aggiungi_tabella(doc, blocco)
+            continue
+        m = RE_IMMAGINE.match(riga)
+        if m:
+            aggiungi_immagine(doc, _percorso_immagine(m.group(2).strip(), cartella_immagini), m.group(1).strip())
+            i += 1
             continue
         if re.match(r"^\s*(-{3,}|\*{3,}|_{3,})\s*$", riga):
             i += 1
@@ -173,14 +231,15 @@ def markdown_in_docx(doc, testo):
         i += 1
         while i < len(righe) and righe[i].strip() and not (
                 righe[i].lstrip().startswith(("|", "#")) or RE_PUNTO.match(righe[i]) or RE_NUM.match(righe[i])
-                or RE_TRASCR.match(righe[i])):
+                or RE_TRASCR.match(righe[i]) or RE_IMMAGINE.match(righe[i])):
             par.add_run().add_break()
             _testo_formattato(par, righe[i].strip())
             i += 1
 
 
-def salva_docx(testo, percorso, titolo=None, sottotitolo=None, nota_ai=True):
-    """Crea un .docx dal testo. Se il testo inizia già con un titolo '# ...' non ne aggiunge un altro."""
+def salva_docx(testo, percorso, titolo=None, sottotitolo=None, nota_ai=True, cartella_immagini=None):
+    """Crea un .docx dal testo. Se il testo inizia già con un titolo '# ...' non ne aggiunge un altro.
+    Le righe «![didascalia](file)» diventano immagini; i percorsi relativi partono da `cartella_immagini`."""
     doc = Document()
     _stili(doc)
     for sez in doc.sections:
@@ -195,7 +254,7 @@ def salva_docx(testo, percorso, titolo=None, sottotitolo=None, nota_ai=True):
         r = p.add_run(sottotitolo)
         r.italic = True
         r.font.color.rgb = GRIGIO
-    markdown_in_docx(doc, testo)
+    markdown_in_docx(doc, testo, cartella_immagini)
     if nota_ai:
         p = doc.add_paragraph()
         r = p.add_run(nota_ai if isinstance(nota_ai, str) else (NOTA_AI_CLOUD if _qualche_cloud() else NOTA_AI))
