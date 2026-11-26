@@ -2,6 +2,14 @@
 
 Le versioni hanno il formato `AAAAMMGG.HHMM` (ora di Roma). Il manuale completo è in [docs/MANUALE.md](docs/MANUALE.md).
 
+## 20261126.1523: documento con figure più robusto con i modelli locali
+Dalla prima prova vera (relazione unica di quattro incontri, 35 foto, gemma3:12b) il documento Envision usciva sbagliato: il modello commentava i propri appunti («Ottimo lavoro! … ecco i suggerimenti»), rifaceva le sezioni della relazione a schede invece dei capitoli del template e scriveva «📷 FOTO n» invece di inserire le foto, che quindi mancavano.
+- **Appunti neutri**: per i documenti gli appunti degli incontri lunghi si prendono con istruzioni a parte, senza le sezioni della relazione a schede, e al secondo giro si uniscono invece di essere «rivisti».
+- **Il documento finale** riceve il materiale come tale, con in fondo il promemoria dei capitoli del template; se il risultato non segue la struttura, Argo lo fa **riscrivere una volta**.
+- **Commenti del modello tolti**: premesse prima del titolo e righe come «Ottimo lavoro!» o «Ecco alcuni suggerimenti…» con quello che segue.
+- **Foto inserite comunque**: se il modello scrive «📷 FOTO n: …» o «(FOTO n)» al posto di [[FOTO n | didascalia]], la foto entra lì con la sua didascalia; le foto che non esistono vengono tolte.
+- Per rigenerare: ✨ Scrivi relazione sull'incontro (o sul gruppo).
+
 ## 20261125.2048: Secondo cervello dal vivo, accanto alla trascrizione Live
 - Con il Secondo cervello attivo, nella pagina **Registra** in modalità **Live** compare il pannello **💡 Dal vivo**: la scaletta dagli incontri simili della Base (temi, domande, cose emerse da verificare) per l'azienda e le funzioni scelte in *Con chi stai parlando?*.
 - A ogni blocco trascritto i temi e le domande di cui si è già parlato si **spuntano da soli** (✓), senza modello: in cima restano quelli ancora da fare.

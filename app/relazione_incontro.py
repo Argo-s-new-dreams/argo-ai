@@ -299,6 +299,55 @@ APPUNTI_DOCUMENTO = ("Scrivi appunti fedeli e DETTAGLIATI di questa parte, che s
                      "12:40: schermata del gestionale con l'elenco delle spedizioni») e accanto il passaggio del "
                      "discorso a cui si riferisce.")
 
+SISTEMA_APPUNTI_DOCUMENTO = """Prendi appunti di lavoro da una parte della trascrizione di un incontro (o dagli appunti di
+una parte). Scrivi in italiano, in elenchi puntati sotto brevi titoli. Solo fatti presenti nel testo: niente commenti,
+giudizi sul testo, suggerimenti di miglioramento, saluti o domande. Non scrivere una relazione: solo appunti.
+{regole}"""
+
+RIASSUNTO_APPUNTI = ("Questi sono appunti di più parti dello stesso incontro. Uniscili in appunti più compatti, senza perdere "
+                     "fasi, strumenti, cifre, problemi, esempi e righe FOTO (numero, momento, cosa mostra, passaggio collegato).")
+
+RE_COMMENTO = re.compile(r"^\W*(ottimo lavoro|ecco (alcuni|i|le) (suggeriment|modific)|in sintesi, hai|spero che|fammi sapere|"
+                         r"se vuoi,? posso|ho (rivisto|migliorato|riscritto)|la relazione è (molto|ben))", re.I)
+RE_FOTO_CITATA = re.compile(r"\(?\b(?:📷\s*)?FOTO\s+(\d+)\b\)?", re.I)
+RE_RIGA_FOTO = re.compile(r"^\s*(?:#+\s*|[-*]\s*)?(?:\*\*)?📷?\s*FOTO\s+(\d+)\b(?:\*\*)?\s*[:.\-–]?\s*(.*)$", re.I)
+
+
+def togli_commenti(md):
+    """Toglie quello che il modello scrive su sé stesso invece del documento: le premesse prima del primo titolo e,
+    da una riga come «Ottimo lavoro!» o «Ecco alcuni suggerimenti…» in poi, i commenti in coda."""
+    righe = md.strip().splitlines()
+    primo = next((i for i, r in enumerate(righe) if r.startswith("#")), None)
+    if primo:  # prima del titolo restano solo le righe brevi (come «ENVISION FRONTIER FIRM»), non i discorsi
+        righe = [r for r in righe[:primo] if len(r.strip()) <= 60 and not RE_COMMENTO.match(r.strip())
+                 and not re.match(r"\s*([-*•]|\d+[.)])\s", r)] + righe[primo:]
+    for i, r in enumerate(righe):
+        if i > 3 and RE_COMMENTO.match(r.strip()):
+            righe = righe[:i]
+            break
+    righe = [r for r in righe if not RE_COMMENTO.match(r.strip())]
+    return "\n".join(righe).strip() + "\n"
+
+
+def capitoli_richiesti(struttura):
+    """I titoli «## …» della struttura di un template documento (senza la spiegazione dopo i due punti)."""
+    return [r.split(":")[0].strip() for r in (struttura or "").splitlines()
+            if r.startswith("## ") and not r.lower().startswith("## dal ")]
+
+
+def struttura_rispettata(md, capitoli):
+    """Vero se il documento ha almeno metà dei capitoli richiesti (confronto sulle parole del titolo)."""
+    if not capitoli:
+        return md.count("\n## ") >= 2
+    titoli = [r.lower() for r in md.splitlines() if r.startswith("## ")]
+    trovati = 0
+    for c in capitoli:
+        parole = [w for w in re.findall(r"[^\W\d_]{4,}", c.lower())][:3]
+        if parole and any(all(w in t for w in parole[:2]) for t in titoli):
+            trovati += 1
+    return trovati >= max(2, len(capitoli) // 2)
+
+
 RE_SEGNAPOSTO_FOTO = re.compile(r"\[\[\s*FOTO\s+(\d+)\s*(?:\|\s*([^\]]*?))?\s*\]\]", re.I)
 
 
@@ -317,6 +366,31 @@ def inserisci_foto(md, sessione):
         return f"\n\n![{alt}](<{foto[n]['file']}>)\n\n"
 
     testo = RE_SEGNAPOSTO_FOTO.sub(sostituisci, md)
+    # Il modello non ha usato [[FOTO n | …]] ma ha scritto «📷 FOTO n: …» o «(FOTO n)»: le foto vanno messe lo stesso
+    righe = []
+    for riga in testo.splitlines():
+        m = RE_RIGA_FOTO.match(riga)
+        if m and int(m.group(1)) not in foto:
+            continue  # foto che non esiste
+        if m:
+            n = int(m.group(1))
+            if n not in usate:
+                usate.add(n)
+                didascalia = re.sub(r"\s*\(\d+:\d+(?::\d+)?\)\s*", " ", m.group(2)).strip(" -–.*") or f"Foto {n}"
+                didascalia = didascalia[:160].replace("[", "(").replace("]", ")")
+                righe.append(f"\n![Figura - {didascalia}](<{foto[n]['file']}>)\n")
+            continue
+        citate = [int(x) for x in RE_FOTO_CITATA.findall(riga) if int(x) in foto and int(x) not in usate]
+        if citate:
+            riga = RE_FOTO_CITATA.sub(lambda m: "" if int(m.group(1)) in foto else m.group(0), riga)
+            riga = re.sub(r"\s+([,.;:])", r"\1", re.sub(r"  +", " ", riga)).rstrip()
+            righe.append(riga)
+            for n in citate:
+                usate.add(n)
+                righe.append(f"\n![Figura - Foto {n}](<{foto[n]['file']}>)\n")
+            continue
+        righe.append(riga)
+    testo = "\n".join(righe)
     return re.sub(r"\n{3,}", "\n\n", testo).strip() + "\n", sorted(usate)
 
 
@@ -378,9 +452,11 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
         appunti = []
         for i, b in enumerate(blocchi, 1):
             stato(f"Prendo appunti · parte {i} di {len(blocchi)}…")
+            documento_appunti = tpl.e_documento(template)
             appunti.append(_chiama(url, modello_testo, [
-                {"role": "system", "content": istruzioni},
-                {"role": "user", "content": (APPUNTI_DOCUMENTO if tpl.e_documento(template) else
+                {"role": "system", "content": SISTEMA_APPUNTI_DOCUMENTO.format(regole=etica.REGOLE)
+                 if documento_appunti else istruzioni},
+                {"role": "user", "content": ((RIASSUNTO_APPUNTI if giro else APPUNTI_DOCUMENTO) if documento_appunti else
                                              "Scrivi appunti fedeli e sintetici di questa parte (chi è chi, aziende, "
                                              "prodotti, richieste, cifre, decisioni, azioni). Conserva il numero, i nomi e "
                                              "i recapiti delle righe FOTO (per esempio «FOTO 2: biglietto di …»).") + "\n\n" + b}],
@@ -404,10 +480,21 @@ def scrivi_relazione(cartella, sessione, url, modello_testo, modello_vision=None
             lunghezza=tpl.LUNGHEZZE[template.get("lunghezza", "dettagliata")][1], regole=etica.REGOLE,
             indicazioni=("INDICAZIONI DELL'UTENTE (hanno la precedenza sullo stile, mai sulla fedeltà):\n"
                          + template["istruzioni"]) if template.get("istruzioni") else "")
-        risposta_doc = _chiama(url, modello_testo, [
-            {"role": "system", "content": sistema},
-            {"role": "user", "content": intestazione + testo}], contesto=32768, stop=stop, motore=m_testo)
-        risposta_doc = re.sub(r"^```(?:markdown|md)?\s*|\s*```$", "", risposta_doc.strip())
+        capitoli = capitoli_richiesti(template.get("struttura"))
+        promemoria = ("\n\n---\nORA SCRIVI IL DOCUMENTO (non commentare il materiale qui sopra, non dare suggerimenti: "
+                      "scrivi direttamente il documento finale). Capitoli, in quest'ordine: " + " · ".join(capitoli) +
+                      ". Le foto vanno inserite con righe [[FOTO n | didascalia]].") if capitoli else ""
+        for tentativo in range(2):
+            risposta_doc = _chiama(url, modello_testo, [
+                {"role": "system", "content": sistema},
+                {"role": "user", "content": intestazione + "MATERIALE (trascrizione o appunti degli incontri):\n\n" + testo
+                 + promemoria}], contesto=32768, stop=stop, motore=m_testo)
+            risposta_doc = togli_commenti(re.sub(r"^```(?:markdown|md)?\s*|\s*```$", "", risposta_doc.strip()))
+            if struttura_rispettata(risposta_doc, capitoli) or tentativo:
+                break
+            stato("Il documento non segue la struttura del template: lo faccio riscrivere una volta…")
+            promemoria += ("\nATTENZIONE: la versione precedente non seguiva la struttura. Usa ESATTAMENTE questi titoli "
+                           "«## » e niente sezioni Riassunto, Temi, Esigenze, Contatti o Aziende.")
         documento, foto_usate = inserisci_foto(etica.pulisci(risposta_doc), sessione)
         passo()
         stato(f"Estraggo contatti, aziende e azioni per CRM e Clienti con {modello_testo}…")

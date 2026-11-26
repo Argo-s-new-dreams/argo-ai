@@ -637,6 +637,7 @@ Per un workshop o un assessment serve spesso un **documento di lavoro**, non una
 - **le foto entrano nel testo** nel punto in cui spiegano il contesto (la schermata del gestionale nel capitolo sul caricamento, il documento cartaceo in quello sui documenti), con la didascalia «Figura - …». Le foto che non servono restano fuori;
 - per farlo bene il modello deve sapere cosa mostra ogni foto: scegli un **modello per le foto** (in alto, «Foto:»);
 - le proposte sono scritte come proposte da validare, le cifre solo come dette. Rileggilo comunque prima di consegnarlo;
+- con un modello piccolo (per esempio gemma3:12b) e tanti incontri insieme il documento può uscire più povero: Argo toglie i commenti del modello, lo fa riscrivere una volta se non segue i capitoli e inserisce le foto anche quando il modello le cita solo come «FOTO n». Con un modello più grande il risultato migliora;
 - con la **relazione unica** (vedi sotto) il documento tiene insieme più incontri, come due giornate di assessment dallo stesso cliente.
 
 In *Impostazioni › Relazioni* la **Forma** di un template può essere *Schede (sezioni)* o *Documento con figure*; per i documenti la **Struttura del documento** dice i capitoli e cosa mettere in ciascuno. Duplica il template Envision per farne versioni tue.
